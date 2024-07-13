@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as st # type: ignore
 
 def create_sidebar(profile_pic):
     st.sidebar.markdown("# About Me")

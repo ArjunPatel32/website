@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as st # type: ignore
 import base64
 
 def get_base64_of_bin_file(bin_file):
@@ -18,12 +18,6 @@ def set_png_as_page_bg(png_file):
     ''' % bin_str
     
     st.markdown(page_bg_img, unsafe_allow_html=True)
-    return
-
-def load_images():
-    profile_pic = 'main/images/profile_pic.jpg'
-    interstellar_pic = 'main/images/interstellar_pic.jpg'
-    return profile_pic, interstellar_pic
 
 def create_footer():
     st.markdown("""

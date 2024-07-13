@@ -1,5 +1,5 @@
-import streamlit as st
-from main.customization import set_png_as_page_bg, load_images, create_footer
+import streamlit as st # type: ignore
+from main.customization import set_png_as_page_bg, create_footer
 from main.sidebar import create_sidebar
 
 # Set page configuration
@@ -13,7 +13,8 @@ st.set_page_config(
 set_png_as_page_bg('main/images/background.jpg')
 
 # Load images
-profile_pic, interstellar_pic = load_images()
+profile_pic = 'main/images/profile_pic.jpg'
+interstellar_pic = 'main/images/interstellar_pic.jpg'
 
 # Sidebar content
 create_sidebar(profile_pic)

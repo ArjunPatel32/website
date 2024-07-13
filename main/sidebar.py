@@ -1,7 +1,7 @@
 import streamlit as st
 
 def create_sidebar(profile_pic):
-    st.sidebar.header("About Me", divider='blue')
+    st.sidebar.header("About Mexxxx", divider='blue')
     st.sidebar.image(profile_pic, width=150)
     st.sidebar.markdown("""
     ### Arjun Patel

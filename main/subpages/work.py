@@ -14,11 +14,13 @@ def display_work():
             <p style="font-size: 28px;">
             I'm currently working as a Data Science Intern at <a href="https://www.dotlas.com/" target="_blank">Dotlas</a>. 
             I've developed web scrapers and data collectors, gathering and analyzing large datasets. 
-            I also worked with different LLMs and APIs to automate data collection and analysis, as well as built a data-display website for clients.
+            I also worked with different LLMs and APIs to automate data collection and analysis, as well as built a 
+            <a href="https://catalog.dotlas.com" target="_blank">data-display website</a> for clients.
             </p>
             """, 
             unsafe_allow_html=True
         )
+
 
     with col2:
         # Display the Dotlas logo centered vertically with the text
@@ -36,7 +38,7 @@ def display_work():
         st.markdown(
             """
             <p style="font-size: 28px;">
-            I am starting research under the mentorship of Steven Kahn at the Rubin Observatory, focusing on data analysis and observational techniques 
+            I am starting research under the mentorship of Dean Steven Kahn at the Rubin Observatory, focusing on data analysis and observational techniques 
             that will contribute to the ongoing commissioning and science goals of the observatory.
             </p>
             """, 

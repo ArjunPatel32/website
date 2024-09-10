@@ -13,7 +13,7 @@ def display_about_me():
         st.markdown(
             """
             <p style="font-size: 28px;">
-            I’m a sophomore at UC Berkeley, where I study Astrophysics and Applied Math with a concentration in statistics. I’m very interested in solving the mysteries of the universe through my work and studies, and I’m currently engaged in research and projects that bridge data science and astrophysics.
+            I’m a sophomore at UC Berkeley, where I study Astrophysics and Applied Math with a concentration in statistics. I’m very interested in solving the mysteries of the universe through my work and studies, and I’m currently engaged in research and projects that bridge astrophysics and data science.
             </p>
             <p style="font-size: 28px;">
             I currently work as a Data Science Intern at Dotlas, where I develop tools to analyze large datasets and automate data processes. Additionally, I recently started a new research position at the Rubin Observatory, focusing on advancing observational techniques and data analysis.
@@ -40,7 +40,7 @@ def display_about_me():
         st.markdown(
             """
             <p style="font-size: 28px;">
-            Beyond academics, I’m actively involved as a Telescope Officer with the Undergraduate Astronomy Society, where I help operate and train others on a variety of telescopes, sharing my enthusiasm for stargazing and exploration.
+            Beyond academics, I’m actively involved as a Telescope Officer with the Undergraduate Astronomy Society, where I help operate and train others on a variety of telescopes, sharing my enthusiasm for stargazing and exploration with others.
             </p>
             <p style="font-size: 28px;">
             When I’m not in school or working, you’ll often find me playing poker, lifting weights, or grinding some video games. I’m always on the lookout for new ways to explore and expand my interests, especially in poker. If you have any tips or want to play a game, let me know!

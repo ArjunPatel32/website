@@ -1,6 +1,17 @@
 import streamlit as st
 
 def display_work():
+    # Inject CSS to hide the expand button on images
+    hide_expand_button = """
+        <style>
+        button[title="View fullscreen"] {
+            display: none !important;
+        }
+        </style>
+    """
+    # Apply the CSS to the app
+    st.markdown(hide_expand_button, unsafe_allow_html=True)
+    
     # Center, enlarge, underline, and italicize the title
     st.markdown("<h1 style='text-align: center; font-size: 48px; text-decoration: underline; font-style: italic;'>Work</h1>", unsafe_allow_html=True)
     
@@ -20,7 +31,6 @@ def display_work():
             """, 
             unsafe_allow_html=True
         )
-
 
     with col2:
         # Display the Dotlas logo centered vertically with the text

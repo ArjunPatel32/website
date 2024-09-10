@@ -1,6 +1,17 @@
 import streamlit as st
 
 def display_interests():
+    # Inject CSS to hide the expand button on images
+    hide_expand_button = """
+        <style>
+        button[title="View fullscreen"] {
+            display: none !important;
+        }
+        </style>
+    """
+    # Apply the CSS to the app
+    st.markdown(hide_expand_button, unsafe_allow_html=True)
+    
     # Center, enlarge, underline, and italicize the title
     st.markdown("<h1 style='text-align: center; font-size: 48px; text-decoration: underline; font-style: italic;'>My Interests</h1>", unsafe_allow_html=True)
     
@@ -15,7 +26,7 @@ def display_interests():
             I'm passionate about astronomy, coding, poker, video games, and lifting. I enjoy exploring new ways to blend my interests, whether it's through a late-night poker game or experimenting with code. Poker, in particular, is my favorite - its blend of strategy, psychology, and skill makes it very fun to play, and I’m always looking to improve my game. 
             </p>
             <p style="font-size: 28px;">
-            Gaming is another huge passion of mine. While I primarily play Valorant, I also enjoy diving into Fall Guys, Overwatch, Minecraft, and some others. I love the challenge that come with these games, and love exploring new worlds and competing with friends. If you ever want to team up or play, feel free to reach out!
+            Gaming is another huge passion of mine. While I primarily play Valorant, I also enjoy diving into Fall Guys, Overwatch, Minecraft, and some others. I love the challenge that comes with these games, and love exploring new worlds and competing with friends. If you ever want to team up or play, feel free to reach out!
             </p>
             """, 
             unsafe_allow_html=True

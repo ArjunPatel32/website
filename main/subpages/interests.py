@@ -26,7 +26,7 @@ def display_interests():
             I'm passionate about astronomy, coding, poker, video games, and lifting. I enjoy exploring new ways to blend my interests, whether it's through a late-night poker game or experimenting with code. Poker, in particular, is my favorite - its blend of strategy, psychology, and skill makes it very fun to play, and I’m always looking to improve my game. 
             </p>
             <p style="font-size: 28px;">
-            Gaming is another huge passion of mine. While I primarily play Valorant, I also enjoy diving into Fall Guys, Overwatch, Minecraft, and some others. I love the challenge that comes with these games, and love exploring new worlds and competing with friends. If you ever want to team up or play, feel free to reach out!
+            Gaming is another huge passion of mine. While I primarily play Marvel Rivals and Valorant, I also enjoy diving into Fall Guys, Overwatch, Minecraft, and some others. I love the challenge that comes with these games, and love exploring new worlds and competing with friends. If you ever want to team up or play, feel free to reach out!
             </p>
             """, 
             unsafe_allow_html=True
@@ -60,4 +60,4 @@ def display_interests():
         )
 
     # Display the interstellar picture at the end with full width
-    st.image('main/images/interstellar_pic.jpg', use_column_width=True)
+    st.image('main/images/interstellar_pic.jpg', use_container_width=True)

@@ -40,7 +40,7 @@ def display_work():
 
     with col3:
             # Display the NASA logo on the right side
-            st.image('main/images/nasa_logo.jpg', width=200)
+            st.image('main/images/nasa_logo.png', width=200)
 
     with col4:
         # NASA project work experience details with increased font size

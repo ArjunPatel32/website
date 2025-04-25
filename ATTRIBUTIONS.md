@@ -21,7 +21,7 @@
 - **Changes Made**: None
 
 ## flow_logo
-- **Source**: [LinkedIN](https://www.linkedin.com/company/flow-traders/)
+- **Source**: [LinkedIn](https://www.linkedin.com/company/flow-traders/)
 - **Author**: Flow Traders
 - **Changes Made**: None
 

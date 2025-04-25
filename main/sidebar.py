@@ -40,24 +40,20 @@ def create_sidebar():
     st.sidebar.markdown("<bv>", unsafe_allow_html=True)
     st.sidebar.header("Socials", divider='blue')
     st.sidebar.markdown("""
-    <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-        <a href="https://www.instagram.com/appatel_04/" style="flex: 1; display: flex; align-items: center;">
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
+        <a href="https://www.instagram.com/appatel_04/" style="display: flex; align-items: center; text-decoration: none;">
             <img src="https://img.icons8.com/ios-filled/50/000000/instagram-new.png" width="20" style="margin-right: 10px;"/> Instagram
         </a>
-        <a href="https://www.linkedin.com/in/arjun-patel-045676255/" style="flex: 1; display: flex; align-items: center;">
+        <a href="https://www.linkedin.com/in/arjun-patel-045676255/" style="display: flex; align-items: center; text-decoration: none;">
             <img src="https://img.icons8.com/ios-filled/50/000000/linkedin.png" width="20" style="margin-right: 10px;"/> LinkedIn
         </a>
-    </div>
-    <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-        <a href="https://open.spotify.com/user/iw4k26n6xg2jmm8z55ca78ecl" style="flex: 1; display: flex; align-items: center;">
+        <a href="https://open.spotify.com/user/iw4k26n6xg2jmm8z55ca78ecl" style="display: flex; align-items: center; text-decoration: none;">
             <img src="https://img.icons8.com/ios-filled/50/000000/spotify.png" width="20" style="margin-right: 10px;"/> Spotify
         </a>
-        <a href="https://github.com/ArjunPatel32" style="flex: 1; display: flex; align-items: center;">
+        <a href="https://github.com/ArjunPatel32" style="display: flex; align-items: center; text-decoration: none;">
             <img src="https://img.icons8.com/ios-filled/50/000000/github.png" width="20" style="margin-right: 10px;"/> GitHub
         </a>
-    </div>
-    <div style="margin-top: 20px;">
-        <a href="https://github.com/ArjunPatel32/website/blob/b0fe1d9712d87691452a0a2a054e9304f062e9d0/main/images/Arjun_Patel_Resume.pdf" download style="flex: 1: flex; align-items: center;">
+        <a href="https://github.com/ArjunPatel32/website/blob/b0fe1d9712d87691452a0a2a054e9304f062e9d0/main/images/Arjun_Patel_Resume.pdf" download style="display: flex; align-items: center; text-decoration: none;">
             <img src="https://img.icons8.com/ios-filled/50/000000/resume.png" width="20" style="margin-right: 10px;"/> Resume
         </a>
     </div>

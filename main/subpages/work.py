@@ -15,23 +15,23 @@ def display_work():
     # Center, enlarge, underline, and italicize the title
     st.markdown("<h1 style='text-align: center; font-size: 48px; text-decoration: underline; font-style: italic;'>Work</h1>", unsafe_allow_html=True)
 
-    col1, col2 = st.columns([3, 1])
+    col1, col2 = st.columns([1, 4])
 
     with col1:
-        st.markdown(
-            """
-            <p style="font-size: 28px;">
-            I'm currently working as a Quantitative Trading Intern as part of Flow Traders’ Ascent program. 
-            I am collaborating with peers in a simulated trading competition and received mentorship from 
-            experienced trading professionals. We also learn about market-making strategies, high-frequency 
-            trading concepts, and real-time risk management techniques.
-            </p>
-            """,
-            unsafe_allow_html=True
-        )
-
-    with col2:
         st.image('main/images/flow_logo.jpg', width=200)
+    
+    with col2:
+        st.markdown(
+        """
+        <p style="font-size: 28px;">
+        I'm currently working as a Quantitative Trading Intern as part of Flow Traders’ Ascent program. 
+        I am collaborating with peers in a simulated trading competition and received mentorship from 
+        experienced trading professionals. We also learn about market-making strategies, high-frequency 
+        trading concepts, and real-time risk management techniques.
+        </p>
+        """,
+        unsafe_allow_html=True
+        )
 
     col3, col4 = st.columns([3, 1])
 
@@ -51,7 +51,7 @@ def display_work():
     with col4:
         st.image('main/images/rubin_observatory.jpg', width=250)
 
-    col5, col6 = st.columns([1, 3])
+    col5, col6 = st.columns([1, 4])
 
     with col5:
         st.image('main/images/nasa_logo.png', width=200)
@@ -86,9 +86,12 @@ def display_work():
         st.image('main/images/nasa_logo.png', width=200)
 
     # Fifth section: Dotlas
-    col9, col10 = st.columns([3, 1])
+    col9, col10 = st.columns([1, 4])
 
     with col9:
+        st.image('main/images/dotlas_logo.png', width=200)
+    
+    with col10:
         st.markdown(
             """
             <p style="font-size: 28px;">
@@ -101,5 +104,4 @@ def display_work():
             unsafe_allow_html=True
         )
 
-    with col10:
-        st.image('main/images/dotlas_logo.png', width=200)
+    

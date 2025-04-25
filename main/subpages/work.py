@@ -15,35 +15,48 @@ def display_work():
     # Center, enlarge, underline, and italicize the title
     st.markdown("<h1 style='text-align: center; font-size: 48px; text-decoration: underline; font-style: italic;'>Work</h1>", unsafe_allow_html=True)
 
-    # First section: Rubin Observatory
     col1, col2 = st.columns([3, 1])
 
     with col1:
-        # Rubin Observatory work details with increased font size
         st.markdown(
             """
             <p style="font-size: 28px;">
-            I am currently conducting research under the mentorship of Dean Steven Kahn at the Rubin Observatory. 
-            I've engineered a pipeline to analyze and compare telescope chamber temperatures across different date ranges, and 
-            automated 2D and 3D visualizations to illustrate variations in elevation and temperature across axis offsets.
+            I'm currently working as a Quantitative Trading Intern as part of Flow Traders’ Ascent program. 
+            I am collaborating with peers in a simulated trading competition and received mentorship from 
+            experienced trading professionals. We also learn about market-making strategies, high-frequency 
+            trading concepts, and real-time risk management techniques.
             </p>
-            """, 
+            """,
             unsafe_allow_html=True
         )
 
     with col2:
-        # Display the Rubin Observatory image on the left side
-        st.image('main/images/rubin_observatory.jpg', width=250)
+        st.image('main/images/flow_logo.png', width=200)
 
-    # Second section: NASA Project
-    col3, col4 = st.columns([1, 3])
+    col3, col4 = st.columns([3, 1])
 
     with col3:
-            # Display the NASA logo on the right side
-            st.image('main/images/nasa_logo.png', width=200)
+        st.markdown(
+            """
+            <p style="font-size: 28px;">
+            I am also currently conducting research under the mentorship of Dean Steven Kahn at the Rubin Observatory. 
+            I've engineered a pipeline to analyze and compare telescope chamber temperatures across different date ranges, and 
+            automated 2D and 3D visualizations to illustrate variations in elevation and temperature across axis offsets. I'm also 
+            conducting Fourier transforms on thermal images to detect the frequency spectrum of stars over time.
+            </p>
+            """,
+            unsafe_allow_html=True
+        )
 
     with col4:
-        # NASA project work experience details with increased font size
+        st.image('main/images/rubin_observatory.jpg', width=250)
+
+    col5, col6 = st.columns([1, 3])
+
+    with col5:
+        st.image('main/images/nasa_logo.png', width=200)
+
+    with col6:
         st.markdown(
             """
             <p style="font-size: 28px;">
@@ -51,15 +64,31 @@ def display_work():
             This involved assessing propulsion, power, autonomous systems, and communication/navigation technologies, comparing the NASA shortfall 
             and state-of-the-art reports to identify successes and areas for improvement.
             </p>
-            """, 
+            """,
             unsafe_allow_html=True
         )
 
-    # Third section: Dotlas
-    col5, col6 = st.columns([3, 1])
+    col7, col8 = st.columns([3, 1])
 
-    with col5:
-        # Dotlas work experience with Dotlas as a clickable link and increased font size
+    with col7:
+        st.markdown(
+            """
+            <p style="font-size: 28px;">
+            At NASA SPORES – HWO, I served as a Data Analyst contributing to exoplanet detection research. I processed radial velocity 
+            data using Python to refine constraints on exoplanet mass and orbital properties. I also identified and standardized 
+            datasets from spectrographs such as HIRES/Keck and HARPS/ESO. My contributions will be part of an upcoming research paper.
+            </p>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with col8:
+        st.image('main/images/nasa_logo.png', width=200)
+
+    # Fifth section: Dotlas
+    col9, col10 = st.columns([3, 1])
+
+    with col9:
         st.markdown(
             """
             <p style="font-size: 28px;">
@@ -68,32 +97,9 @@ def display_work():
             I also worked with different LLMs and APIs to automate data collection and analysis, as well as built a 
             <a href="https://catalog.dotlas.com" target="_blank">data-display website</a> for clients.
             </p>
-            """, 
+            """,
             unsafe_allow_html=True
         )
 
-    with col6:
-        # Display the Dotlas logo centered vertically with the text
+    with col10:
         st.image('main/images/dotlas_logo.png', width=200)
-
-    # Fourth section: Laser Lab at the University of Rochester
-    col7, col8 = st.columns([1, 3])
-
-    with col7:
-        # Display the Laser Lab image on the right side
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.image('main/images/laserlab.jpg', width=250)
-
-    with col8:
-        # Laser Lab work experience details with increased font size
-        st.markdown(
-            """
-            <p style="font-size: 28px;">
-            I've also worked as a Research Assistant at the University of Rochester Laboratory for Laser Energetics, 
-            where I utilized COMSOL Multiphysics® for modeling experiments on electromagnetic radiation detection. 
-            I explored the use of terahertz radiation to differentiate between healthy and cancerous tissues and 
-            evaluated the impact of embedding tissues in paraffin wax to mimic real-life samples.
-            </p>
-            """, 
-            unsafe_allow_html=True
-        )

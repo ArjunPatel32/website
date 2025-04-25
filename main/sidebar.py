@@ -56,6 +56,11 @@ def create_sidebar():
             <img src="https://img.icons8.com/ios-filled/50/000000/github.png" width="20" style="margin-right: 10px;"/> GitHub
         </a>
     </div>
+    <div style="margin-top: 20px;">
+        <a href="https://github.com/ArjunPatel32/website/blob/b0fe1d9712d87691452a0a2a054e9304f062e9d0/main/images/Arjun_Patel_Resume.pdf" download style="display: flex; align-items: center;">
+            <img src="https://img.icons8.com/ios-filled/50/000000/resume.png" width="20" style="margin-right: 10px;"/> Download Resume
+        </a>
+    </div>
     """, unsafe_allow_html=True)
 
     return page

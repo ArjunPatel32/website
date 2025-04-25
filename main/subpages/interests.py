@@ -50,7 +50,7 @@ def display_interests():
         st.markdown(
             """
             <p style="font-size: 28px;">
-            Interstellar is one of my all-time favorite movies. Beyond that, I’m a big Marvel fan, with Captain America, Deadpool, and Venom as my top three characters. I'm also a big TV watcher, with shows like The Office, Daredevil, and The Big Bang Theory being some of my favorites.
+            Interstellar is one of my all-time favorite movies. Beyond that, I’m a big Marvel fan, with Captain America, Loki, and Deadpool as my top three characters. I'm also a big TV watcher, with shows like The Office, Daredevil, and Loki being some of my favorites.
             </p>
             <p style="font-size: 28px;">
             My fascination with the universe continues to drive my interest in astronomy, whether it's stargazing through a telescope or diving into the latest cosmic discoveries. I have surrounded myself with a lot of astronomy-related activities, from my studies to my work, and I'm always looking for new ways to explore more.

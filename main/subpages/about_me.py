@@ -27,7 +27,7 @@ def display_about_me():
             I’m a sophomore at UC Berkeley, where I study Astrophysics and Applied Math with a concentration in statistics. I’m very interested in solving the mysteries of the universe through my work and studies, and I’m currently engaged in research and projects that bridge astrophysics and data science.
             </p>
             <p style="font-size: 28px;">
-           I am a Research Assistant at the Rubin Observatory, developing pipelines to analyze telescope chamber temperatures and visualizing atmospheric distortions in star imaging.With a strong foundation in Python, statistical analysis, and data visualization, I am looking to apply my skills to quantitative trading, leveraging my passion for data-driven decision-making and problem-solving in fast-paced environments.
+           I am a Research Assistant at the Rubin Observatory, developing pipelines to analyze telescope chamber temperatures and visualizing atmospheric distortions in star imaging. With a strong foundation in Python, statistical analysis, and data visualization, I am looking to apply my skills to quantitative trading, leveraging my passion for data-driven decision-making and problem-solving in fast-paced environments.
             </p>
             """, 
             unsafe_allow_html=True

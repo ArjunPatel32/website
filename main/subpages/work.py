@@ -31,7 +31,7 @@ def display_work():
         )
 
     with col2:
-        st.image('main/images/flow_logo.png', width=200)
+        st.image('main/images/flow_logo.jpg', width=200)
 
     col3, col4 = st.columns([3, 1])
 

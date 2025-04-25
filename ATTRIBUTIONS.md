@@ -20,6 +20,11 @@
 - **Author**: Dotlas
 - **Changes Made**: None
 
+## flow_logo
+- **Source**: [LinkedIN](https://www.linkedin.com/company/flow-traders/)
+- **Author**: Flow Traders
+- **Changes Made**: None
+
 ## interstellar_pic
 - **Source**: [Reddit](https://www.reddit.com/r/MovieDetails/comments/hd0h7l/in_interstellar_2014_the_black_hole_was_so/)
 - **Author**: Jaz1140

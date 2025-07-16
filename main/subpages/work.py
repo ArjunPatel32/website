@@ -18,7 +18,7 @@ def display_work():
     col1, col2 = st.columns([1, 4])
 
     with col1:
-        st.image('main/images/AIN_logo.png', width=200)
+        st.image('main/images/AIN_logo.png', width=180)
     
     with col2:
         st.markdown(
@@ -72,9 +72,6 @@ def display_work():
     col7, col8 = st.columns([1, 4])
 
     with col7:
-        st.image('main/images/nasa_logo.png', width=200)
-
-    with col8:
         st.markdown(
             """
             <p style="font-size: 28px;">
@@ -86,9 +83,16 @@ def display_work():
             unsafe_allow_html=True
         )
 
+    with col8:
+        st.image('main/images/nasa_logo.png', width=200)
+
+
     col9, col10 = st.columns([3, 1])
 
     with col9:
+        st.image('main/images/nasa_logo.png', width=200)
+
+    with col10:
         st.markdown(
             """
             <p style="font-size: 28px;">
@@ -100,16 +104,9 @@ def display_work():
             unsafe_allow_html=True
         )
 
-    with col10:
-        st.image('main/images/nasa_logo.png', width=200)
-
-    # Fifth section: Dotlas
     col11, col12 = st.columns([1, 4])
-
-    with col11:
-        st.image('main/images/dotlas_logo.png', width=200)
     
-    with col12:
+    with col11:
         st.markdown(
             """
             <p style="font-size: 28px;">
@@ -121,5 +118,8 @@ def display_work():
             """,
             unsafe_allow_html=True
         )
+
+    with col12:
+        st.image('main/images/dotlas_logo.png', width=200)
 
     

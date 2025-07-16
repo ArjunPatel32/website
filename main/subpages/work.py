@@ -69,7 +69,7 @@ def display_work():
         )
     
     
-    col7, col8 = st.columns([1, 4])
+    col7, col8 = st.columns([4, 1])
 
     with col7:
         st.markdown(
@@ -87,7 +87,7 @@ def display_work():
         st.image('main/images/nasa_logo.png', width=200)
 
 
-    col9, col10 = st.columns([3, 1])
+    col9, col10 = st.columns([1, 4])
 
     with col9:
         st.image('main/images/nasa_logo.png', width=200)
@@ -104,7 +104,7 @@ def display_work():
             unsafe_allow_html=True
         )
 
-    col11, col12 = st.columns([1, 4])
+    col11, col12 = st.columns([3, 1])
     
     with col11:
         st.markdown(

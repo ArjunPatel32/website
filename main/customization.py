@@ -27,7 +27,7 @@ def create_footer():
     st.markdown("""
     <hr style='border: none; border-top: 1px dashed gray;'>
     <footer style='padding: 10px 0; text-align: center; color: gray; font-size: small;'>
-        <p>&copy; 2024 Arjun Patel. All rights reserved.</p>
+        <p>&copy; 2025 Arjun Patel. All rights reserved.</p>
     </footer>
     """, unsafe_allow_html=True)
 

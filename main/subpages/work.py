@@ -38,10 +38,10 @@ def display_work():
         st.markdown(
             """
             <p style="font-size: 28px;">
-            I was a Quantitative Trading Intern as part of Flow Traders’ Ascent program, where I 
-            collaborated with peers in a simulated trading competition and received mentorship from 
-            experienced trading professionals. We also learned about market-making strategies, high-frequency 
-            trading concepts, and real-time risk management techniques.
+            I am also currently conducting research under the mentorship of Dean Steven Kahn at the Rubin Observatory. 
+            I've engineered a pipeline to analyze and compare telescope chamber temperatures across different date ranges, and 
+            automated 2D and 3D visualizations to illustrate variations in elevation and temperature across axis offsets. I'm also 
+            conducting Fourier transforms on thermal images to detect the frequency spectrum of stars over time.
             </p>
             """,
             unsafe_allow_html=True

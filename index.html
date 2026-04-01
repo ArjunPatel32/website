@@ -396,11 +396,11 @@
         /* Spread logos evenly around edges */
         .logo-1 { top: 8%; left: 55%; animation-duration: 22s; animation-delay: 0s; }      /* NASA - top center */
         .logo-2 { top: 75%; left: 85%; animation-duration: 25s; animation-delay: -5s; }   /* Rubin - bottom right */
-        .logo-3 { top: 85%; left: 50%; animation-duration: 28s; animation-delay: -10s; }  /* Dotlas - bottom center */
+        .logo-3 { top: 85%; left: 58%; animation-duration: 28s; animation-delay: -10s; }  /* Dotlas - bottom center-right */
         .logo-4 { top: 45%; left: 92%; animation-duration: 20s; animation-delay: -3s; }   /* UAS - right side */
         .logo-5 { top: 75%; left: 15%; animation-duration: 24s; animation-delay: -8s; }   /* Flow - bottom left */
         .logo-6 { top: 8%; left: 38%; animation-duration: 26s; animation-delay: -12s; }   /* ACES - left of NASA */
-        .logo-7 { top: 55%; left: 88%; animation-duration: 23s; animation-delay: -7s; }   /* Brighton - right side */
+        .logo-7 { top: 45%; left: calc(11.5% - 20px); animation-duration: 23s; animation-delay: -7s; }   /* Brighton - between Flow and black hole */
         .logo-8 { top: 85%; left: 25%; animation-duration: 21s; animation-delay: -14s; }  /* Cal - bottom left-center */
 
         @keyframes floatItem {
@@ -784,9 +784,9 @@
             transform: translateX(-50%);
             width: 50px;
             height: 70px;
-            background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%);
             border-radius: 6px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.9);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
             cursor: pointer;
             z-index: 50;
             animation: floatCard 4s ease-in-out infinite;
@@ -795,12 +795,13 @@
             align-items: center;
             justify-content: center;
             font-size: 28px;
-            border: 2px solid #ddd;
+            color: #fff;
+            border: 2px solid #333;
         }
 
         .poker-card::before {
             content: '♠';
-            color: #1a1a2e;
+            color: #fff;
             font-weight: bold;
             position: absolute;
             top: 4px;
@@ -815,7 +816,7 @@
             right: 6px;
             font-size: 12px;
             font-weight: bold;
-            color: #1a1a2e;
+            color: #fff;
         }
 
         .poker-card:hover {
@@ -1104,7 +1105,7 @@
         <ul class="bio">
             <li>Astrophysics & quant - now turning data into wins at Triumph</li>
             <li>Dropped out of Berkeley to build the future of gaming</li>
-            <li>When I'm not working: lifting, gaming, or at the poker table</li>
+            <li>When I'm not working, I'm gaming, lifting, or at the poker table</li>
         </ul>
 
         <div class="social-links">
@@ -1119,6 +1120,9 @@
             </a>
             <a href="https://open.spotify.com/user/iw4k26n6xg2jmm8z55ca78ecl" class="social-link" title="Spotify" target="_blank" rel="noopener">
                 <svg viewBox="0 0 24 24"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+            </a>
+            <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" class="social-link" title="YouTube" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
             </a>
         </div>
 
@@ -1515,7 +1519,18 @@
             setTimeout(() => {
                 clearInterval(spinInterval);
                 reel3.classList.remove('spinning');
-                reel3.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+
+                // ~10% chance to force a jackpot
+                const forceJackpot = Math.random() < 0.1;
+
+                if (forceJackpot) {
+                    const jackpotSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+                    reel1.textContent = jackpotSymbol;
+                    reel2.textContent = jackpotSymbol;
+                    reel3.textContent = jackpotSymbol;
+                } else {
+                    reel3.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+                }
 
                 // Check for win
                 const results = [reel1.textContent, reel2.textContent, reel3.textContent];

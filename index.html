@@ -398,10 +398,10 @@
         .logo-2 { top: 75%; left: 85%; animation-duration: 25s; animation-delay: -5s; }   /* Rubin - bottom right */
         .logo-3 { top: 85%; left: 50%; animation-duration: 28s; animation-delay: -10s; }  /* Dotlas - bottom center */
         .logo-4 { top: 45%; left: 92%; animation-duration: 20s; animation-delay: -3s; }   /* UAS - right side */
-        .logo-5 { top: 35%; left: 4%; animation-duration: 24s; animation-delay: -8s; }    /* Flow - below black hole */
+        .logo-5 { top: 75%; left: 15%; animation-duration: 24s; animation-delay: -8s; }   /* Flow - bottom left */
         .logo-6 { top: 8%; left: 38%; animation-duration: 26s; animation-delay: -12s; }   /* ACES - left of NASA */
-        .logo-7 { top: 48%; left: 10%; animation-duration: 23s; animation-delay: -7s; }   /* Brighton - below black hole */
-        .logo-8 { top: 60%; left: 4%; animation-duration: 21s; animation-delay: -14s; }   /* Cal - below black hole */
+        .logo-7 { top: 55%; left: 88%; animation-duration: 23s; animation-delay: -7s; }   /* Brighton - right side */
+        .logo-8 { top: 85%; left: 25%; animation-duration: 21s; animation-delay: -14s; }  /* Cal - bottom left-center */
 
         @keyframes floatItem {
             0%, 100% { transform: translate(0, 0) rotate(0deg); }
@@ -776,111 +776,57 @@
             100% { transform: scale(1); }
         }
 
-        /* Floating poker chip */
-        .poker-chip {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: conic-gradient(
-                from 0deg,
-                #dc2626 0deg, #dc2626 30deg,
-                #fff 30deg, #fff 60deg,
-                #dc2626 60deg, #dc2626 90deg,
-                #fff 90deg, #fff 120deg,
-                #dc2626 120deg, #dc2626 150deg,
-                #fff 150deg, #fff 180deg,
-                #dc2626 180deg, #dc2626 210deg,
-                #fff 210deg, #fff 240deg,
-                #dc2626 240deg, #dc2626 270deg,
-                #fff 270deg, #fff 300deg,
-                #dc2626 300deg, #dc2626 330deg,
-                #fff 330deg, #fff 360deg
-            );
-            box-shadow: inset 0 0 15px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.3);
-            animation: floatChip 18s ease-in-out infinite, spinChip 20s linear infinite;
-            opacity: 0.7;
-            top: 75%;
-            right: 15%;
-        }
-
-        .poker-chip::before {
-            content: '';
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            bottom: 10px;
-            border-radius: 50%;
-            background: #dc2626;
-            border: 3px solid #fbbf24;
-        }
-
-        .poker-chip::after {
-            content: '$';
-            position: absolute;
-            top: 50%;
+        /* Floating poker card - easter egg trigger */
+        .poker-card {
+            position: fixed;
+            bottom: 80px;
             left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 16px;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 70px;
+            background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+            border-radius: 6px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.9);
+            cursor: pointer;
+            z-index: 50;
+            animation: floatCard 4s ease-in-out infinite;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            border: 2px solid #ddd;
+        }
+
+        .poker-card::before {
+            content: '♠';
+            color: #1a1a2e;
             font-weight: bold;
-            color: #fbbf24;
-        }
-
-        @keyframes floatChip {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(10deg); }
-        }
-
-        @keyframes spinChip {
-            from { transform: rotateY(0deg); }
-            to { transform: rotateY(360deg); }
-        }
-
-        /* Floating dice */
-        .dice {
             position: absolute;
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(145deg, #ffffff, #e0e0e0);
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.8);
-            animation: floatDice 15s ease-in-out infinite, tumbleDice 8s ease-in-out infinite;
-            opacity: 0.75;
-            top: 82%;
-            left: 75%;
+            top: 4px;
+            left: 6px;
+            font-size: 12px;
         }
 
-        .dice::before,
-        .dice::after {
-            content: '';
+        .poker-card::after {
+            content: 'A';
             position: absolute;
-            width: 8px;
-            height: 8px;
-            background: #1a1a2e;
-            border-radius: 50%;
+            bottom: 4px;
+            right: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #1a1a2e;
         }
 
-        .dice::before {
-            top: 8px;
-            left: 8px;
-            box-shadow: 16px 16px 0 #1a1a2e, 16px 0 0 #1a1a2e, 0 16px 0 #1a1a2e;
+        .poker-card:hover {
+            transform: translateX(-50%) scale(1.15) rotate(-5deg);
+            box-shadow: 0 8px 30px rgba(139, 92, 246, 0.5), 0 0 20px rgba(251, 191, 36, 0.4);
+            border-color: #fbbf24;
         }
 
-        .dice::after {
-            top: 16px;
-            left: 16px;
-        }
-
-        @keyframes floatDice {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-        }
-
-        @keyframes tumbleDice {
-            0%, 100% { transform: rotate(0deg) rotateX(0deg); }
-            25% { transform: rotate(5deg) rotateX(10deg); }
-            75% { transform: rotate(-5deg) rotateX(-10deg); }
+        @keyframes floatCard {
+            0%, 100% { transform: translateX(-50%) translateY(0) rotate(0deg); }
+            50% { transform: translateX(-50%) translateY(-8px) rotate(3deg); }
         }
 
         /* Slot machine */
@@ -974,24 +920,65 @@
             font-weight: 500;
         }
 
-        /* Easter egg - hidden card */
-        .easter-egg {
-            position: fixed;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 20px;
-            height: 6px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 3px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            z-index: 50;
+        .slot-result.jackpot {
+            font-size: 1.1rem;
+            animation: jackpotPulse 0.5s ease infinite;
         }
 
-        .easter-egg:hover {
+        @keyframes jackpotPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .slot-machine.winning {
+            animation: slotGlow 0.3s ease infinite;
+            box-shadow: 0 0 50px rgba(251, 191, 36, 0.8), 0 0 100px rgba(251, 191, 36, 0.4);
+        }
+
+        @keyframes slotGlow {
+            0%, 100% { box-shadow: 0 0 50px rgba(251, 191, 36, 0.8), 0 0 100px rgba(251, 191, 36, 0.4); }
+            50% { box-shadow: 0 0 70px rgba(251, 191, 36, 1), 0 0 120px rgba(251, 191, 36, 0.6); }
+        }
+
+        /* Screen flash for jackpot */
+        .screen-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: rgba(251, 191, 36, 0.3);
-            width: 40px;
+            pointer-events: none;
+            z-index: 999;
+            animation: flashFade 0.5s ease forwards;
+        }
+
+        @keyframes flashFade {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Big jackpot text */
+        .jackpot-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            font-weight: 800;
+            color: #fbbf24;
+            text-shadow: 0 0 30px rgba(251, 191, 36, 0.8), 0 0 60px rgba(251, 191, 36, 0.5);
+            z-index: 1001;
+            animation: jackpotTextAnim 2s ease forwards;
+            pointer-events: none;
+        }
+
+        @keyframes jackpotTextAnim {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(-10deg); opacity: 0; }
+            20% { transform: translate(-50%, -50%) scale(1.3) rotate(5deg); opacity: 1; }
+            40% { transform: translate(-50%, -50%) scale(1) rotate(-3deg); opacity: 1; }
+            80% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(0.8) rotate(0deg); opacity: 0; }
         }
 
         /* Card rain animation */
@@ -1076,9 +1063,8 @@
         </div>
     </div>
 
-    <!-- Floating gambling elements -->
-    <div class="poker-chip"></div>
-    <div class="dice"></div>
+    <!-- Floating poker card - easter egg -->
+    <div class="poker-card" id="pokerCard">♠</div>
 
     <!-- Poll -->
     <div class="poll-container" id="poll">
@@ -1101,9 +1087,6 @@
         <button class="slot-btn" id="spinBtn">SPIN</button>
         <div class="slot-result" id="slotResult"></div>
     </div>
-
-    <!-- Easter egg trigger -->
-    <div class="easter-egg" id="easterEgg" title="?"></div>
 
     <div class="container">
         <div class="profile-wrapper">
@@ -1537,24 +1520,101 @@
                 // Check for win
                 const results = [reel1.textContent, reel2.textContent, reel3.textContent];
                 if (results[0] === results[1] && results[1] === results[2]) {
-                    slotResult.textContent = '🎉 JACKPOT! 🎉';
-                    slotResult.style.color = '#fbbf24';
-                    // Confetti explosion
-                    for (let i = 0; i < 30; i++) {
-                        createSlotConfetti();
-                    }
+                    triggerJackpot();
                 } else if (results[0] === results[1] || results[1] === results[2] || results[0] === results[2]) {
                     slotResult.textContent = '✨ Nice! ✨';
                     slotResult.style.color = '#10b981';
+                    slotResult.classList.remove('jackpot');
                 } else {
                     slotResult.textContent = 'Try again!';
                     slotResult.style.color = '#888';
+                    slotResult.classList.remove('jackpot');
                 }
 
                 isSpinning = false;
                 spinBtn.disabled = false;
             }, 2000);
         });
+
+        function triggerJackpot() {
+            const slotMachine = document.getElementById('slotMachine');
+
+            // Screen flash
+            const flash = document.createElement('div');
+            flash.className = 'screen-flash';
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 500);
+
+            // Big jackpot text
+            const jackpotText = document.createElement('div');
+            jackpotText.className = 'jackpot-text';
+            jackpotText.textContent = '💰 JACKPOT! 💰';
+            document.body.appendChild(jackpotText);
+            setTimeout(() => jackpotText.remove(), 2000);
+
+            // Slot machine glow effect
+            slotMachine.classList.add('winning');
+            setTimeout(() => slotMachine.classList.remove('winning'), 3000);
+
+            // Update result text
+            slotResult.textContent = '🎉 JACKPOT! 🎉';
+            slotResult.style.color = '#fbbf24';
+            slotResult.classList.add('jackpot');
+
+            // Massive confetti explosion - multiple waves
+            for (let wave = 0; wave < 3; wave++) {
+                setTimeout(() => {
+                    for (let i = 0; i < 40; i++) {
+                        createSlotConfetti();
+                    }
+                }, wave * 300);
+            }
+
+            // Extra confetti from corners
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => createCornerConfetti(), i * 50);
+            }
+        }
+
+        function createCornerConfetti() {
+            const confetti = document.createElement('div');
+            const startFromLeft = Math.random() > 0.5;
+            confetti.style.cssText = `
+                position: fixed;
+                width: ${Math.random() * 10 + 8}px;
+                height: ${Math.random() * 10 + 8}px;
+                background: hsl(${Math.random() * 60 + 30}, 90%, 60%);
+                top: ${window.innerHeight}px;
+                left: ${startFromLeft ? 0 : window.innerWidth}px;
+                pointer-events: none;
+                border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
+                z-index: 1000;
+            `;
+            document.body.appendChild(confetti);
+
+            let vx = (startFromLeft ? 1 : -1) * (Math.random() * 8 + 5);
+            let vy = -(Math.random() * 15 + 12);
+            let x = parseFloat(confetti.style.left);
+            let y = parseFloat(confetti.style.top);
+            let rotation = 0;
+
+            function animateCornerConfetti() {
+                vy += 0.4;
+                x += vx;
+                y += vy;
+                rotation += vx * 3;
+                confetti.style.left = x + 'px';
+                confetti.style.top = y + 'px';
+                confetti.style.transform = `rotate(${rotation}deg)`;
+
+                if (y < window.innerHeight + 50) {
+                    requestAnimationFrame(animateCornerConfetti);
+                } else {
+                    confetti.remove();
+                }
+            }
+            requestAnimationFrame(animateCornerConfetti);
+        }
 
         function createSlotConfetti() {
             const slotMachine = document.getElementById('slotMachine');
@@ -1596,36 +1656,46 @@
             requestAnimationFrame(animateSlotConfetti);
         }
 
-        // Easter egg - card rain
-        const easterEgg = document.getElementById('easterEgg');
+        // Easter egg - card rain (click the poker card)
+        const pokerCard = document.getElementById('pokerCard');
         const cards = ['🂡', '🂢', '🂣', '🂤', '🂥', '🂦', '🂧', '🂨', '🂩', '🂪', '🂫', '🂭', '🂮',
                        '🃁', '🃂', '🃃', '🃄', '🃅', '🃆', '🃇', '🃈', '🃉', '🃊', '🃋', '🃍', '🃎',
                        '🃑', '🃒', '🃓', '🃔', '🃕', '🃖', '🃗', '🃘', '🃙', '🃚', '🃛', '🃝', '🃞'];
 
         let easterEggTriggered = false;
 
-        easterEgg.addEventListener('click', () => {
+        pokerCard.addEventListener('click', () => {
             if (easterEggTriggered) return;
             easterEggTriggered = true;
 
+            // Hide the card while raining
+            pokerCard.style.opacity = '0';
+            pokerCard.style.pointerEvents = 'none';
+
             // Rain cards for 5 seconds
             const cardRainInterval = setInterval(() => {
-                for (let i = 0; i < 3; i++) {
+                for (let i = 0; i < 5; i++) {
                     const card = document.createElement('div');
                     card.className = 'raining-card';
                     card.textContent = cards[Math.floor(Math.random() * cards.length)];
                     card.style.left = Math.random() * window.innerWidth + 'px';
                     card.style.top = '-50px';
                     card.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    card.style.fontSize = (Math.random() * 20 + 25) + 'px';
                     document.body.appendChild(card);
 
                     setTimeout(() => card.remove(), 4000);
                 }
-            }, 100);
+            }, 80);
 
             setTimeout(() => {
                 clearInterval(cardRainInterval);
-                easterEggTriggered = false;
+                // Bring back the card
+                setTimeout(() => {
+                    pokerCard.style.opacity = '1';
+                    pokerCard.style.pointerEvents = 'auto';
+                    easterEggTriggered = false;
+                }, 1000);
             }, 5000);
         });
     </script>

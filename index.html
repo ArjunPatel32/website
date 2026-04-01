@@ -138,23 +138,71 @@
             }
         }
 
+        /* Work badge */
+        .work-badge {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 24px;
+            background: rgba(255, 140, 50, 0.1);
+            border: 1px solid rgba(255, 140, 50, 0.3);
+            border-radius: 50px;
+            margin-bottom: 40px;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 0.9s forwards;
+            transition: all 0.3s ease;
+        }
+
+        .work-badge:hover {
+            background: rgba(255, 140, 50, 0.15);
+            border-color: rgba(255, 140, 50, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .work-logo {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+
+        .work-badge span {
+            color: #ff8c32;
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
         /* Bio section */
         .bio {
-            max-width: 600px;
-            text-align: center;
-            line-height: 1.7;
-            color: #999;
-            font-size: 1rem;
+            max-width: 550px;
+            text-align: left;
+            line-height: 1.8;
+            color: #888;
+            font-size: 0.95rem;
             margin-bottom: 50px;
             opacity: 0;
             animation: fadeIn 1s ease-out 1s forwards;
+            list-style: none;
+            padding: 0;
         }
 
-        .bio p {
-            margin-bottom: 16px;
+        .bio li {
+            margin-bottom: 12px;
+            padding-left: 20px;
+            position: relative;
         }
 
-        .bio p:last-child {
+        .bio li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 10px;
+            width: 6px;
+            height: 6px;
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            border-radius: 50%;
+        }
+
+        .bio li:last-child {
             margin-bottom: 0;
         }
 
@@ -242,12 +290,18 @@
         </div>
 
         <h1 class="name">Arjun Patel</h1>
-        <p class="tagline">Astrophysics & Applied Math @ UC Berkeley</p>
+        <p class="tagline">Quantitative Strategist</p>
 
-        <div class="bio">
-            <p>I'm a Research Assistant at the Rubin Observatory, developing pipelines to analyze telescope data and visualizing atmospheric distortions in star imaging. I'm passionate about solving the universe's mysteries through data.</p>
-            <p>When I'm not studying the cosmos, you'll find me at the poker table, in the gym, or exploring new ideas at the intersection of astrophysics and quantitative analysis.</p>
+        <div class="work-badge">
+            <img src="main/images/triumph.png" alt="Triumph Arcade" class="work-logo">
+            <span>Triumph Arcade</span>
         </div>
+
+        <ul class="bio">
+            <li>Former astrophysics student turned quant - dropped out of Berkeley to build real things</li>
+            <li>Still fascinated by the cosmos and how the universe works</li>
+            <li>When I'm not working: lifting, gaming, or at the poker table</li>
+        </ul>
 
         <div class="social-links">
             <a href="https://github.com/ArjunPatel32" class="social-link" title="GitHub" target="_blank" rel="noopener">
@@ -262,12 +316,9 @@
             <a href="https://open.spotify.com/user/iw4k26n6xg2jmm8z55ca78ecl" class="social-link" title="Spotify" target="_blank" rel="noopener">
                 <svg viewBox="0 0 24 24"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
             </a>
-            <a href="https://github.com/ArjunPatel32/website/blob/main/main/images/Arjun_Patel_Resume.pdf" class="social-link" title="Resume" target="_blank" rel="noopener">
-                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h5v7h7v9H6zm2-6h8v2H8v-2zm0-3h8v2H8v-2zm0 6h5v2H8v-2z"/></svg>
-            </a>
         </div>
 
-        <a href="mailto:arjun_patel3@berkeley.edu" class="email-link">arjun_patel3@berkeley.edu</a>
+        <a href="mailto:arjun360patel@gmail.com" class="email-link">arjun360patel@gmail.com</a>
     </div>
 
     <script>

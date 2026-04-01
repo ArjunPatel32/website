@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arjun Patel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Star field canvas */
+        #stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        /* Main content */
+        .container {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        /* Profile image */
+        .profile-wrapper {
+            position: relative;
+            margin-bottom: 40px;
+            opacity: 0;
+            transform: scale(0.8);
+            animation: fadeInScale 1s ease-out 0.3s forwards;
+        }
+
+        .profile-wrapper::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899, #3b82f6);
+            background-size: 400% 400%;
+            border-radius: 50%;
+            animation: gradientRotate 8s ease infinite;
+            z-index: -1;
+        }
+
+        .profile-wrapper::after {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: -2;
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        .profile-img {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #0a0a0f;
+            display: block;
+        }
+
+        @keyframes gradientRotate {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        @keyframes fadeInScale {
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Name */
+        .name {
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 12px;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.8s ease-out 0.6s forwards;
+            background: linear-gradient(135deg, #fff 0%, #a0a0a0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tagline {
+            font-size: 1.1rem;
+            color: #888;
+            font-weight: 400;
+            margin-bottom: 40px;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.8s ease-out 0.8s forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Bio section */
+        .bio {
+            max-width: 600px;
+            text-align: center;
+            line-height: 1.7;
+            color: #999;
+            font-size: 1rem;
+            margin-bottom: 50px;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 1s forwards;
+        }
+
+        .bio p {
+            margin-bottom: 16px;
+        }
+
+        .bio p:last-child {
+            margin-bottom: 0;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        /* Social links */
+        .social-links {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            justify-content: center;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 1.2s forwards;
+        }
+
+        .social-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #888;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .social-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.2);
+        }
+
+        .social-link svg {
+            width: 22px;
+            height: 22px;
+            fill: currentColor;
+        }
+
+        /* Email link */
+        .email-link {
+            margin-top: 30px;
+            color: #666;
+            text-decoration: none;
+            font-size: 0.9rem;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 1.4s forwards;
+            transition: color 0.3s ease;
+        }
+
+        .email-link:hover {
+            color: #8b5cf6;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .profile-img {
+                width: 180px;
+                height: 180px;
+            }
+
+            .social-links {
+                gap: 16px;
+            }
+
+            .social-link {
+                width: 44px;
+                height: 44px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="stars"></canvas>
+
+    <div class="container">
+        <div class="profile-wrapper">
+            <img src="main/images/profile_pic.jpg" alt="Arjun Patel" class="profile-img">
+        </div>
+
+        <h1 class="name">Arjun Patel</h1>
+        <p class="tagline">Astrophysics & Applied Math @ UC Berkeley</p>
+
+        <div class="bio">
+            <p>I'm a Research Assistant at the Rubin Observatory, developing pipelines to analyze telescope data and visualizing atmospheric distortions in star imaging. I'm passionate about solving the universe's mysteries through data.</p>
+            <p>When I'm not studying the cosmos, you'll find me at the poker table, in the gym, or exploring new ideas at the intersection of astrophysics and quantitative analysis.</p>
+        </div>
+
+        <div class="social-links">
+            <a href="https://github.com/ArjunPatel32" class="social-link" title="GitHub" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            </a>
+            <a href="https://www.linkedin.com/in/arjun-patel-045676255/" class="social-link" title="LinkedIn" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            </a>
+            <a href="https://www.instagram.com/appatel_04/" class="social-link" title="Instagram" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+            </a>
+            <a href="https://open.spotify.com/user/iw4k26n6xg2jmm8z55ca78ecl" class="social-link" title="Spotify" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+            </a>
+            <a href="https://github.com/ArjunPatel32/website/blob/main/main/images/Arjun_Patel_Resume.pdf" class="social-link" title="Resume" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h5v7h7v9H6zm2-6h8v2H8v-2zm0-3h8v2H8v-2zm0 6h5v2H8v-2z"/></svg>
+            </a>
+        </div>
+
+        <a href="mailto:arjun_patel3@berkeley.edu" class="email-link">arjun_patel3@berkeley.edu</a>
+    </div>
+
+    <script>
+        // Animated star field
+        const canvas = document.getElementById('stars');
+        const ctx = canvas.getContext('2d');
+
+        let stars = [];
+        let shootingStars = [];
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initStars();
+        }
+
+        function initStars() {
+            stars = [];
+            const numStars = Math.floor((canvas.width * canvas.height) / 8000);
+
+            for (let i = 0; i < numStars; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 1.5 + 0.5,
+                    opacity: Math.random() * 0.8 + 0.2,
+                    twinkleSpeed: Math.random() * 0.02 + 0.005,
+                    twinkleOffset: Math.random() * Math.PI * 2
+                });
+            }
+        }
+
+        function createShootingStar() {
+            if (Math.random() < 0.002 && shootingStars.length < 2) {
+                shootingStars.push({
+                    x: Math.random() * canvas.width,
+                    y: 0,
+                    length: Math.random() * 80 + 50,
+                    speed: Math.random() * 8 + 6,
+                    angle: Math.PI / 4 + (Math.random() * 0.2 - 0.1),
+                    opacity: 1
+                });
+            }
+        }
+
+        function drawStars(time) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw regular stars with twinkle
+            stars.forEach(star => {
+                const twinkle = Math.sin(time * star.twinkleSpeed + star.twinkleOffset) * 0.3 + 0.7;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity * twinkle})`;
+                ctx.fill();
+            });
+
+            // Draw and update shooting stars
+            shootingStars = shootingStars.filter(ss => {
+                const vx = Math.cos(ss.angle) * ss.speed;
+                const vy = Math.sin(ss.angle) * ss.speed;
+
+                // Draw trail
+                const gradient = ctx.createLinearGradient(
+                    ss.x, ss.y,
+                    ss.x - Math.cos(ss.angle) * ss.length,
+                    ss.y - Math.sin(ss.angle) * ss.length
+                );
+                gradient.addColorStop(0, `rgba(255, 255, 255, ${ss.opacity})`);
+                gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+                ctx.beginPath();
+                ctx.moveTo(ss.x, ss.y);
+                ctx.lineTo(
+                    ss.x - Math.cos(ss.angle) * ss.length,
+                    ss.y - Math.sin(ss.angle) * ss.length
+                );
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Update position
+                ss.x += vx;
+                ss.y += vy;
+                ss.opacity -= 0.008;
+
+                return ss.opacity > 0 && ss.x < canvas.width + 100 && ss.y < canvas.height + 100;
+            });
+
+            createShootingStar();
+        }
+
+        function animate(time) {
+            drawStars(time);
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        animate(0);
+    </script>
+</body>
+</html>

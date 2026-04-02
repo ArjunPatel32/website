@@ -1068,7 +1068,7 @@ document.addEventListener('mousemove', (e) => {
     const distance = Math.sqrt(dx * dx + dy * dy);
 
     const triggerDistance = 80;
-    const warningDistance = 500;
+    const warningDistance = 600;
 
     // Update CSS variables for gradient positioning
     const bhXPercent = (bhCenter.x / window.innerWidth) * 100;

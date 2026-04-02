@@ -1,2 +1,2 @@
-Arjun Patels Website:
-[arjunpatel.streamlit.app](https://arjunpatel.streamlit.app/)
+Arjun Patel's Website:
+[arjunpatel32.github.io/website](https://arjunpatel32.github.io/website/)

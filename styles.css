@@ -603,7 +603,7 @@ body {
 
 /* Nebula Galaxy - more organic/space-like */
 .spiral-galaxy {
-    position: absolute;
+    position: fixed;
     width: 160px;
     height: 140px;
     top: 12%;
@@ -611,6 +611,7 @@ body {
     animation: floatGalaxy 35s ease-in-out infinite;
     pointer-events: auto;
     cursor: pointer;
+    z-index: 5;
 }
 
 .galaxy-core {

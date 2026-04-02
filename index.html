@@ -996,6 +996,102 @@
             100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
         }
 
+        /* Black hole suck-in animation */
+        .black-hole-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at var(--bh-x, 50%) var(--bh-y, 50%),
+                #000 0%,
+                #000 var(--bh-size, 0%),
+                transparent var(--bh-size, 0%));
+            pointer-events: none;
+            z-index: 500;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .black-hole-overlay.active {
+            opacity: 1;
+        }
+
+        .sucking .floating-logo,
+        .sucking .spiral-galaxy,
+        .sucking .container,
+        .sucking .poll-container,
+        .sucking .slot-machine,
+        .sucking .poker-card,
+        .sucking .aurora {
+            transition: transform 1.5s cubic-bezier(0.55, 0.055, 0.675, 0.19),
+                        opacity 1.2s ease-in,
+                        filter 1s ease-in !important;
+        }
+
+        .big-bang-particle {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 600;
+        }
+
+        .big-bang-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at var(--bh-x, 50%) var(--bh-y, 50%),
+                #fff 0%,
+                rgba(255, 200, 100, 0.8) 20%,
+                rgba(139, 92, 246, 0.5) 40%,
+                transparent 70%);
+            z-index: 700;
+            animation: bigBangFlash 1.5s ease-out forwards;
+            pointer-events: none;
+        }
+
+        @keyframes bigBangFlash {
+            0% { opacity: 0; transform: scale(0); }
+            10% { opacity: 1; transform: scale(1.5); }
+            100% { opacity: 0; transform: scale(3); }
+        }
+
+        .singularity {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            z-index: 550;
+            box-shadow: 0 0 30px 15px rgba(255, 255, 255, 0.8),
+                        0 0 60px 30px rgba(255, 200, 100, 0.5),
+                        0 0 100px 50px rgba(139, 92, 246, 0.3);
+            transform: translate(-50%, -50%);
+            animation: singularityPulse 0.3s ease-in-out infinite;
+        }
+
+        @keyframes singularityPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+        }
+
+        .proximity-warning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 400;
+            background: radial-gradient(circle at var(--bh-x, 50%) var(--bh-y, 50%),
+                rgba(255, 100, 50, 0.15) 0%,
+                transparent 30%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
         /* Responsive */
         @media (max-width: 480px) {
             .profile-img {
@@ -1713,6 +1809,247 @@
                 }, 1000);
             }, 5000);
         });
+
+        // Black hole suck-in effect
+        const blackHole = document.querySelector('.black-hole');
+        let blackHoleActive = false;
+        let proximityWarningEl = null;
+        let blackHoleOverlay = null;
+
+        // Create overlay elements
+        function createBlackHoleOverlays() {
+            proximityWarningEl = document.createElement('div');
+            proximityWarningEl.className = 'proximity-warning';
+            document.body.appendChild(proximityWarningEl);
+
+            blackHoleOverlay = document.createElement('div');
+            blackHoleOverlay.className = 'black-hole-overlay';
+            document.body.appendChild(blackHoleOverlay);
+        }
+        createBlackHoleOverlays();
+
+        // Get black hole center position
+        function getBlackHoleCenter() {
+            const rect = blackHole.getBoundingClientRect();
+            return {
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2
+            };
+        }
+
+        // Check proximity to black hole
+        document.addEventListener('mousemove', (e) => {
+            if (blackHoleActive || window.innerWidth <= 480) return;
+
+            const bhCenter = getBlackHoleCenter();
+            const dx = e.clientX - bhCenter.x;
+            const dy = e.clientY - bhCenter.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            const triggerDistance = 80;
+            const warningDistance = 200;
+
+            // Update CSS variables for gradient positioning
+            const bhXPercent = (bhCenter.x / window.innerWidth) * 100;
+            const bhYPercent = (bhCenter.y / window.innerHeight) * 100;
+
+            proximityWarningEl.style.setProperty('--bh-x', bhXPercent + '%');
+            proximityWarningEl.style.setProperty('--bh-y', bhYPercent + '%');
+            blackHoleOverlay.style.setProperty('--bh-x', bhXPercent + '%');
+            blackHoleOverlay.style.setProperty('--bh-y', bhYPercent + '%');
+
+            // Proximity warning glow
+            if (distance < warningDistance && distance > triggerDistance) {
+                const intensity = 1 - (distance - triggerDistance) / (warningDistance - triggerDistance);
+                proximityWarningEl.style.opacity = intensity * 0.8;
+            } else {
+                proximityWarningEl.style.opacity = 0;
+            }
+
+            // Trigger the suck-in!
+            if (distance < triggerDistance) {
+                triggerBlackHoleSuckIn(bhCenter, bhXPercent, bhYPercent);
+            }
+        });
+
+        function triggerBlackHoleSuckIn(bhCenter, bhXPercent, bhYPercent) {
+            if (blackHoleActive) return;
+            blackHoleActive = true;
+
+            proximityWarningEl.style.opacity = 0;
+            document.body.classList.add('sucking');
+
+            // Elements to suck in
+            const elementsToSuck = [
+                ...document.querySelectorAll('.floating-logo'),
+                document.querySelector('.spiral-galaxy'),
+                document.querySelector('.container'),
+                document.querySelector('.poll-container'),
+                document.querySelector('.slot-machine'),
+                document.querySelector('.poker-card'),
+                document.querySelector('.aurora')
+            ].filter(el => el);
+
+            // Store original transforms
+            const originalTransforms = elementsToSuck.map(el => ({
+                el,
+                transform: el.style.transform || '',
+                opacity: el.style.opacity || ''
+            }));
+
+            // Calculate suck-in transforms for each element
+            elementsToSuck.forEach((el, i) => {
+                const rect = el.getBoundingClientRect();
+                const elCenterX = rect.left + rect.width / 2;
+                const elCenterY = rect.top + rect.height / 2;
+
+                const translateX = bhCenter.x - elCenterX;
+                const translateY = bhCenter.y - elCenterY;
+
+                // Add delay variation based on distance
+                const distance = Math.sqrt(translateX * translateX + translateY * translateY);
+                const delay = Math.min(distance / 2000, 0.3);
+
+                el.style.transitionDelay = delay + 's';
+                el.style.transform = `translate(${translateX}px, ${translateY}px) scale(0) rotate(${Math.random() * 720 - 360}deg)`;
+                el.style.opacity = '0';
+                el.style.filter = 'blur(10px)';
+            });
+
+            // Grow the black hole overlay
+            blackHoleOverlay.classList.add('active');
+            let bhSize = 0;
+            const growInterval = setInterval(() => {
+                bhSize += 2;
+                blackHoleOverlay.style.setProperty('--bh-size', bhSize + '%');
+                if (bhSize >= 150) {
+                    clearInterval(growInterval);
+                }
+            }, 20);
+
+            // After suck-in completes, do the collapse
+            setTimeout(() => {
+                collapseAndExplode(bhCenter, bhXPercent, bhYPercent, originalTransforms);
+            }, 2000);
+        }
+
+        function collapseAndExplode(bhCenter, bhXPercent, bhYPercent, originalTransforms) {
+            // Create singularity point
+            const singularity = document.createElement('div');
+            singularity.className = 'singularity';
+            singularity.style.left = bhCenter.x + 'px';
+            singularity.style.top = bhCenter.y + 'px';
+            document.body.appendChild(singularity);
+
+            // Collapse the black hole overlay
+            let bhSize = 150;
+            const collapseInterval = setInterval(() => {
+                bhSize -= 5;
+                blackHoleOverlay.style.setProperty('--bh-size', Math.max(0, bhSize) + '%');
+                if (bhSize <= 0) {
+                    clearInterval(collapseInterval);
+                }
+            }, 20);
+
+            // After collapse, BIG BANG!
+            setTimeout(() => {
+                singularity.remove();
+                bigBangExplosion(bhCenter, bhXPercent, bhYPercent, originalTransforms);
+            }, 800);
+        }
+
+        function bigBangExplosion(bhCenter, bhXPercent, bhYPercent, originalTransforms) {
+            // Flash effect
+            const flash = document.createElement('div');
+            flash.className = 'big-bang-flash';
+            flash.style.setProperty('--bh-x', bhXPercent + '%');
+            flash.style.setProperty('--bh-y', bhYPercent + '%');
+            document.body.appendChild(flash);
+
+            // Create explosion particles
+            const particleColors = [
+                '#fff', '#ffd700', '#ff6b35', '#8b5cf6', '#ec4899', '#3b82f6', '#10b981'
+            ];
+
+            for (let i = 0; i < 100; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'big-bang-particle';
+
+                const size = Math.random() * 15 + 5;
+                const angle = (Math.PI * 2 * i) / 100 + Math.random() * 0.5;
+                const velocity = Math.random() * 800 + 400;
+                const color = particleColors[Math.floor(Math.random() * particleColors.length)];
+
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.background = color;
+                particle.style.left = bhCenter.x + 'px';
+                particle.style.top = bhCenter.y + 'px';
+                particle.style.boxShadow = `0 0 ${size}px ${color}`;
+
+                document.body.appendChild(particle);
+
+                // Animate particle outward
+                const vx = Math.cos(angle) * velocity;
+                const vy = Math.sin(angle) * velocity;
+                let x = bhCenter.x;
+                let y = bhCenter.y;
+                let opacity = 1;
+                let currentSize = size;
+
+                function animateParticle() {
+                    x += vx * 0.016;
+                    y += vy * 0.016;
+                    opacity -= 0.015;
+                    currentSize *= 0.99;
+
+                    particle.style.left = x + 'px';
+                    particle.style.top = y + 'px';
+                    particle.style.opacity = opacity;
+                    particle.style.width = currentSize + 'px';
+                    particle.style.height = currentSize + 'px';
+
+                    if (opacity > 0) {
+                        requestAnimationFrame(animateParticle);
+                    } else {
+                        particle.remove();
+                    }
+                }
+                requestAnimationFrame(animateParticle);
+            }
+
+            // Clean up flash
+            setTimeout(() => flash.remove(), 1500);
+
+            // Reset everything
+            setTimeout(() => {
+                resetEverything(originalTransforms);
+            }, 500);
+        }
+
+        function resetEverything(originalTransforms) {
+            document.body.classList.remove('sucking');
+            blackHoleOverlay.classList.remove('active');
+            blackHoleOverlay.style.setProperty('--bh-size', '0%');
+
+            // Restore all elements with a nice fade-in
+            originalTransforms.forEach(({ el }, index) => {
+                el.style.transition = 'transform 1s ease-out, opacity 1s ease-out, filter 0.5s ease-out';
+                el.style.transitionDelay = (index * 0.05) + 's';
+                el.style.transform = '';
+                el.style.opacity = '';
+                el.style.filter = '';
+            });
+
+            // Allow re-triggering after animation completes
+            setTimeout(() => {
+                originalTransforms.forEach(({ el }) => {
+                    el.style.transition = '';
+                    el.style.transitionDelay = '';
+                });
+                blackHoleActive = false;
+            }, 2000);
+        }
     </script>
 </body>
 </html>

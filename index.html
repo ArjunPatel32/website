@@ -371,7 +371,7 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 0;
+            z-index: 2;
             overflow: hidden;
         }
 
@@ -380,18 +380,20 @@
             position: absolute;
             width: 65px;
             height: 65px;
-            opacity: 0.2;
-            filter: grayscale(80%) brightness(0.8);
+            opacity: 0.3;
+            filter: grayscale(70%) brightness(0.9);
             object-fit: contain;
             animation: floatItem 20s ease-in-out infinite;
-            transition: opacity 0.4s ease, filter 0.4s ease;
-            pointer-events: auto;
+            transition: all 0.4s ease;
+            pointer-events: auto !important;
             cursor: pointer;
+            z-index: 10;
         }
 
         .floating-logo:hover {
-            opacity: 1 !important;
-            filter: grayscale(0%) brightness(1.1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 20px rgba(139, 92, 246, 1)) drop-shadow(0 0 40px rgba(236, 72, 153, 0.8)) !important;
+            opacity: 1;
+            filter: grayscale(0%) brightness(1.15) drop-shadow(0 0 10px rgba(255, 255, 255, 1)) drop-shadow(0 0 25px rgba(139, 92, 246, 0.9)) drop-shadow(0 0 50px rgba(236, 72, 153, 0.7));
+            transform: scale(1.15);
             animation-play-state: paused;
         }
 
@@ -2200,11 +2202,11 @@
         };
 
         // Physics constants
-        const GRAVITY = 0.5;
-        const JUMP_FORCE = -13;
-        const MOVE_SPEED = 5;
-        const FRICTION = 0.88;
-        const MAX_FALL_SPEED = 12;
+        const GRAVITY = 0.55;
+        const JUMP_FORCE = -14;
+        const MOVE_SPEED = 4;
+        const FRICTION = 0.82;
+        const MAX_FALL_SPEED = 14;
 
         // Input state
         const keys = {
@@ -2217,27 +2219,27 @@
             gameCanvas.width = window.innerWidth;
             gameCanvas.height = window.innerHeight;
 
-            // Total game height (how far up to climb) - shorter for easier game
-            game.gameHeight = window.innerHeight * 2.5;
+            // Total game height (how far up to climb)
+            game.gameHeight = window.innerHeight * 3;
 
-            // Generate platforms - ensure each is reachable from the last
+            // Generate platforms - challenging but achievable
             game.platforms = [];
-            const platformCount = 18; // More platforms = easier jumps
-            const verticalSpacing = 85; // Fixed spacing that's always jumpable
-            const maxHorizontalJump = 180; // Max horizontal distance player can jump
+            const platformCount = 14; // Fewer platforms = harder
+            const verticalSpacing = 110; // More spacing = need precise jumps
+            const maxHorizontalJump = 160; // Tighter horizontal tolerance
 
             // Track last platform position to ensure reachability
-            let lastX = gameCanvas.width / 2 - 100;
-            let lastWidth = 200;
+            let lastX = gameCanvas.width / 2 - 80;
+            let lastWidth = 160;
 
             for (let i = 0; i < platformCount; i++) {
-                const y = game.gameHeight - 150 - (i * verticalSpacing);
-                const width = 140 + Math.random() * 60; // Wider platforms
+                const y = game.gameHeight - 180 - (i * verticalSpacing);
+                const width = 100 + Math.random() * 50; // Narrower platforms
 
                 // Calculate valid X range based on last platform (must be reachable)
                 const lastCenter = lastX + lastWidth / 2;
-                const minX = Math.max(30, lastCenter - maxHorizontalJump - width / 2);
-                const maxX = Math.min(gameCanvas.width - width - 30, lastCenter + maxHorizontalJump - width / 2);
+                const minX = Math.max(40, lastCenter - maxHorizontalJump - width / 2);
+                const maxX = Math.min(gameCanvas.width - width - 40, lastCenter + maxHorizontalJump - width / 2);
 
                 // Random X within reachable range
                 const x = minX + Math.random() * (maxX - minX);
@@ -2246,7 +2248,7 @@
                     x: x,
                     y: y,
                     width: width,
-                    height: 18,
+                    height: 16,
                     // Gradient colors - neon theme
                     color1: `hsl(${260 + (i * 8) % 60}, 80%, 60%)`,
                     color2: `hsl(${280 + (i * 12) % 80}, 70%, 50%)`,
@@ -2257,12 +2259,12 @@
                 lastWidth = width;
             }
 
-            // Starting platform (bottom) - wide and centered
+            // Starting platform (bottom) - decent size
             game.platforms.push({
-                x: gameCanvas.width / 2 - 120,
+                x: gameCanvas.width / 2 - 80,
                 y: game.gameHeight - 50,
-                width: 240,
-                height: 22,
+                width: 160,
+                height: 20,
                 color1: '#10b981',
                 color2: '#059669',
                 glowColor: 'rgba(16, 185, 129, 0.5)',
@@ -2397,13 +2399,13 @@
         function updatePlayer() {
             const p = game.player;
 
-            // Horizontal movement
+            // Horizontal movement - lower acceleration for less sensitivity
             if (keys.left) {
-                p.vx -= 1.2;
+                p.vx -= 0.6;
                 p.facingRight = false;
             }
             if (keys.right) {
-                p.vx += 1.2;
+                p.vx += 0.6;
                 p.facingRight = true;
             }
 

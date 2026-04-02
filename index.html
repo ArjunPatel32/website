@@ -446,12 +446,18 @@
             bottom: -55px;
         }
 
-        /* Poker card tooltip */
-        .poker-card::after {
-            content: 'Poker at Berkeley\ACompetitor';
-            white-space: pre;
+        /* Poker card wrapper and tooltip */
+        .poker-card-wrapper {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
+        }
+
+        .poker-card-wrapper .card-tooltip {
             position: absolute;
-            bottom: -50px;
+            bottom: -55px;
             left: 50%;
             transform: translateX(-50%) scale(0.8);
             background: rgba(10, 10, 20, 0.95);
@@ -466,13 +472,14 @@
             transition: all 0.3s ease;
             z-index: 100;
             min-width: 120px;
+            white-space: pre-line;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(251, 191, 36, 0.2);
         }
 
-        .poker-card:hover::after {
+        .poker-card-wrapper:hover .card-tooltip {
             opacity: 1;
             transform: translateX(-50%) scale(1);
-            bottom: -55px;
+            bottom: -60px;
         }
 
         /* Spread logos evenly around edges */
@@ -860,17 +867,13 @@
 
         /* Floating poker card - easter egg trigger */
         .poker-card {
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
+            position: relative;
             width: 50px;
             height: 70px;
             background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%);
             border-radius: 6px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
             cursor: pointer;
-            z-index: 50;
             animation: floatCard 4s ease-in-out infinite;
             transition: all 0.3s ease;
             display: flex;
@@ -902,14 +905,14 @@
         }
 
         .poker-card:hover {
-            transform: translateX(-50%) scale(1.15) rotate(-5deg);
+            transform: scale(1.15) rotate(-5deg);
             box-shadow: 0 8px 30px rgba(139, 92, 246, 0.5), 0 0 20px rgba(251, 191, 36, 0.4);
             border-color: #fbbf24;
         }
 
         @keyframes floatCard {
-            0%, 100% { transform: translateX(-50%) translateY(0) rotate(0deg); }
-            50% { transform: translateX(-50%) translateY(-8px) rotate(3deg); }
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(3deg); }
         }
 
         /* Slot machine */
@@ -1316,7 +1319,11 @@
     </div>
 
     <!-- Floating poker card - easter egg -->
-    <div class="poker-card" id="pokerCard">♠</div>
+    <div class="poker-card-wrapper">
+        <div class="poker-card" id="pokerCard">♠</div>
+        <span class="card-tooltip">Poker at Berkeley
+Competitor</span>
+    </div>
 
     <!-- Poll -->
     <div class="poll-container" id="poll">
@@ -1592,23 +1599,30 @@
             mascotCanvas.width = window.innerWidth;
             mascotCanvas.height = window.innerHeight;
 
-            // Create platforms around the edges of the screen in a loop pattern
+            // Create platforms around the edges and inside for variety
             const w = mascotCanvas.width;
             const h = mascotCanvas.height;
 
             mascotPlatforms.length = 0;
             mascotPlatforms.push(
-                { x: w * 0.1, y: h * 0.75, width: 80 },      // 0: bottom left
-                { x: w * 0.05, y: h * 0.55, width: 70 },     // 1: left middle
-                { x: w * 0.12, y: h * 0.35, width: 75 },     // 2: left upper
-                { x: w * 0.25, y: h * 0.2, width: 80 },      // 3: top left area
-                { x: w * 0.45, y: h * 0.12, width: 90 },     // 4: top center
-                { x: w * 0.65, y: h * 0.18, width: 80 },     // 5: top right area
-                { x: w * 0.8, y: h * 0.32, width: 75 },      // 6: right upper
-                { x: w * 0.88, y: h * 0.5, width: 70 },      // 7: right middle
-                { x: w * 0.82, y: h * 0.7, width: 80 },      // 8: right lower
-                { x: w * 0.6, y: h * 0.82, width: 85 },      // 9: bottom right
-                { x: w * 0.35, y: h * 0.78, width: 80 }      // 10: bottom center -> loops to 0
+                // Outer ring
+                { x: w * 0.1, y: h * 0.75, width: 80 },      // bottom left
+                { x: w * 0.05, y: h * 0.55, width: 70 },     // left middle
+                { x: w * 0.12, y: h * 0.35, width: 75 },     // left upper
+                { x: w * 0.25, y: h * 0.2, width: 80 },      // top left area
+                { x: w * 0.45, y: h * 0.12, width: 90 },     // top center
+                { x: w * 0.65, y: h * 0.18, width: 80 },     // top right area
+                { x: w * 0.8, y: h * 0.32, width: 75 },      // right upper
+                { x: w * 0.88, y: h * 0.5, width: 70 },      // right middle
+                { x: w * 0.82, y: h * 0.7, width: 80 },      // right lower
+                { x: w * 0.6, y: h * 0.82, width: 85 },      // bottom right
+                { x: w * 0.35, y: h * 0.78, width: 80 },     // bottom center
+                // Inner platforms for variety
+                { x: w * 0.25, y: h * 0.5, width: 70 },      // inner left
+                { x: w * 0.4, y: h * 0.38, width: 75 },      // inner top-left
+                { x: w * 0.55, y: h * 0.45, width: 70 },     // inner center
+                { x: w * 0.7, y: h * 0.55, width: 75 },      // inner right
+                { x: w * 0.5, y: h * 0.65, width: 80 }       // inner bottom
             );
 
             // Start mascot on first platform
@@ -1627,20 +1641,43 @@
             const m = mascot;
 
             if (m.state === 'looping') {
-                // Get current and next platform
+                // Get current platform
                 const currentPlat = mascotPlatforms[m.currentPlatformIndex];
-                const nextIndex = (m.currentPlatformIndex + 1) % mascotPlatforms.length;
-                const nextPlat = mascotPlatforms[nextIndex];
 
-                // Target: center of next platform
-                const targetX = nextPlat.x + nextPlat.width / 2 - m.width / 2;
-                const targetY = nextPlat.y - m.height;
-
-                // If on ground and waited enough, jump to next platform
+                // If on ground and waited enough, jump to a random nearby platform
                 if (m.onGround) {
                     m.waitTimer += 1;
-                    if (m.waitTimer > 70) { // Wait ~1.2 seconds before jumping
+                    if (m.waitTimer > 120) { // Wait ~2 seconds before jumping
                         m.waitTimer = 0;
+
+                        // Find all platforms within jump range (not the current one)
+                        const currentCenter = { x: currentPlat.x + currentPlat.width / 2, y: currentPlat.y };
+                        const maxJumpDist = 400; // Max distance to consider
+                        const minJumpDist = 100; // Min distance (don't jump to very close platforms)
+
+                        const reachablePlatforms = mascotPlatforms
+                            .map((plat, idx) => {
+                                const platCenter = { x: plat.x + plat.width / 2, y: plat.y };
+                                const dist = Math.sqrt(
+                                    Math.pow(platCenter.x - currentCenter.x, 2) +
+                                    Math.pow(platCenter.y - currentCenter.y, 2)
+                                );
+                                return { plat, idx, dist };
+                            })
+                            .filter(p => p.idx !== m.currentPlatformIndex && p.dist >= minJumpDist && p.dist <= maxJumpDist);
+
+                        // Pick a random reachable platform
+                        if (reachablePlatforms.length === 0) {
+                            // Fallback: pick any platform except current
+                            const otherPlatforms = mascotPlatforms.filter((_, idx) => idx !== m.currentPlatformIndex);
+                            const randomPlat = otherPlatforms[Math.floor(Math.random() * otherPlatforms.length)];
+                            m.currentPlatformIndex = mascotPlatforms.indexOf(randomPlat);
+                        } else {
+                            const chosen = reachablePlatforms[Math.floor(Math.random() * reachablePlatforms.length)];
+                            m.currentPlatformIndex = chosen.idx;
+                        }
+
+                        const nextPlat = mascotPlatforms[m.currentPlatformIndex];
 
                         // Calculate proper projectile motion to land on target
                         const startX = m.x + m.width / 2;
@@ -2643,7 +2680,8 @@
             gameHeight: 0,
             won: false,
             fallTransition: 0,
-            shakeIntensity: 0
+            shakeIntensity: 0,
+            lastCheckpoint: null // Track last checkpoint reached
         };
 
         // Physics constants
@@ -2677,9 +2715,13 @@
             let lastX = gameCanvas.width / 2 - 80;
             let lastWidth = 160;
 
+            // Checkpoint positions: at platform 4 and platform 9 (roughly 1/3 and 2/3 up)
+            const checkpointIndices = [4, 9];
+
             for (let i = 0; i < platformCount; i++) {
                 const y = game.gameHeight - 180 - (i * verticalSpacing);
-                const width = 100 + Math.random() * 50; // Narrower platforms
+                const isCheckpoint = checkpointIndices.includes(i);
+                const width = isCheckpoint ? 140 : 100 + Math.random() * 50; // Checkpoints are wider
 
                 // Calculate valid X range based on last platform (must be reachable)
                 const lastCenter = lastX + lastWidth / 2;
@@ -2689,16 +2731,32 @@
                 // Random X within reachable range
                 const x = minX + Math.random() * (maxX - minX);
 
-                game.platforms.push({
-                    x: x,
-                    y: y,
-                    width: width,
-                    height: 16,
-                    // Gradient colors - neon theme
-                    color1: `hsl(${260 + (i * 8) % 60}, 80%, 60%)`,
-                    color2: `hsl(${280 + (i * 12) % 80}, 70%, 50%)`,
-                    glowColor: `hsla(${270 + (i * 10) % 70}, 80%, 60%, 0.5)`
-                });
+                if (isCheckpoint) {
+                    // Checkpoint platform - green with special styling
+                    game.platforms.push({
+                        x: x,
+                        y: y,
+                        width: width,
+                        height: 18,
+                        color1: '#10b981',
+                        color2: '#059669',
+                        glowColor: 'rgba(16, 185, 129, 0.6)',
+                        isCheckpoint: true,
+                        checkpointId: i
+                    });
+                } else {
+                    // Normal platform
+                    game.platforms.push({
+                        x: x,
+                        y: y,
+                        width: width,
+                        height: 16,
+                        // Gradient colors - neon theme
+                        color1: `hsl(${260 + (i * 8) % 60}, 80%, 60%)`,
+                        color2: `hsl(${280 + (i * 12) % 80}, 70%, 50%)`,
+                        glowColor: `hsla(${270 + (i * 10) % 70}, 80%, 60%, 0.5)`
+                    });
+                }
 
                 lastX = x;
                 lastWidth = width;
@@ -2804,6 +2862,7 @@
             game.fallTransition = 0;
             game.shakeIntensity = 0;
             game.slideOffset = window.innerHeight; // For slide-up effect
+            game.lastCheckpoint = null; // Reset checkpoint for new game
         }
 
         function startPlatformerGame() {
@@ -2959,6 +3018,23 @@
                         p.y = plat.y - p.height;
                         p.vy = 0;
                         p.onGround = true;
+
+                        // Check if this is a checkpoint
+                        if (plat.isCheckpoint && (!game.lastCheckpoint || plat.checkpointId > game.lastCheckpoint.checkpointId)) {
+                            game.lastCheckpoint = plat;
+                            // Checkpoint reached particles
+                            for (let i = 0; i < 20; i++) {
+                                game.particles.push({
+                                    x: plat.x + plat.width / 2,
+                                    y: plat.y,
+                                    vx: (Math.random() - 0.5) * 8,
+                                    vy: -Math.random() * 6 - 2,
+                                    life: 1.2,
+                                    color: '#10b981'
+                                });
+                            }
+                            game.shakeIntensity = 5;
+                        }
                     }
                 }
             }
@@ -3011,13 +3087,18 @@
             }
 
             function respawnPlayer() {
-                const startPlatform = game.platforms.find(pl => pl.isStart) || game.platforms[game.platforms.length - 1];
-                p.x = startPlatform.x + startPlatform.width / 2 - p.width / 2;
-                p.y = startPlatform.y - p.height;
+                // Use last checkpoint if available, otherwise start platform
+                const respawnPlatform = game.lastCheckpoint ||
+                    game.platforms.find(pl => pl.isStart) ||
+                    game.platforms[game.platforms.length - 1];
+
+                p.x = respawnPlatform.x + respawnPlatform.width / 2 - p.width / 2;
+                p.y = respawnPlatform.y - p.height;
                 p.vx = 0;
                 p.vy = 0;
                 game.shakeIntensity = 12;
-                // Death particles
+
+                // Death particles (red)
                 for (let i = 0; i < 15; i++) {
                     game.particles.push({
                         x: p.x + p.width / 2,
@@ -3027,6 +3108,20 @@
                         life: 1,
                         color: '#ef4444'
                     });
+                }
+
+                // Respawn particles (green to show checkpoint)
+                if (game.lastCheckpoint) {
+                    for (let i = 0; i < 10; i++) {
+                        game.particles.push({
+                            x: p.x + p.width / 2,
+                            y: p.y + p.height,
+                            vx: (Math.random() - 0.5) * 6,
+                            vy: -Math.random() * 4,
+                            life: 1,
+                            color: '#10b981'
+                        });
+                    }
                 }
             }
 

@@ -609,6 +609,8 @@ body {
     top: 12%;
     right: 12%;
     animation: floatGalaxy 35s ease-in-out infinite;
+    pointer-events: auto;
+    cursor: pointer;
 }
 
 .galaxy-core {

@@ -982,8 +982,6 @@ const nebulaClouds = document.querySelectorAll('.nebula-cloud');
 let nebulaMouseX = 0, nebulaMouseY = 0;
 
 if (spiralGalaxy) {
-    spiralGalaxy.style.cursor = 'pointer';
-
     spiralGalaxy.addEventListener('mousemove', (e) => {
         const rect = spiralGalaxy.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
@@ -1070,7 +1068,7 @@ document.addEventListener('mousemove', (e) => {
     const distance = Math.sqrt(dx * dx + dy * dy);
 
     const triggerDistance = 80;
-    const warningDistance = 400;
+    const warningDistance = 500;
 
     // Update CSS variables for gradient positioning
     const bhXPercent = (bhCenter.x / window.innerWidth) * 100;

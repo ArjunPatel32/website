@@ -1253,8 +1253,9 @@
             border: 1px solid rgba(255,255,255,0.2);
         }
 
-        @keyframes winFlashAnim {
-            0% { opacity: 1; }
+        @keyframes winGlowAnim {
+            0% { opacity: 0; }
+            30% { opacity: 1; }
             100% { opacity: 0; }
         }
 
@@ -1318,7 +1319,7 @@
         <div class="floating-logo logo-7" data-name="Brighton Fire" data-role="Fire Explorer Captain">
             <img src="main/images/brighton_fire_logo.jpg" alt="">
         </div>
-        <div class="floating-logo logo-8" data-name="UC Berkeley" data-role="Student">
+        <div class="floating-logo logo-8" data-name="UC Berkeley" data-role="Undergraduate Student">
             <img src="main/images/cal_logo.png" alt="">
         </div>
 
@@ -1653,6 +1654,7 @@
             mascot.x = startPlat.x + startPlat.width / 2 - mascot.width / 2;
             mascot.y = startPlat.y - mascot.height;
             mascot.currentPlatformIndex = 0;
+            mascot.previousPlatformIndex = -1;
             mascot.onGround = true;
             mascot.waitTimer = 0;
             mascot.state = 'looping';
@@ -1675,10 +1677,10 @@
                     if (m.waitTimer > 120) { // Wait ~2 seconds before jumping
                         m.waitTimer = 0;
 
-                        // Find all platforms within jump range (not the current one)
+                        // Find all platforms within jump range
                         const currentCenter = { x: currentPlat.x + currentPlat.width / 2, y: currentPlat.y };
-                        const maxJumpDist = 400; // Max distance to consider
-                        const minJumpDist = 100; // Min distance (don't jump to very close platforms)
+                        const maxJumpDist = 600; // Increased max distance
+                        const minJumpDist = 80; // Reduced min distance
 
                         const reachablePlatforms = mascotPlatforms
                             .map((plat, idx) => {
@@ -1687,20 +1689,38 @@
                                     Math.pow(platCenter.x - currentCenter.x, 2) +
                                     Math.pow(platCenter.y - currentCenter.y, 2)
                                 );
-                                return { plat, idx, dist };
+                                // Lower weight for previous platform (less likely to go back)
+                                const isPrevious = idx === m.previousPlatformIndex;
+                                return { plat, idx, dist, weight: isPrevious ? 0.15 : 1 };
                             })
                             .filter(p => p.idx !== m.currentPlatformIndex && p.dist >= minJumpDist && p.dist <= maxJumpDist);
 
-                        // Pick a random reachable platform
+                        // Pick a weighted random platform (previous platform less likely)
+                        let chosenIdx;
                         if (reachablePlatforms.length === 0) {
                             // Fallback: pick any platform except current
-                            const otherPlatforms = mascotPlatforms.filter((_, idx) => idx !== m.currentPlatformIndex);
-                            const randomPlat = otherPlatforms[Math.floor(Math.random() * otherPlatforms.length)];
-                            m.currentPlatformIndex = mascotPlatforms.indexOf(randomPlat);
+                            const otherPlatforms = mascotPlatforms
+                                .map((p, idx) => ({ idx, weight: idx === m.previousPlatformIndex ? 0.15 : 1 }))
+                                .filter(p => p.idx !== m.currentPlatformIndex);
+                            const totalWeight = otherPlatforms.reduce((sum, p) => sum + p.weight, 0);
+                            let rand = Math.random() * totalWeight;
+                            for (const p of otherPlatforms) {
+                                rand -= p.weight;
+                                if (rand <= 0) { chosenIdx = p.idx; break; }
+                            }
+                            if (chosenIdx === undefined) chosenIdx = otherPlatforms[0].idx;
                         } else {
-                            const chosen = reachablePlatforms[Math.floor(Math.random() * reachablePlatforms.length)];
-                            m.currentPlatformIndex = chosen.idx;
+                            const totalWeight = reachablePlatforms.reduce((sum, p) => sum + p.weight, 0);
+                            let rand = Math.random() * totalWeight;
+                            for (const p of reachablePlatforms) {
+                                rand -= p.weight;
+                                if (rand <= 0) { chosenIdx = p.idx; break; }
+                            }
+                            if (chosenIdx === undefined) chosenIdx = reachablePlatforms[0].idx;
                         }
+
+                        m.previousPlatformIndex = m.currentPlatformIndex;
+                        m.currentPlatformIndex = chosenIdx;
 
                         const nextPlat = mascotPlatforms[m.currentPlatformIndex];
 
@@ -2803,9 +2823,12 @@
                 isStart: true
             });
 
-            // Add hazards (spikes) on some platforms
+            // Add hazards (spikes) on some platforms - NOT on checkpoints!
             game.hazards = [];
             for (let i = 2; i < platformCount - 1; i += 2) {
+                // Skip checkpoint platforms (indices 4 and 9)
+                if (checkpointIndices.includes(i)) continue;
+
                 const plat = game.platforms[i];
                 // Add spikes on the left or right side of platform
                 const spikeOnLeft = Math.random() > 0.5;
@@ -2839,8 +2862,11 @@
                 });
             }
 
-            // Add floating fire hazards (move up and down)
+            // Add floating fire hazards (move up and down) - NOT near checkpoints!
             for (let i = 1; i < platformCount - 2; i += 3) {
+                // Skip if this or adjacent platform is a checkpoint
+                if (checkpointIndices.includes(i) || checkpointIndices.includes(i + 1) || checkpointIndices.includes(i - 1)) continue;
+
                 const plat = game.platforms[i];
                 game.hazards.push({
                     x: plat.x + plat.width / 2 - 15,
@@ -3541,27 +3567,28 @@
         }
 
         function endGame() {
-            // Big victory particles burst
-            for (let i = 0; i < 80; i++) {
+            // Victory particles burst (gold themed)
+            for (let i = 0; i < 60; i++) {
                 game.particles.push({
                     x: game.exitPortal.x,
                     y: game.exitPortal.y,
-                    vx: (Math.random() - 0.5) * 20,
-                    vy: (Math.random() - 0.5) * 20,
+                    vx: (Math.random() - 0.5) * 15,
+                    vy: (Math.random() - 0.5) * 15,
                     life: 2,
-                    color: ['#fbbf24', '#8b5cf6', '#10b981', '#ec4899', '#fff'][Math.floor(Math.random() * 5)]
+                    color: ['#fbbf24', '#f59e0b', '#10b981', '#fff'][Math.floor(Math.random() * 4)]
                 });
             }
 
-            // Flash the screen white briefly
-            const winFlash = document.createElement('div');
-            winFlash.style.cssText = `
+            // Gentle golden glow instead of harsh white flash
+            const winGlow = document.createElement('div');
+            winGlow.style.cssText = `
                 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background: white; z-index: 3000; pointer-events: none;
-                animation: winFlashAnim 0.5s ease-out forwards;
+                background: radial-gradient(circle at 50% 20%, rgba(251, 191, 36, 0.4) 0%, transparent 60%);
+                z-index: 2500; pointer-events: none;
+                animation: winGlowAnim 1.5s ease-out forwards;
             `;
-            document.body.appendChild(winFlash);
-            setTimeout(() => winFlash.remove(), 500);
+            document.body.appendChild(winGlow);
+            setTimeout(() => winGlow.remove(), 1500);
 
             // Victory animation delay, then slide back
             setTimeout(() => {

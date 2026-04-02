@@ -986,10 +986,15 @@ if (spiralGalaxy) {
         offsetY: 0,
         targetOffsetX: 0,
         targetOffsetY: 0,
-        maxOffset: 1500, // Max pixels the nebula can drift
-        pushRadius: 600, // How close mouse needs to be to push nebula
-        pushStrength: 1.5 // How strongly it gets pushed
+        maxOffset: 250, // Max pixels the nebula can drift
+        pushRadius: 180, // How close mouse needs to be to push nebula
+        pushStrength: 0.7 // How strongly it gets pushed
     };
+
+    // Get nebula's original position (for bounds checking)
+    const nebulaRect = spiralGalaxy.getBoundingClientRect();
+    const originalX = nebulaRect.left + nebulaRect.width / 2;
+    const originalY = nebulaRect.top + nebulaRect.height / 2;
 
     // Get nebula center position
     function getNebulaCenterPos() {
@@ -997,6 +1002,30 @@ if (spiralGalaxy) {
         return {
             x: rect.left + rect.width / 2 - nebulaState.offsetX,
             y: rect.top + rect.height / 2 - nebulaState.offsetY
+        };
+    }
+
+    // Clamp nebula position to stay on screen
+    function clampToScreen(offsetX, offsetY) {
+        const padding = 50; // Keep nebula at least this far from edge
+        const nebulaSize = 180;
+
+        // Calculate where nebula would be with this offset
+        const newX = originalX + offsetX;
+        const newY = originalY + offsetY;
+
+        // Clamp to screen bounds
+        const minX = padding + nebulaSize / 2;
+        const maxX = window.innerWidth - padding - nebulaSize / 2;
+        const minY = padding + nebulaSize / 2;
+        const maxY = window.innerHeight - padding - nebulaSize / 2;
+
+        const clampedX = Math.max(minX, Math.min(maxX, newX));
+        const clampedY = Math.max(minY, Math.min(maxY, newY));
+
+        return {
+            x: clampedX - originalX,
+            y: clampedY - originalY
         };
     }
 
@@ -1010,11 +1039,13 @@ if (spiralGalaxy) {
         if (distance < nebulaState.pushRadius && distance > 0) {
             // Calculate push direction (away from mouse)
             const pushFactor = Math.pow(1 - distance / nebulaState.pushRadius, 2) * nebulaState.pushStrength;
-            const pushX = -(dx / distance) * nebulaState.maxOffset * pushFactor;
-            const pushY = -(dy / distance) * nebulaState.maxOffset * pushFactor;
+            let pushX = -(dx / distance) * nebulaState.maxOffset * pushFactor;
+            let pushY = -(dy / distance) * nebulaState.maxOffset * pushFactor;
 
-            nebulaState.targetOffsetX = pushX;
-            nebulaState.targetOffsetY = pushY;
+            // Clamp to screen bounds
+            const clamped = clampToScreen(pushX, pushY);
+            nebulaState.targetOffsetX = clamped.x;
+            nebulaState.targetOffsetY = clamped.y;
         } else {
             // Drift back to original position
             nebulaState.targetOffsetX = 0;
@@ -1025,7 +1056,7 @@ if (spiralGalaxy) {
     // Smooth animation loop for nebula drift
     function animateNebula() {
         // Ease toward target (higher = more responsive)
-        const easing = 0.15;
+        const easing = 0.12;
         nebulaState.offsetX += (nebulaState.targetOffsetX - nebulaState.offsetX) * easing;
         nebulaState.offsetY += (nebulaState.targetOffsetY - nebulaState.offsetY) * easing;
 

@@ -380,19 +380,19 @@
             position: absolute;
             width: 65px;
             height: 65px;
-            opacity: 0.25;
-            filter: grayscale(60%) brightness(1.5);
+            opacity: 0.2;
+            filter: grayscale(80%) brightness(0.8);
             object-fit: contain;
             animation: floatItem 20s ease-in-out infinite;
-            transition: opacity 0.4s ease, filter 0.4s ease, box-shadow 0.4s ease, transform 0.3s ease;
+            transition: opacity 0.4s ease, filter 0.4s ease;
             pointer-events: auto;
+            cursor: pointer;
         }
 
         .floating-logo:hover {
-            opacity: 1;
-            filter: grayscale(0%) brightness(1.2) drop-shadow(0 0 15px rgba(139, 92, 246, 0.8));
-            box-shadow: 0 0 30px rgba(139, 92, 246, 0.6), 0 0 60px rgba(236, 72, 153, 0.3);
-            transform: scale(1.1);
+            opacity: 1 !important;
+            filter: grayscale(0%) brightness(1.1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 20px rgba(139, 92, 246, 1)) drop-shadow(0 0 40px rgba(236, 72, 153, 0.8)) !important;
+            animation-play-state: paused;
         }
 
         /* Spread logos evenly around edges */
@@ -1486,64 +1486,14 @@
         const maxThumbs = 30;
 
         function moveNoButton(mouseX, mouseY) {
-            const btnRect = noBtn.getBoundingClientRect();
-            const pollRect = poll.getBoundingClientRect();
-            const btnCenterX = btnRect.left + btnRect.width / 2;
-            const btnCenterY = btnRect.top + btnRect.height / 2;
+            // Simply move to a random position within a box area
+            // Box bounds: -150 to 150 horizontally, -80 to 80 vertically
+            const boxWidth = 300;
+            const boxHeight = 160;
 
-            // Calculate direction away from mouse
-            let dx = btnCenterX - mouseX;
-            let dy = btnCenterY - mouseY;
-
-            // Normalize and add minimum escape distance
-            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-            const escapeDistance = 120 + Math.random() * 60; // Move 120-180px away
-            dx = (dx / dist) * escapeDistance;
-            dy = (dy / dist) * escapeDistance;
-
-            // Add some randomness to the direction
-            dx += (Math.random() - 0.5) * 40;
-            dy += (Math.random() - 0.5) * 40;
-
-            // Get current offset values
-            const currentLeft = parseFloat(noBtn.style.left) || 0;
-            const currentTop = parseFloat(noBtn.style.top) || 0;
-
-            // Calculate new position
-            let newLeft = currentLeft + dx;
-            let newTop = currentTop + dy;
-
-            // Calculate the button's would-be position in screen coordinates
-            // The button's natural position (without offset) relative to poll container
-            const naturalBtnLeft = btnRect.left - currentLeft;
-            const naturalBtnTop = btnRect.top - currentTop;
-
-            // Calculate where the button would end up
-            const futureLeft = naturalBtnLeft + newLeft;
-            const futureTop = naturalBtnTop + newTop;
-            const futureRight = futureLeft + btnRect.width;
-            const futureBottom = futureTop + btnRect.height;
-
-            // Screen bounds with padding
-            const padding = 10;
-            const screenLeft = padding;
-            const screenTop = padding;
-            const screenRight = window.innerWidth - padding;
-            const screenBottom = window.innerHeight - padding;
-
-            // Clamp to screen bounds
-            if (futureLeft < screenLeft) {
-                newLeft = screenLeft - naturalBtnLeft;
-            }
-            if (futureRight > screenRight) {
-                newLeft = screenRight - btnRect.width - naturalBtnLeft;
-            }
-            if (futureTop < screenTop) {
-                newTop = screenTop - naturalBtnTop;
-            }
-            if (futureBottom > screenBottom) {
-                newTop = screenBottom - btnRect.height - naturalBtnTop;
-            }
+            // Random position within the box
+            const newLeft = (Math.random() - 0.5) * boxWidth;
+            const newTop = (Math.random() - 0.5) * boxHeight;
 
             noBtn.style.position = 'relative';
             noBtn.style.left = newLeft + 'px';
@@ -2250,11 +2200,11 @@
         };
 
         // Physics constants
-        const GRAVITY = 0.6;
-        const JUMP_FORCE = -14;
-        const MOVE_SPEED = 6;
-        const FRICTION = 0.85;
-        const MAX_FALL_SPEED = 15;
+        const GRAVITY = 0.5;
+        const JUMP_FORCE = -13;
+        const MOVE_SPEED = 5;
+        const FRICTION = 0.88;
+        const MAX_FALL_SPEED = 12;
 
         // Input state
         const keys = {
@@ -2267,51 +2217,63 @@
             gameCanvas.width = window.innerWidth;
             gameCanvas.height = window.innerHeight;
 
-            // Total game height (how far up to climb)
-            game.gameHeight = window.innerHeight * 4;
+            // Total game height (how far up to climb) - shorter for easier game
+            game.gameHeight = window.innerHeight * 2.5;
 
-            // Generate platforms
+            // Generate platforms - ensure each is reachable from the last
             game.platforms = [];
-            const platformCount = 12;
-            const verticalSpacing = (game.gameHeight - 200) / platformCount;
+            const platformCount = 18; // More platforms = easier jumps
+            const verticalSpacing = 85; // Fixed spacing that's always jumpable
+            const maxHorizontalJump = 180; // Max horizontal distance player can jump
+
+            // Track last platform position to ensure reachability
+            let lastX = gameCanvas.width / 2 - 100;
+            let lastWidth = 200;
 
             for (let i = 0; i < platformCount; i++) {
                 const y = game.gameHeight - 150 - (i * verticalSpacing);
-                const width = 120 + Math.random() * 80;
-                const x = Math.random() * (gameCanvas.width - width - 100) + 50;
+                const width = 140 + Math.random() * 60; // Wider platforms
 
-                // Alternate sides somewhat to make it more interesting
-                const adjustedX = i % 2 === 0
-                    ? Math.min(x, gameCanvas.width * 0.6 - width)
-                    : Math.max(x, gameCanvas.width * 0.4);
+                // Calculate valid X range based on last platform (must be reachable)
+                const lastCenter = lastX + lastWidth / 2;
+                const minX = Math.max(30, lastCenter - maxHorizontalJump - width / 2);
+                const maxX = Math.min(gameCanvas.width - width - 30, lastCenter + maxHorizontalJump - width / 2);
+
+                // Random X within reachable range
+                const x = minX + Math.random() * (maxX - minX);
 
                 game.platforms.push({
-                    x: adjustedX,
+                    x: x,
                     y: y,
                     width: width,
-                    height: 15,
+                    height: 18,
                     // Gradient colors - neon theme
-                    color1: `hsl(${260 + (i * 10) % 60}, 80%, 60%)`,
-                    color2: `hsl(${280 + (i * 15) % 80}, 70%, 50%)`,
-                    glowColor: `hsla(${270 + (i * 12) % 70}, 80%, 60%, 0.5)`
+                    color1: `hsl(${260 + (i * 8) % 60}, 80%, 60%)`,
+                    color2: `hsl(${280 + (i * 12) % 80}, 70%, 50%)`,
+                    glowColor: `hsla(${270 + (i * 10) % 70}, 80%, 60%, 0.5)`
                 });
+
+                lastX = x;
+                lastWidth = width;
             }
 
-            // Starting platform (bottom)
+            // Starting platform (bottom) - wide and centered
             game.platforms.push({
-                x: gameCanvas.width / 2 - 100,
+                x: gameCanvas.width / 2 - 120,
                 y: game.gameHeight - 50,
-                width: 200,
-                height: 20,
+                width: 240,
+                height: 22,
                 color1: '#10b981',
                 color2: '#059669',
-                glowColor: 'rgba(16, 185, 129, 0.5)'
+                glowColor: 'rgba(16, 185, 129, 0.5)',
+                isStart: true
             });
 
-            // Exit portal at top
+            // Exit portal at top - positioned above the last platform
+            const topPlatform = game.platforms[platformCount - 1];
             game.exitPortal = {
-                x: gameCanvas.width / 2,
-                y: 100,
+                x: topPlatform.x + topPlatform.width / 2,
+                y: topPlatform.y - 120,
                 radius: 60,
                 pulsePhase: 0
             };
@@ -2342,6 +2304,7 @@
             game.won = false;
             game.fallTransition = 0;
             game.shakeIntensity = 0;
+            game.slideOffset = window.innerHeight; // For slide-up effect
         }
 
         function startPlatformerGame() {
@@ -2350,19 +2313,45 @@
 
             initGame();
 
-            // Show game elements
+            // Show game canvas
             gameCanvas.style.display = 'block';
             gameUI.style.display = 'block';
 
-            // Start fall transition
-            game.fallTransition = 1;
-            game.shakeIntensity = 15;
+            // Slide-up transition - website slides up to reveal game below
+            game.slideOffset = window.innerHeight;
+            game.isSliding = true;
+
+            // Animate the main content sliding up
+            const mainElements = [
+                document.querySelector('.container'),
+                document.querySelector('.poll-container'),
+                document.querySelector('.slot-machine'),
+                document.querySelector('.poker-card'),
+                document.querySelector('.floating-objects'),
+                document.querySelector('.aurora'),
+                document.querySelector('#stars')
+            ].filter(el => el);
+
+            // Add slide-up animation to main content
+            mainElements.forEach(el => {
+                el.style.transition = 'transform 1.5s cubic-bezier(0.4, 0, 0.2, 1)';
+                el.style.transform = 'translateY(-100vh)';
+            });
+
+            // Screen shake on "floor break"
+            game.shakeIntensity = 20;
 
             // Add event listeners
             window.addEventListener('keydown', handleKeyDown);
             window.addEventListener('keyup', handleKeyUp);
 
-            // Start game loop
+            // Start game loop after slide completes
+            setTimeout(() => {
+                game.isSliding = false;
+                game.slideOffset = 0;
+            }, 1500);
+
+            // Start game loop immediately (will draw during slide)
             gameLoop();
         }
 
@@ -2471,10 +2460,16 @@
                 }
             }
 
-            // Respawn if fell too far
-            if (p.y > game.gameHeight + 100) {
-                p.y = game.gameHeight - 100;
+            // Respawn on starting platform if fell to the floor
+            if (p.y > game.gameHeight - 30) {
+                // Find the starting platform
+                const startPlatform = game.platforms.find(pl => pl.isStart) || game.platforms[game.platforms.length - 1];
+                p.x = startPlatform.x + startPlatform.width / 2 - p.width / 2;
+                p.y = startPlatform.y - p.height;
+                p.vx = 0;
                 p.vy = 0;
+                // Small shake feedback
+                game.shakeIntensity = 8;
             }
 
             // Movement particles
@@ -2724,39 +2719,59 @@
                 });
             }
 
-            // Fade out and return to website
+            // Slide website back down after a moment
             setTimeout(() => {
-                let fadeOut = 0;
-                const fadeInterval = setInterval(() => {
-                    fadeOut += 0.03;
-                    gameCtx.fillStyle = `rgba(255, 255, 255, ${fadeOut})`;
-                    gameCtx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+                // Get main elements to slide back
+                const mainElements = [
+                    document.querySelector('.container'),
+                    document.querySelector('.poll-container'),
+                    document.querySelector('.slot-machine'),
+                    document.querySelector('.poker-card'),
+                    document.querySelector('.floating-objects'),
+                    document.querySelector('.aurora'),
+                    document.querySelector('#stars')
+                ].filter(el => el);
 
-                    if (fadeOut >= 1) {
-                        clearInterval(fadeInterval);
+                // Slide website back down
+                mainElements.forEach(el => {
+                    el.style.transition = 'transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
+                    el.style.transform = 'translateY(0)';
+                });
 
-                        // Clean up
-                        gameActive = false;
-                        cancelAnimationFrame(gameAnimationId);
-                        window.removeEventListener('keydown', handleKeyDown);
-                        window.removeEventListener('keyup', handleKeyUp);
+                // Fade out game canvas
+                gameCanvas.style.transition = 'opacity 1s ease';
+                gameCanvas.style.opacity = '0';
 
-                        // Hide game
-                        gameCanvas.style.display = 'none';
-                        gameUI.style.display = 'none';
+                // Clean up after slide completes
+                setTimeout(() => {
+                    // Clean up
+                    gameActive = false;
+                    cancelAnimationFrame(gameAnimationId);
+                    window.removeEventListener('keydown', handleKeyDown);
+                    window.removeEventListener('keyup', handleKeyUp);
 
-                        // Reset keys
-                        keys.left = false;
-                        keys.right = false;
-                        keys.jump = false;
+                    // Hide game
+                    gameCanvas.style.display = 'none';
+                    gameCanvas.style.opacity = '1';
+                    gameCanvas.style.transition = '';
+                    gameUI.style.display = 'none';
 
-                        // Celebration on return
-                        for (let i = 0; i < 30; i++) {
-                            setTimeout(() => createSlotConfetti(), i * 30);
-                        }
+                    // Reset main element transitions
+                    mainElements.forEach(el => {
+                        el.style.transition = '';
+                    });
+
+                    // Reset keys
+                    keys.left = false;
+                    keys.right = false;
+                    keys.jump = false;
+
+                    // Celebration on return
+                    for (let i = 0; i < 30; i++) {
+                        setTimeout(() => createSlotConfetti(), i * 30);
                     }
-                }, 30);
-            }, 1000);
+                }, 1200);
+            }, 800);
         }
 
         // Handle window resize for game

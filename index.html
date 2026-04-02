@@ -1433,17 +1433,34 @@
         let thumbsCount = 0;
         const maxThumbs = 30;
 
-        function moveNoButton() {
-            // Calculate random position within reasonable bounds
-            const maxX = 120;
-            const maxY = 80;
+        function moveNoButton(mouseX, mouseY) {
+            const btnRect = noBtn.getBoundingClientRect();
+            const btnCenterX = btnRect.left + btnRect.width / 2;
+            const btnCenterY = btnRect.top + btnRect.height / 2;
 
-            const randomX = (Math.random() - 0.5) * maxX;
-            const randomY = (Math.random() - 0.5) * maxY;
+            // Calculate direction away from mouse
+            let dx = btnCenterX - mouseX;
+            let dy = btnCenterY - mouseY;
+
+            // Normalize and add minimum escape distance
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            const escapeDistance = 120 + Math.random() * 60; // Move 120-180px away
+            dx = (dx / dist) * escapeDistance;
+            dy = (dy / dist) * escapeDistance;
+
+            // Add some randomness to the direction
+            dx += (Math.random() - 0.5) * 40;
+            dy += (Math.random() - 0.5) * 40;
+
+            // Clamp to reasonable bounds
+            const maxX = 150;
+            const maxY = 100;
+            dx = Math.max(-maxX, Math.min(maxX, dx));
+            dy = Math.max(-maxY, Math.min(maxY, dy));
 
             noBtn.style.position = 'relative';
-            noBtn.style.left = randomX + 'px';
-            noBtn.style.top = randomY + 'px';
+            noBtn.style.left = dx + 'px';
+            noBtn.style.top = dy + 'px';
             noBtn.style.transform = `rotate(${(Math.random() - 0.5) * 20}deg)`;
 
             // Spawn thumbs down emoji
@@ -1489,10 +1506,19 @@
             setTimeout(() => thumb.remove(), 2000);
         }
 
-        noBtn.addEventListener('mouseenter', moveNoButton);
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+
+        noBtn.addEventListener('mouseenter', (e) => moveNoButton(e.clientX, e.clientY));
         noBtn.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            moveNoButton();
+            const touch = e.touches[0];
+            moveNoButton(touch.clientX, touch.clientY);
         });
 
         // Yes button shows result and clears all thumbs
@@ -1560,41 +1586,9 @@
             requestAnimationFrame(animateConfetti);
         }
 
-        // Matrix rain effect
+        // Matrix rain effect - disabled for now
         const matrixCanvas = document.getElementById('matrix');
-        const matrixCtx = matrixCanvas.getContext('2d');
-
-        function resizeMatrix() {
-            matrixCanvas.width = window.innerWidth;
-            matrixCanvas.height = window.innerHeight;
-        }
-        resizeMatrix();
-        window.addEventListener('resize', resizeMatrix);
-
-        const matrixChars = '0123456789ABCDEFπ∑∫∂√∞±×÷=≠≈<>%$';
-        const fontSize = 14;
-        let columns = Math.floor(matrixCanvas.width / fontSize);
-        let drops = Array(columns).fill(1);
-
-        function drawMatrix() {
-            matrixCtx.fillStyle = 'rgba(10, 10, 15, 0.05)';
-            matrixCtx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
-
-            matrixCtx.fillStyle = '#10b981';
-            matrixCtx.font = fontSize + 'px monospace';
-
-            for (let i = 0; i < drops.length; i++) {
-                const char = matrixChars[Math.floor(Math.random() * matrixChars.length)];
-                matrixCtx.fillText(char, i * fontSize, drops[i] * fontSize);
-
-                if (drops[i] * fontSize > matrixCanvas.height && Math.random() > 0.975) {
-                    drops[i] = 0;
-                }
-                drops[i]++;
-            }
-        }
-
-        setInterval(drawMatrix, 50);
+        matrixCanvas.style.display = 'none';
 
         // Slot machine
         const symbols = ['🎰', '💎', '7️⃣', '🍀', '⭐', '🎲', '♠️', '♦️'];
@@ -2079,25 +2073,42 @@
             // Clean up flash
             setTimeout(() => flash.remove(), 1500);
 
-            // Reset everything
+            // Reset everything - explode back into place
             setTimeout(() => {
                 resetEverything(originalTransforms);
-            }, 500);
+            }, 300);
         }
 
         function resetEverything(originalTransforms) {
             document.body.classList.remove('sucking');
+            const bhCenter = storedBhCenter;
 
             // Show the original black hole again
             blackHole.style.opacity = '';
 
-            // Restore all elements with a nice fade-in
+            // First, position elements at the black hole center (scaled down)
+            originalTransforms.forEach(({ el }) => {
+                const rect = el.getBoundingClientRect();
+                // Elements are already at the black hole from the suck-in
+                // Now we'll animate them explosively outward
+                el.style.transition = 'none';
+                el.style.filter = 'blur(5px)';
+            });
+
+            // Force reflow
+            document.body.offsetHeight;
+
+            // Animate elements flying out from center back to original positions
             originalTransforms.forEach(({ el }, index) => {
-                el.style.transition = 'transform 1s ease-out, opacity 1s ease-out, filter 0.5s ease-out';
-                el.style.transitionDelay = (index * 0.05) + 's';
-                el.style.transform = '';
-                el.style.opacity = '';
-                el.style.filter = '';
+                // Stagger the explosion slightly based on element type
+                const delay = Math.random() * 0.3;
+
+                setTimeout(() => {
+                    el.style.transition = 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s ease-out, filter 0.4s ease-out';
+                    el.style.transform = '';
+                    el.style.opacity = '';
+                    el.style.filter = '';
+                }, delay * 1000);
             });
 
             // Allow re-triggering after animation completes
@@ -2108,7 +2119,7 @@
                 });
                 blackHoleActive = false;
                 storedBhCenter = null;
-            }, 2000);
+            }, 1500);
         }
     </script>
 </body>

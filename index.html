@@ -1285,13 +1285,13 @@
     <!-- Floating objects -->
     <div class="floating-objects">
         <!-- Logos from past work -->
-        <img src="main/images/nasa_logo.png" alt="" class="floating-logo logo-1" data-name="NASA" data-role="[POSITION]">
-        <img src="main/images/rubin_observatory.jpg" alt="" class="floating-logo logo-2" data-name="Rubin Observatory" data-role="[POSITION]">
-        <img src="main/images/dotlas_logo.png" alt="" class="floating-logo logo-3" data-name="Dotlas" data-role="[POSITION]">
-        <img src="main/images/uas_berk.jpg" alt="" class="floating-logo logo-4" data-name="UAS Berkeley" data-role="[POSITION]">
-        <img src="main/images/flow_logo.jpg" alt="" class="floating-logo logo-5" data-name="Flow" data-role="[POSITION]">
-        <img src="main/images/aces.png" alt="" class="floating-logo logo-6" data-name="ACES" data-role="[POSITION]">
-        <img src="main/images/brighton_fire_logo.jpg" alt="" class="floating-logo logo-7" data-name="Brighton Fire" data-role="[POSITION]">
+        <img src="main/images/nasa_logo.png" alt="" class="floating-logo logo-1" data-name="NASA" data-role="Data Analyst & Research Fellow">
+        <img src="main/images/rubin_observatory.jpg" alt="" class="floating-logo logo-2" data-name="Rubin Observatory" data-role="Research Assistant">
+        <img src="main/images/dotlas_logo.png" alt="" class="floating-logo logo-3" data-name="Dotlas" data-role="Data Science & Engineering Intern">
+        <img src="main/images/uas_berk.jpg" alt="" class="floating-logo logo-4" data-name="Undergraduate Astronomy Society" data-role="Telescope Officer">
+        <img src="main/images/flow_logo.jpg" alt="" class="floating-logo logo-5" data-name="Flow" data-role="Quantitative Trading Ascent Intern">
+        <img src="main/images/aces.png" alt="" class="floating-logo logo-6" data-name="Poker at Berkeley" data-role="Competitor">
+        <img src="main/images/brighton_fire_logo.jpg" alt="" class="floating-logo logo-7" data-name="Brighton Fire" data-role="Fire Explorer Captain">
         <img src="main/images/cal_logo.png" alt="" class="floating-logo logo-8" data-name="UC Berkeley" data-role="Student">
 
         <!-- Black hole -->
@@ -1619,6 +1619,8 @@
             mascot.state = 'looping';
         }
 
+        const MASCOT_GRAVITY = 0.4;
+
         function updateMascot() {
             if (mascot.state === 'playing') return; // Don't update when in platformer
 
@@ -1630,18 +1632,47 @@
                 const nextIndex = (m.currentPlatformIndex + 1) % mascotPlatforms.length;
                 const nextPlat = mascotPlatforms[nextIndex];
 
+                // Target: center of next platform
+                const targetX = nextPlat.x + nextPlat.width / 2 - m.width / 2;
+                const targetY = nextPlat.y - m.height;
+
                 // If on ground and waited enough, jump to next platform
                 if (m.onGround) {
                     m.waitTimer += 1;
-                    if (m.waitTimer > 60) { // Wait ~1 second before jumping
+                    if (m.waitTimer > 70) { // Wait ~1.2 seconds before jumping
                         m.waitTimer = 0;
-                        // Calculate jump to reach next platform
-                        const dx = (nextPlat.x + nextPlat.width / 2) - (m.x + m.width / 2);
-                        const dy = nextPlat.y - currentPlat.y;
 
-                        // Jump physics - calculate needed velocities
-                        m.vy = -10 - Math.abs(dy) * 0.015;
-                        m.vx = dx * 0.025;
+                        // Calculate proper projectile motion to land on target
+                        const startX = m.x + m.width / 2;
+                        const startY = m.y + m.height;
+                        const endX = nextPlat.x + nextPlat.width / 2;
+                        const endY = nextPlat.y;
+
+                        const dx = endX - startX;
+                        const dy = endY - startY;
+
+                        // Calculate jump arc - use a fixed apex height above the higher platform
+                        const apexHeight = Math.min(startY, endY) - 120; // 120px above higher platform
+                        const rise = startY - apexHeight; // How high we need to go
+
+                        // Time to reach apex: vy = vy0 - g*t, at apex vy=0, so t = vy0/g
+                        // Height: y = vy0*t - 0.5*g*t^2 = rise, substituting t = vy0/g:
+                        // rise = vy0^2/g - 0.5*vy0^2/g = 0.5*vy0^2/g
+                        // vy0 = sqrt(2 * g * rise)
+                        const vy0 = -Math.sqrt(2 * MASCOT_GRAVITY * rise);
+
+                        // Total flight time: use kinematic equation
+                        // dy = vy0*t + 0.5*g*t^2, solve for t
+                        // 0.5*g*t^2 + vy0*t - dy = 0
+                        // t = (-vy0 + sqrt(vy0^2 + 2*g*dy)) / g
+                        const discriminant = vy0 * vy0 + 2 * MASCOT_GRAVITY * dy;
+                        const totalTime = (-vy0 + Math.sqrt(Math.max(0, discriminant))) / MASCOT_GRAVITY;
+
+                        // Horizontal velocity to cover dx in totalTime
+                        const vx0 = dx / Math.max(totalTime, 1);
+
+                        m.vy = vy0;
+                        m.vx = vx0;
                         m.onGround = false;
                         m.facingRight = dx > 0;
                         m.currentPlatformIndex = nextIndex;
@@ -1661,26 +1692,24 @@
                 }
 
                 // Apply gravity
-                m.vy += 0.35;
-                m.vy = Math.min(m.vy, 10);
+                m.vy += MASCOT_GRAVITY;
+                m.vy = Math.min(m.vy, 12);
 
-                // Apply friction
-                m.vx *= 0.98;
-
-                // Move
+                // Move (no friction during jump for accurate landing)
                 m.x += m.vx;
                 m.y += m.vy;
 
-                // Check platform collision
+                // Check platform collision - land on the target platform
                 m.onGround = false;
-                for (const plat of mascotPlatforms) {
-                    if (m.x + m.width > plat.x && m.x < plat.x + plat.width) {
-                        if (m.vy > 0 && m.y + m.height > plat.y && m.y + m.height < plat.y + 20) {
-                            m.y = plat.y - m.height;
-                            m.vy = 0;
-                            m.vx *= 0.5;
-                            m.onGround = true;
-                        }
+                const targetPlat = mascotPlatforms[m.currentPlatformIndex];
+                if (m.x + m.width > targetPlat.x && m.x < targetPlat.x + targetPlat.width) {
+                    if (m.vy > 0 && m.y + m.height >= targetPlat.y && m.y + m.height < targetPlat.y + 25) {
+                        m.y = targetPlat.y - m.height;
+                        // Snap to center of platform
+                        m.x = targetPlat.x + targetPlat.width / 2 - m.width / 2;
+                        m.vy = 0;
+                        m.vx = 0;
+                        m.onGround = true;
                     }
                 }
 
@@ -1692,6 +1721,7 @@
                     m.vx = 0;
                     m.vy = 0;
                     m.currentPlatformIndex = 0;
+                    m.onGround = true;
                 }
             } else if (m.state === 'falling') {
                 // Falling into the platformer

@@ -16,7 +16,7 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #0a0a0f;
+            background: #070709;
             color: #e0e0e0;
             min-height: 100vh;
             overflow-x: hidden;
@@ -407,7 +407,7 @@
             width: 100%;
             height: 100%;
             object-fit: contain;
-            opacity: 0.3;
+            opacity: 0.4;
             filter: grayscale(70%) brightness(0.9);
             transition: all 0.4s ease;
         }
@@ -2401,6 +2401,60 @@
             }, 5000);
         });
 
+        // Interactive nebula effect
+        const spiralGalaxy = document.querySelector('.spiral-galaxy');
+        const nebulaClouds = document.querySelectorAll('.nebula-cloud');
+        let nebulaMouseX = 0, nebulaMouseY = 0;
+
+        if (spiralGalaxy) {
+            spiralGalaxy.style.cursor = 'pointer';
+
+            spiralGalaxy.addEventListener('mousemove', (e) => {
+                const rect = spiralGalaxy.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+
+                // Mouse position relative to center (-1 to 1)
+                const relX = (e.clientX - centerX) / (rect.width / 2);
+                const relY = (e.clientY - centerY) / (rect.height / 2);
+
+                nebulaMouseX = relX;
+                nebulaMouseY = relY;
+
+                // Move each cloud in different directions based on mouse
+                nebulaClouds.forEach((cloud, i) => {
+                    const offsetX = relX * (15 + i * 8);
+                    const offsetY = relY * (12 + i * 6);
+                    const scale = 1 + Math.abs(relX * relY) * 0.15;
+                    cloud.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+                    cloud.style.opacity = 0.6 + Math.abs(relX * relY) * 0.2;
+                    cloud.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+                });
+
+                // Brighten the galaxy core
+                const galaxyCore = spiralGalaxy.querySelector('.galaxy-core');
+                if (galaxyCore) {
+                    const dist = Math.sqrt(relX * relX + relY * relY);
+                    const glow = 15 + (1 - dist) * 20;
+                    galaxyCore.style.boxShadow = `0 0 ${glow}px ${glow/2}px rgba(255, 255, 255, ${0.3 + (1-dist) * 0.4})`;
+                }
+            });
+
+            spiralGalaxy.addEventListener('mouseleave', () => {
+                // Reset clouds to original position
+                nebulaClouds.forEach((cloud) => {
+                    cloud.style.transform = '';
+                    cloud.style.opacity = '';
+                    cloud.style.transition = 'transform 0.8s ease-out, opacity 0.8s ease-out';
+                });
+
+                const galaxyCore = spiralGalaxy.querySelector('.galaxy-core');
+                if (galaxyCore) {
+                    galaxyCore.style.boxShadow = '';
+                }
+            });
+        }
+
         // Black hole suck-in effect
         const blackHole = document.querySelector('.black-hole');
         let blackHoleActive = false;
@@ -2441,7 +2495,7 @@
             const distance = Math.sqrt(dx * dx + dy * dy);
 
             const triggerDistance = 80;
-            const warningDistance = 200;
+            const warningDistance = 400;
 
             // Update CSS variables for gradient positioning
             const bhXPercent = (bhCenter.x / window.innerWidth) * 100;
@@ -2453,7 +2507,7 @@
             // Proximity warning glow
             if (distance < warningDistance && distance > triggerDistance) {
                 const intensity = 1 - (distance - triggerDistance) / (warningDistance - triggerDistance);
-                proximityWarningEl.style.opacity = intensity * 0.8;
+                proximityWarningEl.style.opacity = intensity;
             } else {
                 proximityWarningEl.style.opacity = 0;
             }

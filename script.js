@@ -986,9 +986,9 @@ if (spiralGalaxy) {
         offsetY: 0,
         targetOffsetX: 0,
         targetOffsetY: 0,
-        maxOffset: 80, // Max pixels the nebula can drift
-        pushRadius: 300, // How close mouse needs to be to push nebula
-        pushStrength: 0.8 // How strongly it gets pushed (0-1)
+        maxOffset: 500, // Max pixels the nebula can drift
+        pushRadius: 400, // How close mouse needs to be to push nebula
+        pushStrength: 1.2 // How strongly it gets pushed
     };
 
     // Get nebula center position
@@ -1024,8 +1024,8 @@ if (spiralGalaxy) {
 
     // Smooth animation loop for nebula drift
     function animateNebula() {
-        // Ease toward target
-        const easing = 0.08;
+        // Ease toward target (higher = more responsive)
+        const easing = 0.15;
         nebulaState.offsetX += (nebulaState.targetOffsetX - nebulaState.offsetX) * easing;
         nebulaState.offsetY += (nebulaState.targetOffsetY - nebulaState.offsetY) * easing;
 

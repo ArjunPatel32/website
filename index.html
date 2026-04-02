@@ -228,9 +228,14 @@
         }
 
         .work-badge:hover {
-            background: rgba(255, 140, 50, 0.15);
-            border-color: rgba(255, 140, 50, 0.5);
-            transform: translateY(-2px);
+            background: rgba(255, 140, 50, 0.25);
+            border-color: rgba(255, 140, 50, 0.8);
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 8px 30px rgba(255, 140, 50, 0.4), 0 0 25px rgba(255, 140, 50, 0.3), inset 0 0 15px rgba(255, 140, 50, 0.15);
+        }
+
+        .work-badge:hover span {
+            text-shadow: 0 0 10px rgba(255, 140, 50, 0.5);
         }
 
         .work-logo {
@@ -1673,8 +1678,8 @@
                 clearInterval(spinInterval);
                 reel3.classList.remove('spinning');
 
-                // ~10% chance to force a jackpot
-                const forceJackpot = Math.random() < 0.1;
+                // ~20% chance to force a jackpot
+                const forceJackpot = Math.random() < 0.2;
 
                 if (forceJackpot) {
                     const jackpotSymbol = symbols[Math.floor(Math.random() * symbols.length)];
@@ -2191,6 +2196,8 @@
                 animTimer: 0
             },
             platforms: [],
+            hazards: [],
+            movingPlatforms: [],
             particles: [],
             bgStars: [],
             exitPortal: { x: 0, y: 0, radius: 60 },
@@ -2270,6 +2277,58 @@
                 glowColor: 'rgba(16, 185, 129, 0.5)',
                 isStart: true
             });
+
+            // Add hazards (spikes) on some platforms
+            game.hazards = [];
+            for (let i = 2; i < platformCount - 1; i += 2) {
+                const plat = game.platforms[i];
+                // Add spikes on the left or right side of platform
+                const spikeOnLeft = Math.random() > 0.5;
+                const spikeWidth = 25;
+                game.hazards.push({
+                    x: spikeOnLeft ? plat.x : plat.x + plat.width - spikeWidth,
+                    y: plat.y - 20,
+                    width: spikeWidth,
+                    height: 20,
+                    type: 'spike'
+                });
+            }
+
+            // Add moving platforms for extra challenge
+            game.movingPlatforms = [];
+            for (let i = 3; i < platformCount - 1; i += 4) {
+                const plat = game.platforms[i];
+                const moveRange = 80 + Math.random() * 60;
+                game.movingPlatforms.push({
+                    x: plat.x,
+                    y: plat.y - 60, // Position between platforms
+                    width: 70,
+                    height: 14,
+                    startX: plat.x,
+                    moveRange: moveRange,
+                    speed: 1.5 + Math.random(),
+                    direction: 1,
+                    color1: '#f59e0b',
+                    color2: '#d97706',
+                    glowColor: 'rgba(245, 158, 11, 0.5)'
+                });
+            }
+
+            // Add floating fire hazards (move up and down)
+            for (let i = 1; i < platformCount - 2; i += 3) {
+                const plat = game.platforms[i];
+                game.hazards.push({
+                    x: plat.x + plat.width / 2 - 15,
+                    y: plat.y - 80,
+                    width: 30,
+                    height: 30,
+                    baseY: plat.y - 80,
+                    moveRange: 40,
+                    speed: 0.02,
+                    phase: Math.random() * Math.PI * 2,
+                    type: 'fire'
+                });
+            }
 
             // Exit portal at top - positioned above the last platform
             const topPlatform = game.platforms[platformCount - 1];
@@ -2462,16 +2521,71 @@
                 }
             }
 
+            // Moving platform collision and update
+            for (const mp of game.movingPlatforms) {
+                // Update position
+                mp.x += mp.speed * mp.direction;
+                if (mp.x > mp.startX + mp.moveRange || mp.x < mp.startX - mp.moveRange) {
+                    mp.direction *= -1;
+                }
+
+                // Collision with player
+                if (p.x + p.width > mp.x && p.x < mp.x + mp.width) {
+                    if (p.vy > 0 &&
+                        p.y + p.height > mp.y &&
+                        p.y + p.height < mp.y + mp.height + p.vy + 5) {
+                        p.y = mp.y - p.height;
+                        p.vy = 0;
+                        p.onGround = true;
+                        // Move player with platform
+                        p.x += mp.speed * mp.direction;
+                    }
+                }
+            }
+
+            // Update and check hazard collisions
+            for (const h of game.hazards) {
+                // Update floating fire hazards
+                if (h.type === 'fire') {
+                    h.phase += h.speed;
+                    h.y = h.baseY + Math.sin(h.phase) * h.moveRange;
+                }
+
+                // Check collision with player (with some padding for fairness)
+                const pad = 5;
+                if (p.x + p.width - pad > h.x + pad &&
+                    p.x + pad < h.x + h.width - pad &&
+                    p.y + p.height - pad > h.y + pad &&
+                    p.y + pad < h.y + h.height - pad) {
+                    // Hit hazard - respawn!
+                    respawnPlayer();
+                    break;
+                }
+            }
+
             // Respawn on starting platform if fell to the floor
             if (p.y > game.gameHeight - 30) {
-                // Find the starting platform
+                respawnPlayer();
+            }
+
+            function respawnPlayer() {
                 const startPlatform = game.platforms.find(pl => pl.isStart) || game.platforms[game.platforms.length - 1];
                 p.x = startPlatform.x + startPlatform.width / 2 - p.width / 2;
                 p.y = startPlatform.y - p.height;
                 p.vx = 0;
                 p.vy = 0;
-                // Small shake feedback
-                game.shakeIntensity = 8;
+                game.shakeIntensity = 12;
+                // Death particles
+                for (let i = 0; i < 15; i++) {
+                    game.particles.push({
+                        x: p.x + p.width / 2,
+                        y: p.y + p.height / 2,
+                        vx: (Math.random() - 0.5) * 10,
+                        vy: (Math.random() - 0.5) * 10,
+                        life: 1,
+                        color: '#ef4444'
+                    });
+                }
             }
 
             // Movement particles
@@ -2625,6 +2739,82 @@
                 ctx.shadowBlur = 0;
             });
 
+            // Draw moving platforms
+            game.movingPlatforms.forEach(mp => {
+                ctx.shadowColor = mp.glowColor;
+                ctx.shadowBlur = 15;
+
+                const grad = ctx.createLinearGradient(mp.x, mp.y, mp.x, mp.y + mp.height);
+                grad.addColorStop(0, mp.color1);
+                grad.addColorStop(1, mp.color2);
+
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.roundRect(mp.x, mp.y, mp.width, mp.height, 4);
+                ctx.fill();
+
+                // Direction indicator arrows
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(mp.direction > 0 ? '→' : '←', mp.x + mp.width / 2, mp.y + mp.height / 2 + 3);
+
+                ctx.shadowBlur = 0;
+            });
+
+            // Draw hazards
+            game.hazards.forEach(h => {
+                if (h.type === 'spike') {
+                    // Draw spikes as triangles
+                    ctx.shadowColor = '#ef4444';
+                    ctx.shadowBlur = 10;
+                    ctx.fillStyle = '#dc2626';
+
+                    const spikeCount = 3;
+                    const spikeWidth = h.width / spikeCount;
+                    for (let i = 0; i < spikeCount; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(h.x + i * spikeWidth, h.y + h.height);
+                        ctx.lineTo(h.x + i * spikeWidth + spikeWidth / 2, h.y);
+                        ctx.lineTo(h.x + (i + 1) * spikeWidth, h.y + h.height);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                } else if (h.type === 'fire') {
+                    // Draw fire as animated circle with glow
+                    ctx.shadowColor = '#f97316';
+                    ctx.shadowBlur = 25;
+
+                    const fireGrad = ctx.createRadialGradient(
+                        h.x + h.width / 2, h.y + h.height / 2, 0,
+                        h.x + h.width / 2, h.y + h.height / 2, h.width / 2
+                    );
+                    fireGrad.addColorStop(0, '#fbbf24');
+                    fireGrad.addColorStop(0.5, '#f97316');
+                    fireGrad.addColorStop(1, '#dc2626');
+
+                    ctx.fillStyle = fireGrad;
+                    ctx.beginPath();
+                    // Wavy fire shape
+                    const wobble = Math.sin(time * 5 + h.phase) * 3;
+                    ctx.ellipse(
+                        h.x + h.width / 2 + wobble,
+                        h.y + h.height / 2,
+                        h.width / 2 + Math.sin(time * 8) * 2,
+                        h.height / 2 + Math.cos(time * 6) * 2,
+                        0, 0, Math.PI * 2
+                    );
+                    ctx.fill();
+
+                    // Inner bright core
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(h.x + h.width / 2 + wobble, h.y + h.height / 2, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.shadowBlur = 0;
+            });
+
             // Draw particles
             game.particles.forEach(p => {
                 ctx.beginPath();
@@ -2767,6 +2957,13 @@
                     keys.left = false;
                     keys.right = false;
                     keys.jump = false;
+
+                    // Reset slot machine to initial state
+                    reel1.textContent = '♠️';
+                    reel2.textContent = '♠️';
+                    reel3.textContent = '♠️';
+                    slotResult.textContent = '';
+                    slotResult.classList.remove('jackpot');
 
                     // Celebration on return
                     for (let i = 0; i < 30; i++) {

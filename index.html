@@ -413,6 +413,68 @@
             animation-play-state: paused;
         }
 
+        /* Logo tooltips */
+        .floating-logo::after {
+            content: attr(data-name) '\A' attr(data-role);
+            white-space: pre;
+            position: absolute;
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%) scale(0.8);
+            background: rgba(10, 10, 20, 0.95);
+            border: 1px solid rgba(139, 92, 246, 0.5);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: #fff;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 100;
+            min-width: 100px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(139, 92, 246, 0.2);
+        }
+
+        .floating-logo::after {
+            line-height: 1.4;
+        }
+
+        .floating-logo:hover::after {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+            bottom: -55px;
+        }
+
+        /* Poker card tooltip */
+        .poker-card::after {
+            content: 'Poker at Berkeley\ACompetitor';
+            white-space: pre;
+            position: absolute;
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%) scale(0.8);
+            background: rgba(10, 10, 20, 0.95);
+            border: 1px solid rgba(251, 191, 36, 0.5);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: #fff;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 100;
+            min-width: 120px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(251, 191, 36, 0.2);
+        }
+
+        .poker-card:hover::after {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+            bottom: -55px;
+        }
+
         /* Spread logos evenly around edges */
         .logo-1 { top: 8%; left: 55%; animation-duration: 22s; animation-delay: 0s; }      /* NASA - top center */
         .logo-2 { top: 75%; left: 85%; animation-duration: 25s; animation-delay: -5s; }   /* Rubin - bottom right */
@@ -1223,14 +1285,14 @@
     <!-- Floating objects -->
     <div class="floating-objects">
         <!-- Logos from past work -->
-        <img src="main/images/nasa_logo.png" alt="" class="floating-logo logo-1">
-        <img src="main/images/rubin_observatory.jpg" alt="" class="floating-logo logo-2">
-        <img src="main/images/dotlas_logo.png" alt="" class="floating-logo logo-3">
-        <img src="main/images/uas_berk.jpg" alt="" class="floating-logo logo-4">
-        <img src="main/images/flow_logo.jpg" alt="" class="floating-logo logo-5">
-        <img src="main/images/aces.png" alt="" class="floating-logo logo-6">
-        <img src="main/images/brighton_fire_logo.jpg" alt="" class="floating-logo logo-7">
-        <img src="main/images/cal_logo.png" alt="" class="floating-logo logo-8">
+        <img src="main/images/nasa_logo.png" alt="" class="floating-logo logo-1" data-name="NASA" data-role="[POSITION]">
+        <img src="main/images/rubin_observatory.jpg" alt="" class="floating-logo logo-2" data-name="Rubin Observatory" data-role="[POSITION]">
+        <img src="main/images/dotlas_logo.png" alt="" class="floating-logo logo-3" data-name="Dotlas" data-role="[POSITION]">
+        <img src="main/images/uas_berk.jpg" alt="" class="floating-logo logo-4" data-name="UAS Berkeley" data-role="[POSITION]">
+        <img src="main/images/flow_logo.jpg" alt="" class="floating-logo logo-5" data-name="Flow" data-role="[POSITION]">
+        <img src="main/images/aces.png" alt="" class="floating-logo logo-6" data-name="ACES" data-role="[POSITION]">
+        <img src="main/images/brighton_fire_logo.jpg" alt="" class="floating-logo logo-7" data-name="Brighton Fire" data-role="[POSITION]">
+        <img src="main/images/cal_logo.png" alt="" class="floating-logo logo-8" data-name="UC Berkeley" data-role="Student">
 
         <!-- Black hole -->
         <div class="black-hole">

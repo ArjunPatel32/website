@@ -976,56 +976,65 @@ pokerCard.addEventListener('click', () => {
     }, 5000);
 });
 
-// Interactive nebula effect
+// Interactive nebula effect - nebula drifts away from mouse
 const spiralGalaxy = document.querySelector('.spiral-galaxy');
-const nebulaClouds = document.querySelectorAll('.nebula-cloud');
-let nebulaMouseX = 0, nebulaMouseY = 0;
 
 if (spiralGalaxy) {
-    spiralGalaxy.addEventListener('mousemove', (e) => {
+    // Nebula drift state
+    const nebulaState = {
+        offsetX: 0,
+        offsetY: 0,
+        targetOffsetX: 0,
+        targetOffsetY: 0,
+        maxOffset: 80, // Max pixels the nebula can drift
+        pushRadius: 300, // How close mouse needs to be to push nebula
+        pushStrength: 0.8 // How strongly it gets pushed (0-1)
+    };
+
+    // Get nebula center position
+    function getNebulaCenterPos() {
         const rect = spiralGalaxy.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
+        return {
+            x: rect.left + rect.width / 2 - nebulaState.offsetX,
+            y: rect.top + rect.height / 2 - nebulaState.offsetY
+        };
+    }
 
-        // Mouse position relative to center (-1 to 1)
-        const relX = (e.clientX - centerX) / (rect.width / 2);
-        const relY = (e.clientY - centerY) / (rect.height / 2);
+    // Update nebula position on mouse move
+    document.addEventListener('mousemove', (e) => {
+        const nebulaCenter = getNebulaCenterPos();
+        const dx = e.clientX - nebulaCenter.x;
+        const dy = e.clientY - nebulaCenter.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
 
-        nebulaMouseX = relX;
-        nebulaMouseY = relY;
+        if (distance < nebulaState.pushRadius && distance > 0) {
+            // Calculate push direction (away from mouse)
+            const pushFactor = Math.pow(1 - distance / nebulaState.pushRadius, 2) * nebulaState.pushStrength;
+            const pushX = -(dx / distance) * nebulaState.maxOffset * pushFactor;
+            const pushY = -(dy / distance) * nebulaState.maxOffset * pushFactor;
 
-        // Move each cloud in different directions based on mouse
-        nebulaClouds.forEach((cloud, i) => {
-            const offsetX = relX * (15 + i * 8);
-            const offsetY = relY * (12 + i * 6);
-            const scale = 1 + Math.abs(relX * relY) * 0.15;
-            cloud.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
-            cloud.style.opacity = 0.6 + Math.abs(relX * relY) * 0.2;
-            cloud.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
-        });
-
-        // Brighten the galaxy core
-        const galaxyCore = spiralGalaxy.querySelector('.galaxy-core');
-        if (galaxyCore) {
-            const dist = Math.sqrt(relX * relX + relY * relY);
-            const glow = 15 + (1 - dist) * 20;
-            galaxyCore.style.boxShadow = `0 0 ${glow}px ${glow/2}px rgba(255, 255, 255, ${0.3 + (1-dist) * 0.4})`;
+            nebulaState.targetOffsetX = pushX;
+            nebulaState.targetOffsetY = pushY;
+        } else {
+            // Drift back to original position
+            nebulaState.targetOffsetX = 0;
+            nebulaState.targetOffsetY = 0;
         }
     });
 
-    spiralGalaxy.addEventListener('mouseleave', () => {
-        // Reset clouds to original position
-        nebulaClouds.forEach((cloud) => {
-            cloud.style.transform = '';
-            cloud.style.opacity = '';
-            cloud.style.transition = 'transform 0.8s ease-out, opacity 0.8s ease-out';
-        });
+    // Smooth animation loop for nebula drift
+    function animateNebula() {
+        // Ease toward target
+        const easing = 0.08;
+        nebulaState.offsetX += (nebulaState.targetOffsetX - nebulaState.offsetX) * easing;
+        nebulaState.offsetY += (nebulaState.targetOffsetY - nebulaState.offsetY) * easing;
 
-        const galaxyCore = spiralGalaxy.querySelector('.galaxy-core');
-        if (galaxyCore) {
-            galaxyCore.style.boxShadow = '';
-        }
-    });
+        // Apply transform
+        spiralGalaxy.style.transform = `translate(${nebulaState.offsetX}px, ${nebulaState.offsetY}px)`;
+
+        requestAnimationFrame(animateNebula);
+    }
+    animateNebula();
 }
 
 // Black hole suck-in effect
@@ -1068,7 +1077,7 @@ document.addEventListener('mousemove', (e) => {
     const distance = Math.sqrt(dx * dx + dy * dy);
 
     const triggerDistance = 80;
-    const warningDistance = 2000; // TESTING - set to big number to verify this is the right setting
+    const warningDistance = 1000;
 
     // Update CSS variables for gradient positioning
     const bhXPercent = (bhCenter.x / window.innerWidth) * 100;
@@ -1077,9 +1086,10 @@ document.addEventListener('mousemove', (e) => {
     proximityWarningEl.style.setProperty('--bh-x', bhXPercent + '%');
     proximityWarningEl.style.setProperty('--bh-y', bhYPercent + '%');
 
-    // Proximity warning glow
+    // Proximity warning glow with r^2 falloff for more dramatic effect
     if (distance < warningDistance && distance > triggerDistance) {
-        const intensity = 1 - (distance - triggerDistance) / (warningDistance - triggerDistance);
+        const normalizedDist = (distance - triggerDistance) / (warningDistance - triggerDistance);
+        const intensity = Math.pow(1 - normalizedDist, 2); // r^2 exponential falloff
         proximityWarningEl.style.opacity = intensity;
     } else {
         proximityWarningEl.style.opacity = 0;

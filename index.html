@@ -396,9 +396,6 @@
             position: absolute;
             width: 65px;
             height: 65px;
-            opacity: 0.3;
-            filter: grayscale(70%) brightness(0.9);
-            object-fit: contain;
             animation: floatItem 20s ease-in-out infinite;
             transition: all 0.4s ease;
             pointer-events: auto !important;
@@ -406,11 +403,23 @@
             z-index: 10;
         }
 
+        .floating-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            opacity: 0.3;
+            filter: grayscale(70%) brightness(0.9);
+            transition: all 0.4s ease;
+        }
+
         .floating-logo:hover {
-            opacity: 1;
-            filter: grayscale(0%) brightness(1.15) drop-shadow(0 0 10px rgba(255, 255, 255, 1)) drop-shadow(0 0 25px rgba(139, 92, 246, 0.9)) drop-shadow(0 0 50px rgba(236, 72, 153, 0.7));
             transform: scale(1.15);
             animation-play-state: paused;
+        }
+
+        .floating-logo:hover img {
+            opacity: 1;
+            filter: grayscale(0%) brightness(1.15) drop-shadow(0 0 10px rgba(255, 255, 255, 1)) drop-shadow(0 0 25px rgba(139, 92, 246, 0.9)) drop-shadow(0 0 50px rgba(236, 72, 153, 0.7));
         }
 
         /* Logo tooltips */
@@ -1288,14 +1297,30 @@
     <!-- Floating objects -->
     <div class="floating-objects">
         <!-- Logos from past work -->
-        <img src="main/images/nasa_logo.png" alt="" class="floating-logo logo-1" data-name="NASA" data-role="Data Analyst & Research Fellow">
-        <img src="main/images/rubin_observatory.jpg" alt="" class="floating-logo logo-2" data-name="Rubin Observatory" data-role="Research Assistant">
-        <img src="main/images/dotlas_logo.png" alt="" class="floating-logo logo-3" data-name="Dotlas" data-role="Data Science & Engineering Intern">
-        <img src="main/images/uas_berk.jpg" alt="" class="floating-logo logo-4" data-name="Undergraduate Astronomy Society" data-role="Telescope Officer">
-        <img src="main/images/flow_logo.jpg" alt="" class="floating-logo logo-5" data-name="Flow" data-role="Quantitative Trading Ascent Intern">
-        <img src="main/images/aces.png" alt="" class="floating-logo logo-6" data-name="Poker at Berkeley" data-role="Competitor">
-        <img src="main/images/brighton_fire_logo.jpg" alt="" class="floating-logo logo-7" data-name="Brighton Fire" data-role="Fire Explorer Captain">
-        <img src="main/images/cal_logo.png" alt="" class="floating-logo logo-8" data-name="UC Berkeley" data-role="Student">
+        <div class="floating-logo logo-1" data-name="NASA" data-role="Data Analyst & Research Fellow">
+            <img src="main/images/nasa_logo.png" alt="">
+        </div>
+        <div class="floating-logo logo-2" data-name="Rubin Observatory" data-role="Research Assistant">
+            <img src="main/images/rubin_observatory.jpg" alt="">
+        </div>
+        <div class="floating-logo logo-3" data-name="Dotlas" data-role="Data Science & Engineering Intern">
+            <img src="main/images/dotlas_logo.png" alt="">
+        </div>
+        <div class="floating-logo logo-4" data-name="Undergraduate Astronomy Society" data-role="Telescope Officer">
+            <img src="main/images/uas_berk.jpg" alt="">
+        </div>
+        <div class="floating-logo logo-5" data-name="Flow" data-role="Quantitative Trading Ascent Intern">
+            <img src="main/images/flow_logo.jpg" alt="">
+        </div>
+        <div class="floating-logo logo-6" data-name="Poker at Berkeley" data-role="Competitor">
+            <img src="main/images/aces.png" alt="">
+        </div>
+        <div class="floating-logo logo-7" data-name="Brighton Fire" data-role="Fire Explorer Captain">
+            <img src="main/images/brighton_fire_logo.jpg" alt="">
+        </div>
+        <div class="floating-logo logo-8" data-name="UC Berkeley" data-role="Student">
+            <img src="main/images/cal_logo.png" alt="">
+        </div>
 
         <!-- Black hole -->
         <div class="black-hole">
@@ -1321,8 +1346,6 @@
     <!-- Floating poker card - easter egg -->
     <div class="poker-card-wrapper">
         <div class="poker-card" id="pokerCard">♠</div>
-        <span class="card-tooltip">Poker at Berkeley
-Competitor</span>
     </div>
 
     <!-- Poll -->
@@ -1630,6 +1653,8 @@ Competitor</span>
             mascot.x = startPlat.x + startPlat.width / 2 - mascot.width / 2;
             mascot.y = startPlat.y - mascot.height;
             mascot.currentPlatformIndex = 0;
+            mascot.onGround = true;
+            mascot.waitTimer = 0;
             mascot.state = 'looping';
         }
 
@@ -1712,7 +1737,6 @@ Competitor</span>
                         m.vx = vx0;
                         m.onGround = false;
                         m.facingRight = dx > 0;
-                        m.currentPlatformIndex = nextIndex;
 
                         // Jump particles
                         for (let i = 0; i < 5; i++) {
@@ -1940,8 +1964,13 @@ Competitor</span>
         // Function to trigger mascot falling (called on jackpot)
         function mascotFallIntoGame() {
             mascot.state = 'falling';
-            mascot.vy = 2;
+            mascot.vy = 5; // Start with faster fall
             mascot.vx = (Math.random() - 0.5) * 3;
+            mascot.onGround = false;
+            // Make sure mascot is visible on screen before falling
+            if (mascot.y > mascotCanvas.height) {
+                mascot.y = mascotCanvas.height / 2;
+            }
         }
 
         // Function to trigger mascot rising (called when platformer won)

@@ -32,6 +32,17 @@
             z-index: 0;
         }
 
+        /* Mascot character canvas */
+        #mascot {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            pointer-events: none;
+        }
+
         /* Matrix rain canvas */
         #matrix {
             position: fixed;
@@ -1168,6 +1179,11 @@
             border: 1px solid rgba(255,255,255,0.2);
         }
 
+        @keyframes winFlashAnim {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
         /* Responsive */
         @media (max-width: 480px) {
             .profile-img {
@@ -1201,6 +1217,7 @@
 <body>
     <canvas id="stars"></canvas>
     <canvas id="matrix"></canvas>
+    <canvas id="mascot"></canvas>
     <div class="aurora"></div>
 
     <!-- Floating objects -->
@@ -1482,6 +1499,330 @@
             container.style.transform = `translate(${moveX}px, ${moveY}px)`;
         });
 
+        // ========================================
+        // MASCOT CHARACTER SYSTEM
+        // ========================================
+        const mascotCanvas = document.getElementById('mascot');
+        const mascotCtx = mascotCanvas.getContext('2d');
+
+        const mascot = {
+            x: 0,
+            y: 0,
+            vx: 0,
+            vy: 0,
+            width: 24,
+            height: 40,
+            onGround: false,
+            facingRight: true,
+            animFrame: 0,
+            animTimer: 0,
+            state: 'looping', // 'looping', 'falling', 'playing', 'rising'
+            currentPlatformIndex: 0,
+            waitTimer: 0,
+            targetX: 0,
+            particles: []
+        };
+
+        // Platforms for mascot to jump around on the main site
+        const mascotPlatforms = [];
+
+        function initMascotPlatforms() {
+            mascotCanvas.width = window.innerWidth;
+            mascotCanvas.height = window.innerHeight;
+
+            // Create platforms around the edges of the screen in a loop pattern
+            const w = mascotCanvas.width;
+            const h = mascotCanvas.height;
+
+            mascotPlatforms.length = 0;
+            mascotPlatforms.push(
+                { x: w * 0.1, y: h * 0.75, width: 80 },      // 0: bottom left
+                { x: w * 0.05, y: h * 0.55, width: 70 },     // 1: left middle
+                { x: w * 0.12, y: h * 0.35, width: 75 },     // 2: left upper
+                { x: w * 0.25, y: h * 0.2, width: 80 },      // 3: top left area
+                { x: w * 0.45, y: h * 0.12, width: 90 },     // 4: top center
+                { x: w * 0.65, y: h * 0.18, width: 80 },     // 5: top right area
+                { x: w * 0.8, y: h * 0.32, width: 75 },      // 6: right upper
+                { x: w * 0.88, y: h * 0.5, width: 70 },      // 7: right middle
+                { x: w * 0.82, y: h * 0.7, width: 80 },      // 8: right lower
+                { x: w * 0.6, y: h * 0.82, width: 85 },      // 9: bottom right
+                { x: w * 0.35, y: h * 0.78, width: 80 }      // 10: bottom center -> loops to 0
+            );
+
+            // Start mascot on first platform
+            const startPlat = mascotPlatforms[0];
+            mascot.x = startPlat.x + startPlat.width / 2 - mascot.width / 2;
+            mascot.y = startPlat.y - mascot.height;
+            mascot.currentPlatformIndex = 0;
+            mascot.state = 'looping';
+        }
+
+        function updateMascot() {
+            if (mascot.state === 'playing') return; // Don't update when in platformer
+
+            const m = mascot;
+
+            if (m.state === 'looping') {
+                // Get current and next platform
+                const currentPlat = mascotPlatforms[m.currentPlatformIndex];
+                const nextIndex = (m.currentPlatformIndex + 1) % mascotPlatforms.length;
+                const nextPlat = mascotPlatforms[nextIndex];
+
+                // If on ground and waited enough, jump to next platform
+                if (m.onGround) {
+                    m.waitTimer += 1;
+                    if (m.waitTimer > 60) { // Wait ~1 second before jumping
+                        m.waitTimer = 0;
+                        // Calculate jump to reach next platform
+                        const dx = (nextPlat.x + nextPlat.width / 2) - (m.x + m.width / 2);
+                        const dy = nextPlat.y - currentPlat.y;
+
+                        // Jump physics - calculate needed velocities
+                        m.vy = -10 - Math.abs(dy) * 0.015;
+                        m.vx = dx * 0.025;
+                        m.onGround = false;
+                        m.facingRight = dx > 0;
+                        m.currentPlatformIndex = nextIndex;
+
+                        // Jump particles
+                        for (let i = 0; i < 5; i++) {
+                            m.particles.push({
+                                x: m.x + m.width / 2,
+                                y: m.y + m.height,
+                                vx: (Math.random() - 0.5) * 4,
+                                vy: Math.random() * 2,
+                                life: 1,
+                                color: '#8b5cf6'
+                            });
+                        }
+                    }
+                }
+
+                // Apply gravity
+                m.vy += 0.35;
+                m.vy = Math.min(m.vy, 10);
+
+                // Apply friction
+                m.vx *= 0.98;
+
+                // Move
+                m.x += m.vx;
+                m.y += m.vy;
+
+                // Check platform collision
+                m.onGround = false;
+                for (const plat of mascotPlatforms) {
+                    if (m.x + m.width > plat.x && m.x < plat.x + plat.width) {
+                        if (m.vy > 0 && m.y + m.height > plat.y && m.y + m.height < plat.y + 20) {
+                            m.y = plat.y - m.height;
+                            m.vy = 0;
+                            m.vx *= 0.5;
+                            m.onGround = true;
+                        }
+                    }
+                }
+
+                // Safety: if fell off screen, reset to first platform
+                if (m.y > mascotCanvas.height + 100) {
+                    const startPlat = mascotPlatforms[0];
+                    m.x = startPlat.x + startPlat.width / 2 - m.width / 2;
+                    m.y = startPlat.y - m.height;
+                    m.vx = 0;
+                    m.vy = 0;
+                    m.currentPlatformIndex = 0;
+                }
+            } else if (m.state === 'falling') {
+                // Falling into the platformer
+                m.vy += 0.5;
+                m.y += m.vy;
+                m.x += m.vx;
+
+                // Add trail particles
+                if (Math.random() > 0.5) {
+                    m.particles.push({
+                        x: m.x + m.width / 2,
+                        y: m.y,
+                        vx: (Math.random() - 0.5) * 2,
+                        vy: -2,
+                        life: 1,
+                        color: '#fbbf24'
+                    });
+                }
+
+                // When fallen far enough, start the actual game
+                if (m.y > mascotCanvas.height + 50) {
+                    m.state = 'playing';
+                    actuallyStartPlatformer();
+                }
+            } else if (m.state === 'rising') {
+                // Flying back up to the main site
+                m.vy -= 0.3; // Accelerate upward
+                m.vy = Math.max(m.vy, -15);
+                m.y += m.vy;
+
+                // Drift toward first platform
+                const targetPlat = mascotPlatforms[0];
+                const targetX = targetPlat.x + targetPlat.width / 2 - m.width / 2;
+                m.x += (targetX - m.x) * 0.02;
+
+                // Trail particles
+                if (Math.random() > 0.3) {
+                    m.particles.push({
+                        x: m.x + m.width / 2,
+                        y: m.y + m.height,
+                        vx: (Math.random() - 0.5) * 3,
+                        vy: 3,
+                        life: 1,
+                        color: Math.random() > 0.5 ? '#fbbf24' : '#8b5cf6'
+                    });
+                }
+
+                // When reached the platform level, land and resume looping
+                if (m.y < targetPlat.y - m.height + 10) {
+                    m.y = targetPlat.y - m.height;
+                    m.vy = 0;
+                    m.vx = 0;
+                    m.onGround = true;
+                    m.currentPlatformIndex = 0;
+                    m.waitTimer = 0;
+                    m.state = 'looping';
+
+                    // Landing particles
+                    for (let i = 0; i < 10; i++) {
+                        m.particles.push({
+                            x: m.x + m.width / 2,
+                            y: m.y + m.height,
+                            vx: (Math.random() - 0.5) * 8,
+                            vy: -Math.random() * 5,
+                            life: 1,
+                            color: '#10b981'
+                        });
+                    }
+                }
+            }
+
+            // Update particles
+            m.particles = m.particles.filter(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.1;
+                p.life -= 0.03;
+                return p.life > 0;
+            });
+
+            // Animation
+            m.animTimer += 0.1;
+            if (m.animTimer >= 1) {
+                m.animTimer = 0;
+                m.animFrame = (m.animFrame + 1) % 4;
+            }
+        }
+
+        function drawMascot() {
+            if (mascot.state === 'playing') return;
+
+            const ctx = mascotCtx;
+            ctx.clearRect(0, 0, mascotCanvas.width, mascotCanvas.height);
+
+            const m = mascot;
+
+            // Draw particles
+            m.particles.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3 * p.life, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            });
+
+            // Draw the mascot (same stick figure style as platformer)
+            ctx.shadowColor = '#8b5cf6';
+            ctx.shadowBlur = 12;
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            const headY = m.y + 10;
+            const bodyTop = m.y + 16;
+            const bodyBottom = m.y + 28;
+            const centerX = m.x + m.width / 2;
+
+            // Head
+            ctx.beginPath();
+            ctx.arc(centerX, headY, 6, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+            ctx.stroke();
+
+            // Body
+            ctx.beginPath();
+            ctx.moveTo(centerX, bodyTop);
+            ctx.lineTo(centerX, bodyBottom);
+            ctx.stroke();
+
+            // Animation offsets
+            const isMoving = Math.abs(m.vx) > 0.5 || !m.onGround;
+            const walkOffset = m.onGround && Math.abs(m.vx) > 0.5 ? Math.sin(m.animTimer * Math.PI * 2) * 4 : 0;
+            const jumpArmOffset = !m.onGround ? -8 : 0;
+
+            // Arms
+            ctx.beginPath();
+            ctx.moveTo(centerX, bodyTop + 4);
+            ctx.lineTo(centerX - 9, bodyTop + 12 + walkOffset + jumpArmOffset);
+            ctx.moveTo(centerX, bodyTop + 4);
+            ctx.lineTo(centerX + 9, bodyTop + 12 - walkOffset + jumpArmOffset);
+            ctx.stroke();
+
+            // Legs
+            ctx.beginPath();
+            ctx.moveTo(centerX, bodyBottom);
+            ctx.lineTo(centerX - 8, m.y + m.height - walkOffset);
+            ctx.moveTo(centerX, bodyBottom);
+            ctx.lineTo(centerX + 8, m.y + m.height + walkOffset);
+            ctx.stroke();
+
+            ctx.shadowBlur = 0;
+
+            // Draw faint platform indicators (optional - very subtle)
+            ctx.globalAlpha = 0.08;
+            mascotPlatforms.forEach(plat => {
+                ctx.fillStyle = '#8b5cf6';
+                ctx.fillRect(plat.x, plat.y, plat.width, 4);
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function mascotLoop() {
+            updateMascot();
+            drawMascot();
+            requestAnimationFrame(mascotLoop);
+        }
+
+        // Initialize mascot
+        initMascotPlatforms();
+        mascotLoop();
+
+        window.addEventListener('resize', () => {
+            initMascotPlatforms();
+        });
+
+        // Function to trigger mascot falling (called on jackpot)
+        function mascotFallIntoGame() {
+            mascot.state = 'falling';
+            mascot.vy = 2;
+            mascot.vx = (Math.random() - 0.5) * 3;
+        }
+
+        // Function to trigger mascot rising (called when platformer won)
+        function mascotRiseFromGame() {
+            mascot.state = 'rising';
+            mascot.x = window.innerWidth / 2 - mascot.width / 2;
+            mascot.y = window.innerHeight + 50;
+            mascot.vy = -5;
+        }
+
         // Poll prank - No button runs away and spawns thumbs down
         const noBtn = document.getElementById('noBtn');
         const yesBtn = document.getElementById('yesBtn');
@@ -1748,10 +2089,15 @@
                 setTimeout(() => createCornerConfetti(), i * 50);
             }
 
-            // Start the platformer game after celebration
+            // Start the mascot falling animation, which will trigger the platformer
             setTimeout(() => {
-                startPlatformerGame();
+                mascotFallIntoGame();
             }, 2500);
+        }
+
+        // Called when mascot finishes falling
+        function actuallyStartPlatformer() {
+            startPlatformerGame();
         }
 
         function createCornerConfetti() {
@@ -2209,11 +2555,11 @@
         };
 
         // Physics constants
-        const GRAVITY = 0.55;
-        const JUMP_FORCE = -14;
-        const MOVE_SPEED = 4;
-        const FRICTION = 0.82;
-        const MAX_FALL_SPEED = 14;
+        const GRAVITY = 0.4;
+        const JUMP_FORCE = -13;
+        const MOVE_SPEED = 3.5;
+        const FRICTION = 0.78;
+        const MAX_FALL_SPEED = 12;
 
         // Input state
         const keys = {
@@ -2390,8 +2736,12 @@
                 document.querySelector('.poker-card'),
                 document.querySelector('.floating-objects'),
                 document.querySelector('.aurora'),
-                document.querySelector('#stars')
+                document.querySelector('#stars'),
+                document.querySelector('#mascot')
             ].filter(el => el);
+
+            // Set mascot to playing state (hides it)
+            mascot.state = 'playing';
 
             // Add slide-up animation to main content
             mainElements.forEach(el => {
@@ -2460,11 +2810,11 @@
 
             // Horizontal movement - lower acceleration for less sensitivity
             if (keys.left) {
-                p.vx -= 0.6;
+                p.vx -= 0.35;
                 p.facingRight = false;
             }
             if (keys.right) {
-                p.vx += 0.6;
+                p.vx += 0.35;
                 p.facingRight = true;
             }
 
@@ -2669,55 +3019,131 @@
                 }
             });
 
-            // Draw exit portal
+            // Draw epic exit portal
             const portal = game.exitPortal;
-            portal.pulsePhase += 0.05;
-            const pulseSize = Math.sin(portal.pulsePhase) * 10;
+            portal.pulsePhase += 0.03;
+            const pulseSize = Math.sin(portal.pulsePhase) * 15;
+            const rotationPhase = time * 0.5;
 
-            // Portal glow
+            // Outer energy ring glow
+            ctx.save();
+            ctx.shadowColor = '#fbbf24';
+            ctx.shadowBlur = 60;
+            for (let ring = 3; ring >= 0; ring--) {
+                const ringRadius = portal.radius + pulseSize + 30 + ring * 20;
+                const ringAlpha = 0.15 - ring * 0.03;
+                ctx.beginPath();
+                ctx.arc(portal.x, portal.y, ringRadius, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(251, 191, 36, ${ringAlpha})`;
+                ctx.lineWidth = 8 - ring * 2;
+                ctx.stroke();
+            }
+            ctx.shadowBlur = 0;
+            ctx.restore();
+
+            // Swirling energy particles around portal
+            ctx.save();
+            for (let i = 0; i < 20; i++) {
+                const particleAngle = rotationPhase + (i / 20) * Math.PI * 2;
+                const particleDist = portal.radius + 20 + Math.sin(time * 3 + i) * 15;
+                const px = portal.x + Math.cos(particleAngle) * particleDist;
+                const py = portal.y + Math.sin(particleAngle) * particleDist;
+                const particleSize = 3 + Math.sin(time * 5 + i * 0.5) * 2;
+
+                ctx.beginPath();
+                ctx.arc(px, py, particleSize, 0, Math.PI * 2);
+                ctx.fillStyle = i % 2 === 0 ? '#fbbf24' : '#fff';
+                ctx.globalAlpha = 0.6 + Math.sin(time * 4 + i) * 0.3;
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+            ctx.restore();
+
+            // Portal outer glow
             const portalGlow = ctx.createRadialGradient(
                 portal.x, portal.y, 0,
-                portal.x, portal.y, portal.radius + pulseSize + 40
+                portal.x, portal.y, portal.radius + pulseSize + 60
             );
-            portalGlow.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
-            portalGlow.addColorStop(0.3, 'rgba(251, 191, 36, 0.6)');
-            portalGlow.addColorStop(0.6, 'rgba(139, 92, 246, 0.3)');
+            portalGlow.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+            portalGlow.addColorStop(0.2, 'rgba(255, 230, 150, 0.8)');
+            portalGlow.addColorStop(0.4, 'rgba(251, 191, 36, 0.5)');
+            portalGlow.addColorStop(0.7, 'rgba(139, 92, 246, 0.2)');
             portalGlow.addColorStop(1, 'transparent');
 
             ctx.beginPath();
-            ctx.arc(portal.x, portal.y, portal.radius + pulseSize + 40, 0, Math.PI * 2);
+            ctx.arc(portal.x, portal.y, portal.radius + pulseSize + 60, 0, Math.PI * 2);
             ctx.fillStyle = portalGlow;
             ctx.fill();
 
-            // Portal core
-            ctx.beginPath();
-            ctx.arc(portal.x, portal.y, portal.radius + pulseSize, 0, Math.PI * 2);
-            const coreGrad = ctx.createRadialGradient(
-                portal.x, portal.y, 0,
-                portal.x, portal.y, portal.radius + pulseSize
-            );
+            // Portal core with spinning gradient
+            ctx.save();
+            ctx.translate(portal.x, portal.y);
+            ctx.rotate(rotationPhase * 0.3);
+
+            const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, portal.radius + pulseSize);
             coreGrad.addColorStop(0, '#fff');
-            coreGrad.addColorStop(0.5, '#fbbf24');
-            coreGrad.addColorStop(1, '#8b5cf6');
+            coreGrad.addColorStop(0.3, '#fffbeb');
+            coreGrad.addColorStop(0.6, '#fbbf24');
+            coreGrad.addColorStop(0.85, '#f59e0b');
+            coreGrad.addColorStop(1, '#d97706');
+
+            ctx.beginPath();
+            ctx.arc(0, 0, portal.radius + pulseSize, 0, Math.PI * 2);
             ctx.fillStyle = coreGrad;
+            ctx.shadowColor = '#fbbf24';
+            ctx.shadowBlur = 40;
             ctx.fill();
 
-            // Light rays from portal
+            // Inner bright core
+            const innerGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, portal.radius * 0.5);
+            innerGrad.addColorStop(0, '#fff');
+            innerGrad.addColorStop(0.5, 'rgba(255,255,255,0.8)');
+            innerGrad.addColorStop(1, 'rgba(255,255,200,0.3)');
+            ctx.beginPath();
+            ctx.arc(0, 0, portal.radius * 0.5 + pulseSize * 0.3, 0, Math.PI * 2);
+            ctx.fillStyle = innerGrad;
+            ctx.fill();
+
+            ctx.restore();
+
+            // Dynamic light rays
             ctx.save();
-            ctx.globalAlpha = 0.3;
-            for (let i = 0; i < 8; i++) {
-                const angle = (time + i * Math.PI / 4) % (Math.PI * 2);
+            for (let i = 0; i < 12; i++) {
+                const rayAngle = rotationPhase * 0.5 + (i / 12) * Math.PI * 2;
+                const rayLength = 120 + Math.sin(time * 2.5 + i * 0.8) * 60;
+                const rayWidth = 4 + Math.sin(time * 3 + i) * 2;
+
+                const rayGrad = ctx.createLinearGradient(
+                    portal.x, portal.y,
+                    portal.x + Math.cos(rayAngle) * rayLength,
+                    portal.y + Math.sin(rayAngle) * rayLength
+                );
+                rayGrad.addColorStop(0, 'rgba(255, 200, 100, 0.6)');
+                rayGrad.addColorStop(0.5, 'rgba(251, 191, 36, 0.3)');
+                rayGrad.addColorStop(1, 'transparent');
+
                 ctx.beginPath();
                 ctx.moveTo(portal.x, portal.y);
-                const rayLength = 150 + Math.sin(time * 2 + i) * 50;
                 ctx.lineTo(
-                    portal.x + Math.cos(angle) * rayLength,
-                    portal.y + Math.sin(angle) * rayLength
+                    portal.x + Math.cos(rayAngle) * rayLength,
+                    portal.y + Math.sin(rayAngle) * rayLength
                 );
-                ctx.strokeStyle = '#fbbf24';
-                ctx.lineWidth = 3;
+                ctx.strokeStyle = rayGrad;
+                ctx.lineWidth = rayWidth;
+                ctx.lineCap = 'round';
                 ctx.stroke();
             }
+            ctx.restore();
+
+            // "EXIT" text floating above portal
+            ctx.save();
+            ctx.font = 'bold 16px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#fff';
+            ctx.shadowColor = '#fbbf24';
+            ctx.shadowBlur = 15;
+            ctx.globalAlpha = 0.7 + Math.sin(time * 2) * 0.2;
+            ctx.fillText('EXIT', portal.x, portal.y - portal.radius - 30 - pulseSize);
             ctx.restore();
 
             // Draw platforms
@@ -2899,19 +3325,29 @@
         }
 
         function endGame() {
-            // Victory particles
-            for (let i = 0; i < 50; i++) {
+            // Big victory particles burst
+            for (let i = 0; i < 80; i++) {
                 game.particles.push({
                     x: game.exitPortal.x,
                     y: game.exitPortal.y,
-                    vx: (Math.random() - 0.5) * 15,
-                    vy: (Math.random() - 0.5) * 15,
-                    life: 1.5,
-                    color: Math.random() > 0.5 ? '#fbbf24' : '#8b5cf6'
+                    vx: (Math.random() - 0.5) * 20,
+                    vy: (Math.random() - 0.5) * 20,
+                    life: 2,
+                    color: ['#fbbf24', '#8b5cf6', '#10b981', '#ec4899', '#fff'][Math.floor(Math.random() * 5)]
                 });
             }
 
-            // Slide website back down after a moment
+            // Flash the screen white briefly
+            const winFlash = document.createElement('div');
+            winFlash.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: white; z-index: 3000; pointer-events: none;
+                animation: winFlashAnim 0.5s ease-out forwards;
+            `;
+            document.body.appendChild(winFlash);
+            setTimeout(() => winFlash.remove(), 500);
+
+            // Victory animation delay, then slide back
             setTimeout(() => {
                 // Get main elements to slide back
                 const mainElements = [
@@ -2921,18 +3357,22 @@
                     document.querySelector('.poker-card'),
                     document.querySelector('.floating-objects'),
                     document.querySelector('.aurora'),
-                    document.querySelector('#stars')
+                    document.querySelector('#stars'),
+                    document.querySelector('#mascot')
                 ].filter(el => el);
 
                 // Slide website back down
                 mainElements.forEach(el => {
-                    el.style.transition = 'transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
+                    el.style.transition = 'transform 1.5s cubic-bezier(0.4, 0, 0.2, 1)';
                     el.style.transform = 'translateY(0)';
                 });
 
                 // Fade out game canvas
-                gameCanvas.style.transition = 'opacity 1s ease';
+                gameCanvas.style.transition = 'opacity 1.2s ease';
                 gameCanvas.style.opacity = '0';
+
+                // Start mascot rising animation
+                mascotRiseFromGame();
 
                 // Clean up after slide completes
                 setTimeout(() => {

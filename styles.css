@@ -601,149 +601,171 @@ body {
     75% { transform: translate(-15px, -10px); }
 }
 
-/* Nebula Galaxy - more organic/space-like */
+/* Eye-shaped Nebula (like Helix/Cat's Eye) */
 .spiral-galaxy {
     position: fixed;
-    width: 160px;
-    height: 140px;
-    top: 12%;
-    right: 12%;
+    width: 180px;
+    height: 180px;
+    top: 10%;
+    right: 10%;
     pointer-events: none;
     z-index: 5;
 }
 
-/* Nebula clouds */
-.nebula-cloud {
+/* Outer ring - teal/cyan edge */
+.nebula-cloud.cloud-1 {
     position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
     border-radius: 50%;
-    filter: blur(8px);
-    opacity: 0.5;
-    animation: driftCloud 20s ease-in-out infinite;
-}
-
-.cloud-1 {
-    width: 100px;
-    height: 60px;
-    top: 20%;
-    left: 10%;
-    background: radial-gradient(ellipse at 30% 50%,
-        rgba(139, 92, 246, 0.6) 0%,
-        rgba(180, 130, 255, 0.3) 40%,
-        transparent 70%
-    );
-    animation-delay: 0s;
-}
-
-.cloud-2 {
-    width: 80px;
-    height: 50px;
-    top: 50%;
-    left: 50%;
-    background: radial-gradient(ellipse at 60% 40%,
-        rgba(100, 150, 255, 0.5) 0%,
-        rgba(150, 180, 255, 0.3) 50%,
+    background: radial-gradient(ellipse 100% 60% at 50% 50%,
+        transparent 40%,
+        rgba(0, 200, 200, 0.15) 50%,
+        rgba(0, 180, 180, 0.3) 60%,
+        rgba(0, 150, 150, 0.2) 70%,
         transparent 80%
     );
-    animation-delay: -7s;
-    animation-duration: 25s;
+    filter: blur(3px);
+    opacity: 0.9;
+    animation: pulseNebula 8s ease-in-out infinite;
 }
 
-.cloud-3 {
-    width: 70px;
-    height: 90px;
-    top: 30%;
-    left: 60%;
-    background: radial-gradient(ellipse at 50% 70%,
-        rgba(236, 72, 153, 0.4) 0%,
-        rgba(255, 150, 200, 0.2) 50%,
-        transparent 80%
+/* Middle ring - purple/magenta */
+.nebula-cloud.cloud-2 {
+    position: absolute;
+    width: 75%;
+    height: 75%;
+    top: 12.5%;
+    left: 12.5%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse 100% 70% at 50% 50%,
+        transparent 30%,
+        rgba(180, 80, 200, 0.2) 45%,
+        rgba(200, 100, 220, 0.4) 55%,
+        rgba(160, 60, 180, 0.25) 70%,
+        transparent 85%
     );
-    animation-delay: -12s;
-    animation-duration: 28s;
+    filter: blur(4px);
+    opacity: 0.85;
+    animation: pulseNebula 6s ease-in-out infinite reverse;
 }
 
-.cloud-4 {
-    width: 60px;
-    height: 40px;
-    top: 60%;
-    left: 20%;
-    background: radial-gradient(ellipse,
-        rgba(59, 130, 246, 0.5) 0%,
-        rgba(100, 160, 255, 0.2) 60%,
+/* Inner ring - pink/red hot gas */
+.nebula-cloud.cloud-3 {
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    top: 25%;
+    left: 25%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse 100% 80% at 50% 50%,
+        transparent 20%,
+        rgba(255, 100, 150, 0.3) 40%,
+        rgba(255, 80, 120, 0.5) 55%,
+        rgba(200, 60, 100, 0.3) 70%,
         transparent 90%
     );
-    animation-delay: -5s;
-    animation-duration: 22s;
+    filter: blur(2px);
+    opacity: 0.9;
+    animation: pulseNebula 5s ease-in-out infinite;
 }
 
-/* Star dust particles */
+/* Central "eye" - bright core */
+.nebula-cloud.cloud-4 {
+    position: absolute;
+    width: 25%;
+    height: 25%;
+    top: 37.5%;
+    left: 37.5%;
+    border-radius: 50%;
+    background: radial-gradient(circle,
+        rgba(255, 255, 255, 0.9) 0%,
+        rgba(200, 220, 255, 0.7) 30%,
+        rgba(150, 180, 255, 0.4) 60%,
+        transparent 100%
+    );
+    filter: blur(1px);
+    opacity: 1;
+    box-shadow: 0 0 20px 5px rgba(200, 220, 255, 0.5),
+                0 0 40px 10px rgba(150, 180, 255, 0.3);
+    animation: pulseCore 3s ease-in-out infinite;
+}
+
+@keyframes pulseNebula {
+    0%, 100% { transform: scale(1); opacity: 0.85; }
+    50% { transform: scale(1.05); opacity: 1; }
+}
+
+@keyframes pulseCore {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 20px 5px rgba(200, 220, 255, 0.5), 0 0 40px 10px rgba(150, 180, 255, 0.3); }
+    50% { transform: scale(1.1); box-shadow: 0 0 30px 8px rgba(200, 220, 255, 0.7), 0 0 50px 15px rgba(150, 180, 255, 0.4); }
+}
+
+/* Star dust particles scattered through nebula */
 .star-dust {
     position: absolute;
     width: 100%;
     height: 100%;
     background-image:
-        radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.9) 0%, transparent 100%),
-        radial-gradient(1px 1px at 70% 20%, rgba(255,255,255,0.7) 0%, transparent 100%),
-        radial-gradient(1px 1px at 40% 70%, rgba(255,255,255,0.8) 0%, transparent 100%),
-        radial-gradient(1px 1px at 80% 60%, rgba(255,255,255,0.6) 0%, transparent 100%),
-        radial-gradient(2px 2px at 30% 50%, rgba(200,180,255,0.9) 0%, transparent 100%),
-        radial-gradient(1px 1px at 60% 40%, rgba(255,255,255,0.7) 0%, transparent 100%),
-        radial-gradient(1px 1px at 15% 60%, rgba(255,255,255,0.8) 0%, transparent 100%),
-        radial-gradient(2px 2px at 85% 35%, rgba(180,200,255,0.7) 0%, transparent 100%),
-        radial-gradient(1px 1px at 50% 15%, rgba(255,255,255,0.8) 0%, transparent 100%),
-        radial-gradient(1px 1px at 25% 85%, rgba(255,255,255,0.7) 0%, transparent 100%),
-        radial-gradient(2px 2px at 75% 75%, rgba(255,220,255,0.8) 0%, transparent 100%),
-        radial-gradient(1px 1px at 10% 45%, rgba(255,255,255,0.6) 0%, transparent 100%);
+        radial-gradient(1px 1px at 25% 35%, rgba(255,255,255,0.9) 0%, transparent 100%),
+        radial-gradient(1px 1px at 75% 30%, rgba(255,255,255,0.8) 0%, transparent 100%),
+        radial-gradient(1px 1px at 35% 70%, rgba(255,255,255,0.85) 0%, transparent 100%),
+        radial-gradient(1px 1px at 70% 65%, rgba(255,255,255,0.7) 0%, transparent 100%),
+        radial-gradient(2px 2px at 50% 20%, rgba(200,220,255,0.9) 0%, transparent 100%),
+        radial-gradient(1px 1px at 20% 55%, rgba(255,255,255,0.75) 0%, transparent 100%),
+        radial-gradient(1px 1px at 80% 50%, rgba(255,255,255,0.8) 0%, transparent 100%),
+        radial-gradient(2px 2px at 45% 80%, rgba(255,200,220,0.85) 0%, transparent 100%),
+        radial-gradient(1px 1px at 60% 25%, rgba(255,255,255,0.7) 0%, transparent 100%),
+        radial-gradient(1px 1px at 30% 45%, rgba(200,255,255,0.8) 0%, transparent 100%),
+        radial-gradient(2px 2px at 55% 55%, rgba(255,220,255,0.75) 0%, transparent 100%),
+        radial-gradient(1px 1px at 40% 30%, rgba(255,255,255,0.65) 0%, transparent 100%);
     animation: twinkleStarDust 4s ease-in-out infinite;
 }
 
 .star-dust-2 {
     background-image:
-        radial-gradient(1px 1px at 55% 25%, rgba(255,255,255,0.8) 0%, transparent 100%),
-        radial-gradient(1px 1px at 35% 55%, rgba(255,255,255,0.7) 0%, transparent 100%),
-        radial-gradient(2px 2px at 65% 45%, rgba(220,200,255,0.9) 0%, transparent 100%),
-        radial-gradient(1px 1px at 45% 35%, rgba(255,255,255,0.6) 0%, transparent 100%),
-        radial-gradient(1px 1px at 90% 25%, rgba(255,255,255,0.8) 0%, transparent 100%),
-        radial-gradient(2px 2px at 15% 75%, rgba(200,220,255,0.8) 0%, transparent 100%),
-        radial-gradient(1px 1px at 75% 85%, rgba(255,255,255,0.7) 0%, transparent 100%),
-        radial-gradient(1px 1px at 5% 15%, rgba(255,255,255,0.6) 0%, transparent 100%),
-        radial-gradient(2px 2px at 50% 90%, rgba(255,200,220,0.7) 0%, transparent 100%),
-        radial-gradient(1px 1px at 85% 50%, rgba(255,255,255,0.8) 0%, transparent 100%);
+        radial-gradient(1px 1px at 65% 40%, rgba(255,255,255,0.85) 0%, transparent 100%),
+        radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.75) 0%, transparent 100%),
+        radial-gradient(2px 2px at 50% 45%, rgba(180,200,255,0.9) 0%, transparent 100%),
+        radial-gradient(1px 1px at 75% 70%, rgba(255,255,255,0.7) 0%, transparent 100%),
+        radial-gradient(1px 1px at 20% 25%, rgba(255,255,255,0.8) 0%, transparent 100%),
+        radial-gradient(2px 2px at 85% 35%, rgba(255,180,200,0.85) 0%, transparent 100%),
+        radial-gradient(1px 1px at 45% 75%, rgba(255,255,255,0.7) 0%, transparent 100%),
+        radial-gradient(1px 1px at 15% 45%, rgba(200,255,220,0.75) 0%, transparent 100%),
+        radial-gradient(2px 2px at 60% 15%, rgba(220,200,255,0.8) 0%, transparent 100%),
+        radial-gradient(1px 1px at 40% 55%, rgba(255,255,255,0.65) 0%, transparent 100%);
     animation: twinkleStarDust 5s ease-in-out infinite reverse;
     animation-delay: -2s;
 }
 
+/* Outer glow for the nebula */
 .galaxy-glow {
     position: absolute;
-    width: 140px;
-    height: 120px;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    width: 200%;
+    height: 200%;
+    top: -50%;
+    left: -50%;
     border-radius: 50%;
     background: radial-gradient(ellipse,
-        rgba(139, 92, 246, 0.12) 0%,
-        rgba(100, 150, 255, 0.08) 30%,
-        rgba(200, 150, 255, 0.05) 50%,
+        rgba(100, 180, 200, 0.08) 0%,
+        rgba(180, 100, 200, 0.05) 30%,
+        rgba(200, 80, 150, 0.03) 50%,
         transparent 70%
     );
-    animation: pulseGalaxy 8s ease-in-out infinite;
-}
-
-@keyframes driftCloud {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33% { transform: translate(8px, -5px) scale(1.05); }
-    66% { transform: translate(-5px, 8px) scale(0.95); }
+    animation: pulseGlow 10s ease-in-out infinite;
+    pointer-events: none;
 }
 
 @keyframes twinkleStarDust {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 0.9; }
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
 }
 
-@keyframes pulseGalaxy {
-    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
-    50% { transform: translate(-50%, -50%) scale(1.08); opacity: 0.7; }
+@keyframes pulseGlow {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.1); opacity: 0.8; }
 }
 
 @keyframes floatGalaxy {

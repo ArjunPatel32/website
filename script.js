@@ -986,9 +986,9 @@ if (spiralGalaxy) {
         offsetY: 0,
         targetOffsetX: 0,
         targetOffsetY: 0,
-        maxOffset: 500, // Max pixels the nebula can drift
-        pushRadius: 400, // How close mouse needs to be to push nebula
-        pushStrength: 1.2 // How strongly it gets pushed
+        maxOffset: 1500, // Max pixels the nebula can drift
+        pushRadius: 600, // How close mouse needs to be to push nebula
+        pushStrength: 1.5 // How strongly it gets pushed
     };
 
     // Get nebula center position

@@ -1957,13 +1957,13 @@
 
             // Animate the black hole expansion
             let scale = 1;
-            const maxScale = 25; // Scale to fill screen
+            const maxScale = 80; // Scale big enough so event horizon covers entire screen
             const growInterval = setInterval(() => {
-                scale += 0.4;
+                scale += 1.2;
                 expandedBlackHole.style.transform = `translate(-50%, -50%) scale(${scale})`;
 
                 // Start blackout when black hole gets big
-                if (scale > 10) {
+                if (scale > 30) {
                     screenBlackout.classList.add('active');
                 }
 
@@ -1981,20 +1981,20 @@
         function collapseAndExplode(originalTransforms) {
             const bhCenter = storedBhCenter;
 
-            // Create singularity point at exact center
+            // Create singularity point at original black hole center
             const singularity = document.createElement('div');
             singularity.className = 'singularity';
-            singularity.style.left = (window.innerWidth / 2) + 'px';
-            singularity.style.top = (window.innerHeight / 2) + 'px';
+            singularity.style.left = bhCenter.x + 'px';
+            singularity.style.top = bhCenter.y + 'px';
             document.body.appendChild(singularity);
 
-            // Collapse the expanded black hole to center
-            let scale = 25;
-            expandedBlackHole.style.left = (window.innerWidth / 2) + 'px';
-            expandedBlackHole.style.top = (window.innerHeight / 2) + 'px';
+            // Collapse the expanded black hole back to original position
+            let scale = 80;
+            expandedBlackHole.style.left = bhCenter.x + 'px';
+            expandedBlackHole.style.top = bhCenter.y + 'px';
 
             const collapseInterval = setInterval(() => {
-                scale -= 0.8;
+                scale -= 2.5;
                 expandedBlackHole.style.transform = `translate(-50%, -50%) scale(${Math.max(0, scale)})`;
 
                 if (scale <= 0) {
@@ -2013,14 +2013,15 @@
         }
 
         function bigBangExplosion(originalTransforms) {
-            const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
+            const bhCenter = storedBhCenter;
+            const centerX = bhCenter.x;
+            const centerY = bhCenter.y;
 
             // Flash effect
             const flash = document.createElement('div');
             flash.className = 'big-bang-flash';
-            flash.style.setProperty('--bh-x', '50%');
-            flash.style.setProperty('--bh-y', '50%');
+            flash.style.setProperty('--bh-x', (centerX / window.innerWidth * 100) + '%');
+            flash.style.setProperty('--bh-y', (centerY / window.innerHeight * 100) + '%');
             document.body.appendChild(flash);
 
             // Create explosion particles

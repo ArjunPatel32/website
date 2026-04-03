@@ -9,8 +9,11 @@ const reel3 = document.getElementById('reel3');
 const slotResult = document.getElementById('slotResult');
 
 let isSpinning = false;
+let spinCount = 0;
+let guaranteedJackpotSpin = 3 + Math.floor(Math.random() * 3); // Random spin 3, 4, or 5
 
 spinBtn.addEventListener('click', () => {
+    spinCount++;
     if (isSpinning) return;
     isSpinning = true;
     spinBtn.disabled = true;
@@ -44,8 +47,9 @@ spinBtn.addEventListener('click', () => {
         clearInterval(spinInterval);
         reel3.classList.remove('spinning');
 
-        // ~20% chance to force a jackpot
-        const forceJackpot = Math.random() < 0.2;
+        // Guarantee jackpot on spin 3-5, otherwise 20% chance after that
+        const isGuaranteedSpin = spinCount === guaranteedJackpotSpin;
+        const forceJackpot = isGuaranteedSpin || (spinCount > 5 && Math.random() < 0.2);
 
         if (forceJackpot) {
             const jackpotSymbol = symbols[Math.floor(Math.random() * symbols.length)];
@@ -61,8 +65,8 @@ spinBtn.addEventListener('click', () => {
         if (results[0] === results[1] && results[1] === results[2]) {
             triggerJackpot();
         } else if (results[0] === results[1] || results[1] === results[2] || results[0] === results[2]) {
-            slotResult.textContent = '\u2728 Nice! \u2728';
-            slotResult.style.color = '#10b981';
+            slotResult.textContent = 'So close!';
+            slotResult.style.color = '#f59e0b';
             slotResult.classList.remove('jackpot');
         } else {
             slotResult.textContent = 'Try again!';

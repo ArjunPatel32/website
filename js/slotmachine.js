@@ -84,13 +84,6 @@ function triggerJackpot() {
     document.body.appendChild(flash);
     setTimeout(() => flash.remove(), 500);
 
-    // Big jackpot text
-    const jackpotText = document.createElement('div');
-    jackpotText.className = 'jackpot-text';
-    jackpotText.textContent = '\uD83D\uDCB0 JACKPOT! \uD83D\uDCB0';
-    document.body.appendChild(jackpotText);
-    setTimeout(() => jackpotText.remove(), 2000);
-
     // Slot machine glow effect
     slotMachine.classList.add('winning');
     setTimeout(() => slotMachine.classList.remove('winning'), 3000);
@@ -100,24 +93,56 @@ function triggerJackpot() {
     slotResult.style.color = '#fbbf24';
     slotResult.classList.add('jackpot');
 
-    // Massive confetti explosion - multiple waves
-    for (let wave = 0; wave < 3; wave++) {
-        setTimeout(() => {
-            for (let i = 0; i < 40; i++) {
-                createSlotConfetti();
-            }
-        }, wave * 300);
+    // Confetti burst (smaller, quicker)
+    for (let i = 0; i < 30; i++) {
+        createSlotConfetti();
     }
 
-    // Extra confetti from corners
-    for (let i = 0; i < 20; i++) {
-        setTimeout(() => createCornerConfetti(), i * 50);
-    }
+    // Start dimming the screen (except mascot) almost immediately
+    setTimeout(() => {
+        createDimOverlayAndFall();
+    }, 600);
+}
 
-    // Create trapdoor effect and start falling animation
+function createDimOverlayAndFall() {
+    // Create a dark overlay that dims everything except the mascot
+    const dimOverlay = document.createElement('div');
+    dimOverlay.className = 'jackpot-dim-overlay';
+    dimOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0);
+        z-index: 1400;
+        pointer-events: none;
+        transition: background 0.8s ease;
+    `;
+    document.body.appendChild(dimOverlay);
+
+    // Make sure the mascot canvas is above the dim overlay
+    const mascotCanvas = document.getElementById('mascot');
+    mascotCanvas.style.zIndex = '1500';
+
+    // Gradually dim the screen
+    requestAnimationFrame(() => {
+        dimOverlay.style.background = 'rgba(0, 0, 0, 0.85)';
+    });
+
+    // After dimming, create trapdoor and drop
     setTimeout(() => {
         createTrapdoorAndFall();
-    }, 2000);
+
+        // Remove dim overlay when mascot falls through
+        setTimeout(() => {
+            dimOverlay.style.background = 'rgba(0, 0, 0, 0)';
+            setTimeout(() => {
+                dimOverlay.remove();
+                mascotCanvas.style.zIndex = '';
+            }, 800);
+        }, 1500);
+    }, 800);
 }
 
 function createTrapdoorAndFall() {

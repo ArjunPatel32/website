@@ -22,7 +22,10 @@ const mascot = {
     // Running state
     isRunning: false,
     runDirection: 1,
-    runTarget: 0
+    runTarget: 0,
+    runSpeed: 1.5,
+    runPauseTarget: null,
+    jumpWaitTarget: null
 };
 
 // Platforms for mascot to jump around on the main site
@@ -70,7 +73,8 @@ function initMascotPlatforms() {
 }
 
 const MASCOT_GRAVITY = 0.4;
-const MASCOT_RUN_SPEED = 1.5;
+const MASCOT_RUN_SPEED_MIN = 0.8;
+const MASCOT_RUN_SPEED_MAX = 2.0;
 
 function updateMascot() {
     if (mascot.state === 'playing') return;
@@ -83,8 +87,8 @@ function updateMascot() {
         if (m.onGround) {
             // Running on platform
             if (m.isRunning) {
-                m.animTimer += 0.25; // Faster animation when running
-                m.x += MASCOT_RUN_SPEED * m.runDirection;
+                m.animTimer += 0.10; // Slower, smoother running animation
+                m.x += m.runSpeed * m.runDirection;
                 m.facingRight = m.runDirection > 0;
 
                 // Check if reached target or platform edge
@@ -105,31 +109,49 @@ function updateMascot() {
                 m.waitTimer += 1;
                 m.animTimer += 0.05; // Slow idle animation
 
-                // After landing, start running after a short pause
-                if (m.waitTimer === 30) {
+                // After landing, start running after a random short pause
+                if (!m.runPauseTarget) {
+                    m.runPauseTarget = 20 + Math.floor(Math.random() * 40); // Random 20-60 frames before running
+                }
+                if (m.waitTimer === m.runPauseTarget) {
+                    m.runPauseTarget = null; // Reset for next time
+
                     // Decide to run left or right on the platform
                     const platCenter = currentPlat.x + currentPlat.width / 2;
                     const mascotCenter = m.x + m.width / 2;
 
-                    // Run toward a random spot on the platform
+                    // Run toward a random spot on the platform (not always the edge)
+                    const leftBound = currentPlat.x + 10;
+                    const rightBound = currentPlat.x + currentPlat.width - m.width - 10;
+
                     if (Math.random() > 0.5) {
                         m.runDirection = 1;
-                        m.runTarget = currentPlat.x + currentPlat.width - m.width - 10;
+                        // Random target between current position and right edge
+                        m.runTarget = m.x + 15 + Math.random() * (rightBound - m.x - 15);
                     } else {
                         m.runDirection = -1;
-                        m.runTarget = currentPlat.x + 10;
+                        // Random target between left edge and current position
+                        m.runTarget = leftBound + Math.random() * (m.x - leftBound - 15);
                     }
+
+                    // Random run speed each time
+                    m.runSpeed = MASCOT_RUN_SPEED_MIN + Math.random() * (MASCOT_RUN_SPEED_MAX - MASCOT_RUN_SPEED_MIN);
 
                     // Only run if there's enough space
                     const distToTarget = Math.abs(m.runTarget - m.x);
-                    if (distToTarget > 20) {
+                    if (distToTarget > 15) {
                         m.isRunning = true;
                     }
                 }
 
-                // Time to jump to next platform
-                if (m.waitTimer > 120) {
+                // Time to jump to next platform (random timing)
+                if (!m.jumpWaitTarget) {
+                    m.jumpWaitTarget = 100 + Math.floor(Math.random() * 150); // Random 100-250 frames before jumping
+                }
+                if (m.waitTimer > m.jumpWaitTarget) {
                     m.waitTimer = 0;
+                    m.jumpWaitTarget = null; // Reset for next landing
+                    m.runPauseTarget = null;
                     m.isRunning = false;
 
                     // Find reachable platforms
@@ -212,8 +234,8 @@ function updateMascot() {
                 }
             }
         } else {
-            // In air - animate faster
-            m.animTimer += 0.2;
+            // In air - gentle animation
+            m.animTimer += 0.08;
         }
 
         // Apply gravity when in air
@@ -266,7 +288,7 @@ function updateMascot() {
         m.vy += 0.5;
         m.y += m.vy;
         m.x += m.vx;
-        m.animTimer += 0.2;
+        m.animTimer += 0.08;
 
         if (Math.random() > 0.5) {
             m.particles.push({
@@ -287,7 +309,7 @@ function updateMascot() {
         m.vy -= 0.3;
         m.vy = Math.max(m.vy, -15);
         m.y += m.vy;
-        m.animTimer += 0.15;
+        m.animTimer += 0.06;
 
         const targetPlat = mascotPlatforms[0];
         const targetX = targetPlat.x + targetPlat.width / 2 - m.width / 2;

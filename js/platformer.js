@@ -310,7 +310,7 @@ function updatePlayer() {
         p.vy += GRAVITY * 0.8;
         p.vy = Math.min(p.vy, 15);
         p.y += p.vy;
-        p.animTimer += 0.2; // Animate legs while falling
+        p.animTimer += 0.08; // Slower leg animation while falling
 
         // Trail particles
         if (Math.random() > 0.6) {
@@ -383,7 +383,7 @@ function updatePlayer() {
 
     // Update animation timer
     if (Math.abs(p.vx) > 0.5 || !p.onGround) {
-        p.animTimer += 0.15;
+        p.animTimer += 0.08;
     }
 
     p.x += p.vx;
@@ -514,7 +514,7 @@ function updatePlayer() {
         }
     }
 
-    p.animTimer += 0.15;
+    p.animTimer += 0.08;
     if (p.animTimer >= 1) {
         p.animTimer = 0;
         p.animFrame = (p.animFrame + 1) % 4;

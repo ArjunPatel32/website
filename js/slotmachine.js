@@ -88,20 +88,60 @@ function triggerJackpot() {
     slotMachine.classList.add('winning');
     setTimeout(() => slotMachine.classList.remove('winning'), 3000);
 
-    // Update result text
+    // Update result text with animated jackpot
     slotResult.textContent = '\uD83C\uDF89 JACKPOT! \uD83C\uDF89';
     slotResult.style.color = '#fbbf24';
     slotResult.classList.add('jackpot');
+
+    // Quick jackpot banner animation on the slot machine
+    const jackpotBanner = document.createElement('div');
+    jackpotBanner.className = 'slot-jackpot-banner';
+    jackpotBanner.innerHTML = '\uD83D\uDCB0 JACKPOT! \uD83D\uDCB0';
+    jackpotBanner.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        font-size: 28px;
+        font-weight: bold;
+        color: #fbbf24;
+        text-shadow: 0 0 10px #fbbf24, 0 0 20px #f59e0b, 0 0 30px #d97706;
+        white-space: nowrap;
+        z-index: 10;
+        animation: jackpotPop 0.8s ease-out forwards;
+    `;
+    slotMachine.style.position = 'relative';
+    slotMachine.appendChild(jackpotBanner);
+
+    // Add the animation keyframes if not already present
+    if (!document.getElementById('jackpotPopKeyframes')) {
+        const style = document.createElement('style');
+        style.id = 'jackpotPopKeyframes';
+        style.textContent = `
+            @keyframes jackpotPop {
+                0% { transform: translate(-50%, -50%) scale(0) rotate(-10deg); opacity: 0; }
+                50% { transform: translate(-50%, -50%) scale(1.3) rotate(5deg); opacity: 1; }
+                70% { transform: translate(-50%, -50%) scale(1.1) rotate(-2deg); }
+                100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
 
     // Confetti burst (smaller, quicker)
     for (let i = 0; i < 30; i++) {
         createSlotConfetti();
     }
 
-    // Start dimming the screen (except mascot) almost immediately
+    // Remove banner and start dimming after quick animation
     setTimeout(() => {
+        jackpotBanner.style.animation = 'none';
+        jackpotBanner.style.transform = 'translate(-50%, -50%) scale(1)';
+        jackpotBanner.style.opacity = '0';
+        jackpotBanner.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => jackpotBanner.remove(), 300);
         createDimOverlayAndFall();
-    }, 600);
+    }, 1000);
 }
 
 function createDimOverlayAndFall() {

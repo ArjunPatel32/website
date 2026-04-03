@@ -39,8 +39,8 @@ document.addEventListener('mousemove', (e) => {
     const dy = e.clientY - bhCenter.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
 
-    const triggerDistance = 80;
-    const warningDistance = 1000;
+    const triggerDistance = 120;
+    const warningDistance = 400;
 
     // Update CSS variables for gradient positioning
     const bhXPercent = (bhCenter.x / window.innerWidth) * 100;
@@ -49,17 +49,33 @@ document.addEventListener('mousemove', (e) => {
     proximityWarningEl.style.setProperty('--bh-x', bhXPercent + '%');
     proximityWarningEl.style.setProperty('--bh-y', bhYPercent + '%');
 
-    // Proximity warning glow with r^2 falloff
+    // Proximity warning glow with steep falloff - super obvious effect
     if (distance < warningDistance && distance > triggerDistance) {
         const normalizedDist = (distance - triggerDistance) / (warningDistance - triggerDistance);
-        const intensity = Math.pow(1 - normalizedDist, 2);
-        proximityWarningEl.style.opacity = intensity;
+        const intensity = Math.pow(1 - normalizedDist, 3); // Steeper falloff
+        proximityWarningEl.style.opacity = Math.min(1, intensity * 1.5); // Boost intensity
+
+        // Screen shake and vignette intensify as you get closer
+        const shakeAmount = (1 - normalizedDist) * 3;
+        document.body.style.transform = `translate(${(Math.random() - 0.5) * shakeAmount}px, ${(Math.random() - 0.5) * shakeAmount}px)`;
+
+        // Pull cursor toward black hole visually (scale black hole)
+        const bhScale = 1 + (1 - normalizedDist) * 0.3;
+        blackHole.style.transform = `scale(${bhScale})`;
+
+        // Intense glow on black hole itself
+        const glowIntensity = (1 - normalizedDist) * 30;
+        blackHole.style.filter = `drop-shadow(0 0 ${glowIntensity}px #8b5cf6) drop-shadow(0 0 ${glowIntensity * 2}px #ec4899)`;
     } else {
         proximityWarningEl.style.opacity = 0;
+        document.body.style.transform = '';
+        blackHole.style.transform = '';
+        blackHole.style.filter = '';
     }
 
     // Trigger the suck-in!
     if (distance < triggerDistance) {
+        document.body.style.transform = '';
         triggerBlackHoleSuckIn(bhCenter, bhXPercent, bhYPercent);
     }
 });

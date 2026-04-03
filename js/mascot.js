@@ -15,16 +15,14 @@ const mascot = {
     facingRight: true,
     animFrame: 0,
     animTimer: 0,
-    state: 'looping', // 'looping', 'falling', 'playing', 'rising', 'landing', 'getting_up'
+    state: 'looping', // 'looping', 'falling', 'playing', 'rising'
     currentPlatformIndex: 0,
     waitTimer: 0,
     particles: [],
-    // Animation state for realistic movement
-    legPhase: 0,
-    jumpSquat: 0, // Squat amount when preparing to jump or landing
-    bodyStretch: 1, // Body stretch/compression
-    landingTimer: 0,
-    getUpTimer: 0
+    // Running state
+    isRunning: false,
+    runDirection: 1,
+    runTarget: 0
 };
 
 // Platforms for mascot to jump around on the main site
@@ -34,7 +32,6 @@ function initMascotPlatforms() {
     mascotCanvas.width = window.innerWidth;
     mascotCanvas.height = window.innerHeight;
 
-    // Create platforms around the edges and inside for variety
     const w = mascotCanvas.width;
     const h = mascotCanvas.height;
 
@@ -52,7 +49,7 @@ function initMascotPlatforms() {
         { x: w * 0.82, y: h * 0.7, width: 80 },
         { x: w * 0.6, y: h * 0.82, width: 85 },
         { x: w * 0.35, y: h * 0.78, width: 80 },
-        // Inner platforms for variety
+        // Inner platforms
         { x: w * 0.25, y: h * 0.5, width: 70 },
         { x: w * 0.4, y: h * 0.38, width: 75 },
         { x: w * 0.55, y: h * 0.45, width: 70 },
@@ -69,9 +66,11 @@ function initMascotPlatforms() {
     mascot.onGround = true;
     mascot.waitTimer = 0;
     mascot.state = 'looping';
+    mascot.isRunning = false;
 }
 
 const MASCOT_GRAVITY = 0.4;
+const MASCOT_RUN_SPEED = 1.5;
 
 function updateMascot() {
     if (mascot.state === 'playing') return;
@@ -82,151 +81,174 @@ function updateMascot() {
         const currentPlat = mascotPlatforms[m.currentPlatformIndex];
 
         if (m.onGround) {
-            m.waitTimer += 1;
+            // Running on platform
+            if (m.isRunning) {
+                m.animTimer += 0.25; // Faster animation when running
+                m.x += MASCOT_RUN_SPEED * m.runDirection;
+                m.facingRight = m.runDirection > 0;
 
-            // Animate leg idle movement when standing
-            m.legPhase += 0.02;
+                // Check if reached target or platform edge
+                const atLeftEdge = m.x <= currentPlat.x + 5;
+                const atRightEdge = m.x + m.width >= currentPlat.x + currentPlat.width - 5;
+                const reachedTarget = (m.runDirection > 0 && m.x >= m.runTarget) ||
+                                     (m.runDirection < 0 && m.x <= m.runTarget);
 
-            // Pre-jump squat animation
-            if (m.waitTimer > 100 && m.waitTimer < 120) {
-                m.jumpSquat = Math.sin((m.waitTimer - 100) / 20 * Math.PI) * 8;
-                m.bodyStretch = 1 - m.jumpSquat / 40;
-            }
+                if (atLeftEdge || atRightEdge || reachedTarget) {
+                    // Stop running, start wait timer for jump
+                    m.isRunning = false;
+                    m.vx = 0;
+                    m.waitTimer = 80; // Short pause before jumping
+                    // Clamp position to platform
+                    m.x = Math.max(currentPlat.x + 5, Math.min(m.x, currentPlat.x + currentPlat.width - m.width - 5));
+                }
+            } else {
+                m.waitTimer += 1;
+                m.animTimer += 0.05; // Slow idle animation
 
-            if (m.waitTimer > 120) {
-                m.waitTimer = 0;
-                m.jumpSquat = 0;
-                m.bodyStretch = 1;
+                // After landing, start running after a short pause
+                if (m.waitTimer === 30) {
+                    // Decide to run left or right on the platform
+                    const platCenter = currentPlat.x + currentPlat.width / 2;
+                    const mascotCenter = m.x + m.width / 2;
 
-                // Find reachable platforms
-                const currentCenter = { x: currentPlat.x + currentPlat.width / 2, y: currentPlat.y };
-                const maxJumpDist = 600;
-                const minJumpDist = 80;
-
-                const reachablePlatforms = mascotPlatforms
-                    .map((plat, idx) => {
-                        const platCenter = { x: plat.x + plat.width / 2, y: plat.y };
-                        const dist = Math.sqrt(
-                            Math.pow(platCenter.x - currentCenter.x, 2) +
-                            Math.pow(platCenter.y - currentCenter.y, 2)
-                        );
-                        const isPrevious = idx === m.previousPlatformIndex;
-                        return { plat, idx, dist, weight: isPrevious ? 0.15 : 1 };
-                    })
-                    .filter(p => p.idx !== m.currentPlatformIndex && p.dist >= minJumpDist && p.dist <= maxJumpDist);
-
-                let chosenIdx;
-                if (reachablePlatforms.length === 0) {
-                    const otherPlatforms = mascotPlatforms
-                        .map((p, idx) => ({ idx, weight: idx === m.previousPlatformIndex ? 0.15 : 1 }))
-                        .filter(p => p.idx !== m.currentPlatformIndex);
-                    const totalWeight = otherPlatforms.reduce((sum, p) => sum + p.weight, 0);
-                    let rand = Math.random() * totalWeight;
-                    for (const p of otherPlatforms) {
-                        rand -= p.weight;
-                        if (rand <= 0) { chosenIdx = p.idx; break; }
+                    // Run toward a random spot on the platform
+                    if (Math.random() > 0.5) {
+                        m.runDirection = 1;
+                        m.runTarget = currentPlat.x + currentPlat.width - m.width - 10;
+                    } else {
+                        m.runDirection = -1;
+                        m.runTarget = currentPlat.x + 10;
                     }
-                    if (chosenIdx === undefined) chosenIdx = otherPlatforms[0].idx;
-                } else {
-                    const totalWeight = reachablePlatforms.reduce((sum, p) => sum + p.weight, 0);
-                    let rand = Math.random() * totalWeight;
-                    for (const p of reachablePlatforms) {
-                        rand -= p.weight;
-                        if (rand <= 0) { chosenIdx = p.idx; break; }
+
+                    // Only run if there's enough space
+                    const distToTarget = Math.abs(m.runTarget - m.x);
+                    if (distToTarget > 20) {
+                        m.isRunning = true;
                     }
-                    if (chosenIdx === undefined) chosenIdx = reachablePlatforms[0].idx;
                 }
 
-                m.previousPlatformIndex = m.currentPlatformIndex;
-                m.currentPlatformIndex = chosenIdx;
+                // Time to jump to next platform
+                if (m.waitTimer > 120) {
+                    m.waitTimer = 0;
+                    m.isRunning = false;
 
-                const nextPlat = mascotPlatforms[m.currentPlatformIndex];
+                    // Find reachable platforms
+                    const currentCenter = { x: currentPlat.x + currentPlat.width / 2, y: currentPlat.y };
+                    const maxJumpDist = 600;
+                    const minJumpDist = 80;
 
-                // Calculate projectile motion
-                const startX = m.x + m.width / 2;
-                const startY = m.y + m.height;
-                const endX = nextPlat.x + nextPlat.width / 2;
-                const endY = nextPlat.y;
+                    const reachablePlatforms = mascotPlatforms
+                        .map((plat, idx) => {
+                            const platCenter = { x: plat.x + plat.width / 2, y: plat.y };
+                            const dist = Math.sqrt(
+                                Math.pow(platCenter.x - currentCenter.x, 2) +
+                                Math.pow(platCenter.y - currentCenter.y, 2)
+                            );
+                            const isPrevious = idx === m.previousPlatformIndex;
+                            return { plat, idx, dist, weight: isPrevious ? 0.15 : 1 };
+                        })
+                        .filter(p => p.idx !== m.currentPlatformIndex && p.dist >= minJumpDist && p.dist <= maxJumpDist);
 
-                const dx = endX - startX;
-                const dy = endY - startY;
+                    let chosenIdx;
+                    if (reachablePlatforms.length === 0) {
+                        const otherPlatforms = mascotPlatforms
+                            .map((p, idx) => ({ idx, weight: idx === m.previousPlatformIndex ? 0.15 : 1 }))
+                            .filter(p => p.idx !== m.currentPlatformIndex);
+                        const totalWeight = otherPlatforms.reduce((sum, p) => sum + p.weight, 0);
+                        let rand = Math.random() * totalWeight;
+                        for (const p of otherPlatforms) {
+                            rand -= p.weight;
+                            if (rand <= 0) { chosenIdx = p.idx; break; }
+                        }
+                        if (chosenIdx === undefined) chosenIdx = otherPlatforms[0].idx;
+                    } else {
+                        const totalWeight = reachablePlatforms.reduce((sum, p) => sum + p.weight, 0);
+                        let rand = Math.random() * totalWeight;
+                        for (const p of reachablePlatforms) {
+                            rand -= p.weight;
+                            if (rand <= 0) { chosenIdx = p.idx; break; }
+                        }
+                        if (chosenIdx === undefined) chosenIdx = reachablePlatforms[0].idx;
+                    }
 
-                const apexHeight = Math.min(startY, endY) - 120;
-                const rise = startY - apexHeight;
+                    m.previousPlatformIndex = m.currentPlatformIndex;
+                    m.currentPlatformIndex = chosenIdx;
 
-                const vy0 = -Math.sqrt(2 * MASCOT_GRAVITY * rise);
-                const discriminant = vy0 * vy0 + 2 * MASCOT_GRAVITY * dy;
-                const totalTime = (-vy0 + Math.sqrt(Math.max(0, discriminant))) / MASCOT_GRAVITY;
-                const vx0 = dx / Math.max(totalTime, 1);
+                    const nextPlat = mascotPlatforms[m.currentPlatformIndex];
 
-                m.vy = vy0;
-                m.vx = vx0;
-                m.onGround = false;
-                m.facingRight = dx > 0;
-                m.bodyStretch = 1.2; // Stretch when jumping
+                    // Calculate projectile motion
+                    const startX = m.x + m.width / 2;
+                    const startY = m.y + m.height;
+                    const endX = nextPlat.x + nextPlat.width / 2;
+                    const endY = nextPlat.y;
 
-                // Jump particles
-                for (let i = 0; i < 5; i++) {
-                    m.particles.push({
-                        x: m.x + m.width / 2,
-                        y: m.y + m.height,
-                        vx: (Math.random() - 0.5) * 4,
-                        vy: Math.random() * 2,
-                        life: 1,
-                        color: '#8b5cf6'
-                    });
+                    const dx = endX - startX;
+                    const dy = endY - startY;
+
+                    const apexHeight = Math.min(startY, endY) - 120;
+                    const rise = startY - apexHeight;
+
+                    const vy0 = -Math.sqrt(2 * MASCOT_GRAVITY * rise);
+                    const discriminant = vy0 * vy0 + 2 * MASCOT_GRAVITY * dy;
+                    const totalTime = (-vy0 + Math.sqrt(Math.max(0, discriminant))) / MASCOT_GRAVITY;
+                    const vx0 = dx / Math.max(totalTime, 1);
+
+                    m.vy = vy0;
+                    m.vx = vx0;
+                    m.onGround = false;
+                    m.facingRight = dx > 0;
+
+                    // Jump particles
+                    for (let i = 0; i < 5; i++) {
+                        m.particles.push({
+                            x: m.x + m.width / 2,
+                            y: m.y + m.height,
+                            vx: (Math.random() - 0.5) * 4,
+                            vy: Math.random() * 2,
+                            life: 1,
+                            color: '#8b5cf6'
+                        });
+                    }
                 }
             }
         } else {
-            // In air - animate legs cycling
-            m.legPhase += 0.15;
-
-            // Body compression/stretch based on velocity
-            if (m.vy < 0) {
-                m.bodyStretch = 1 + Math.min(Math.abs(m.vy) / 30, 0.15); // Stretch going up
-            } else {
-                m.bodyStretch = 1 - Math.min(m.vy / 30, 0.1); // Compress going down
-            }
+            // In air - animate faster
+            m.animTimer += 0.2;
         }
 
-        // Apply gravity
-        m.vy += MASCOT_GRAVITY;
-        m.vy = Math.min(m.vy, 12);
-
-        m.x += m.vx;
-        m.y += m.vy;
+        // Apply gravity when in air
+        if (!m.onGround) {
+            m.vy += MASCOT_GRAVITY;
+            m.vy = Math.min(m.vy, 12);
+            m.x += m.vx;
+            m.y += m.vy;
+        }
 
         // Platform collision
-        m.onGround = false;
-        const targetPlat = mascotPlatforms[m.currentPlatformIndex];
-        if (m.x + m.width > targetPlat.x && m.x < targetPlat.x + targetPlat.width) {
-            if (m.vy > 0 && m.y + m.height >= targetPlat.y && m.y + m.height < targetPlat.y + 25) {
-                m.y = targetPlat.y - m.height;
-                m.x = targetPlat.x + targetPlat.width / 2 - m.width / 2;
-                m.vy = 0;
-                m.vx = 0;
-                m.onGround = true;
-                m.jumpSquat = 6; // Landing squat
-                m.bodyStretch = 0.85; // Compress on landing
+        if (!m.onGround) {
+            const targetPlat = mascotPlatforms[m.currentPlatformIndex];
+            if (m.x + m.width > targetPlat.x && m.x < targetPlat.x + targetPlat.width) {
+                if (m.vy > 0 && m.y + m.height >= targetPlat.y && m.y + m.height < targetPlat.y + 25) {
+                    m.y = targetPlat.y - m.height;
+                    m.vy = 0;
+                    m.vx = 0;
+                    m.onGround = true;
+                    m.isRunning = false;
+                    m.waitTimer = 0;
 
-                // Landing particles
-                for (let i = 0; i < 3; i++) {
-                    m.particles.push({
-                        x: m.x + m.width / 2,
-                        y: m.y + m.height,
-                        vx: (Math.random() - 0.5) * 3,
-                        vy: -Math.random() * 2,
-                        life: 0.8,
-                        color: '#8b5cf6'
-                    });
+                    // Landing particles
+                    for (let i = 0; i < 3; i++) {
+                        m.particles.push({
+                            x: m.x + m.width / 2,
+                            y: m.y + m.height,
+                            vx: (Math.random() - 0.5) * 3,
+                            vy: -Math.random() * 2,
+                            life: 0.8,
+                            color: '#8b5cf6'
+                        });
+                    }
                 }
             }
-        }
-
-        // Recover from landing squat
-        if (m.onGround && m.jumpSquat > 0) {
-            m.jumpSquat *= 0.85;
-            m.bodyStretch += (1 - m.bodyStretch) * 0.15;
         }
 
         // Safety: if fell off screen, reset
@@ -238,16 +260,14 @@ function updateMascot() {
             m.vy = 0;
             m.currentPlatformIndex = 0;
             m.onGround = true;
+            m.isRunning = false;
         }
     } else if (m.state === 'falling') {
-        // Falling into the platformer
         m.vy += 0.5;
         m.y += m.vy;
         m.x += m.vx;
-        m.legPhase += 0.2; // Flailing legs
-        m.bodyStretch = 1.1;
+        m.animTimer += 0.2;
 
-        // Trail particles
         if (Math.random() > 0.5) {
             m.particles.push({
                 x: m.x + m.width / 2,
@@ -259,23 +279,20 @@ function updateMascot() {
             });
         }
 
-        // When fallen far enough, start the actual game
         if (m.y > mascotCanvas.height + 50) {
             m.state = 'playing';
             actuallyStartPlatformer();
         }
     } else if (m.state === 'rising') {
-        // Flying back up to the main site
         m.vy -= 0.3;
         m.vy = Math.max(m.vy, -15);
         m.y += m.vy;
-        m.legPhase += 0.1;
+        m.animTimer += 0.15;
 
         const targetPlat = mascotPlatforms[0];
         const targetX = targetPlat.x + targetPlat.width / 2 - m.width / 2;
         m.x += (targetX - m.x) * 0.02;
 
-        // Trail particles
         if (Math.random() > 0.3) {
             m.particles.push({
                 x: m.x + m.width / 2,
@@ -287,7 +304,6 @@ function updateMascot() {
             });
         }
 
-        // When reached the platform level, land
         if (m.y < targetPlat.y - m.height + 10) {
             m.y = targetPlat.y - m.height;
             m.vy = 0;
@@ -296,10 +312,8 @@ function updateMascot() {
             m.currentPlatformIndex = 0;
             m.waitTimer = 0;
             m.state = 'looping';
-            m.jumpSquat = 8;
-            m.bodyStretch = 0.8;
+            m.isRunning = false;
 
-            // Landing particles
             for (let i = 0; i < 10; i++) {
                 m.particles.push({
                     x: m.x + m.width / 2,
@@ -321,13 +335,6 @@ function updateMascot() {
         p.life -= 0.03;
         return p.life > 0;
     });
-
-    // Animation
-    m.animTimer += 0.1;
-    if (m.animTimer >= 1) {
-        m.animTimer = 0;
-        m.animFrame = (m.animFrame + 1) % 4;
-    }
 }
 
 function drawMascot() {
@@ -348,7 +355,7 @@ function drawMascot() {
         ctx.globalAlpha = 1;
     });
 
-    // Draw the mascot with realistic animation
+    // Draw the mascot - simple stick figure style
     ctx.shadowColor = '#8b5cf6';
     ctx.shadowBlur = 12;
     ctx.strokeStyle = '#fff';
@@ -357,17 +364,9 @@ function drawMascot() {
     ctx.lineJoin = 'round';
 
     const centerX = m.x + m.width / 2;
-    const baseY = m.y + m.height;
-
-    // Apply body compression/stretch
-    const bodyHeight = 28 * m.bodyStretch;
-    const squat = m.jumpSquat;
-
-    // Adjusted positions with squat
-    const headY = baseY - bodyHeight - 10 + squat * 0.5;
-    const bodyTop = baseY - bodyHeight + squat * 0.3;
-    const bodyBottom = baseY - 12 + squat * 0.5;
-    const hipY = bodyBottom;
+    const headY = m.y + 10;
+    const bodyTop = m.y + 16;
+    const bodyBottom = m.y + 28;
 
     // Head
     ctx.beginPath();
@@ -376,99 +375,31 @@ function drawMascot() {
     ctx.fill();
     ctx.stroke();
 
-    // Body (shorter when squatting)
+    // Body
     ctx.beginPath();
-    ctx.moveTo(centerX, bodyTop + 6);
+    ctx.moveTo(centerX, bodyTop);
     ctx.lineTo(centerX, bodyBottom);
     ctx.stroke();
 
-    // Realistic leg animation
-    const isInAir = !m.onGround;
-    const isMoving = Math.abs(m.vx) > 0.5;
+    // Animation - legs and arms swing with movement
+    const isMoving = m.isRunning || !m.onGround;
+    const walkOffset = isMoving ? Math.sin(m.animTimer * Math.PI * 2) * 6 : 0;
+    const jumpArmOffset = !m.onGround ? -8 : 0;
 
-    let leftLegAngle, rightLegAngle;
-    let leftKneeBend, rightKneeBend;
-    let leftFootAngle, rightFootAngle;
-
-    if (isInAir) {
-        // In-air leg animation - cycling/running motion
-        const airPhase = m.legPhase;
-
-        // Front leg goes forward, back leg goes back
-        leftLegAngle = Math.sin(airPhase) * 0.8; // -0.8 to 0.8 radians
-        rightLegAngle = Math.sin(airPhase + Math.PI) * 0.8;
-
-        // Knee bends more when leg is forward
-        leftKneeBend = 0.3 + Math.max(0, Math.sin(airPhase)) * 0.5;
-        rightKneeBend = 0.3 + Math.max(0, Math.sin(airPhase + Math.PI)) * 0.5;
-
-        // Feet angle
-        leftFootAngle = Math.sin(airPhase) * 0.3;
-        rightFootAngle = Math.sin(airPhase + Math.PI) * 0.3;
-    } else if (squat > 2) {
-        // Squatting - knees bent outward
-        leftLegAngle = -0.3;
-        rightLegAngle = 0.3;
-        leftKneeBend = 0.5 + squat / 15;
-        rightKneeBend = 0.5 + squat / 15;
-        leftFootAngle = 0;
-        rightFootAngle = 0;
-    } else {
-        // Standing/idle - subtle weight shift
-        const idlePhase = m.legPhase;
-        leftLegAngle = Math.sin(idlePhase * 0.5) * 0.05 - 0.15;
-        rightLegAngle = Math.sin(idlePhase * 0.5 + 0.5) * 0.05 + 0.15;
-        leftKneeBend = 0.1;
-        rightKneeBend = 0.1;
-        leftFootAngle = 0;
-        rightFootAngle = 0;
-    }
-
-    const thighLength = 10 + squat * 0.3;
-    const shinLength = 10 + squat * 0.2;
-
-    // Draw legs with knees
-    function drawLeg(angle, kneeBend, footAngle, side) {
-        const hipOffset = side * 3;
-        const hipX = centerX + hipOffset;
-
-        // Thigh
-        const kneeX = hipX + Math.sin(angle) * thighLength;
-        const kneeY = hipY + Math.cos(angle) * thighLength;
-
-        // Shin (bends at knee)
-        const shinAngle = angle + kneeBend * side * 0.5;
-        const footX = kneeX + Math.sin(shinAngle) * shinLength;
-        const footY = kneeY + Math.cos(shinAngle) * shinLength;
-
-        ctx.beginPath();
-        ctx.moveTo(hipX, hipY);
-        ctx.lineTo(kneeX, kneeY);
-        ctx.lineTo(footX, footY);
-        ctx.stroke();
-
-        // Foot
-        const footLength = 4;
-        const footEndX = footX + Math.cos(footAngle) * footLength * (m.facingRight ? 1 : -1);
-        const footEndY = footY + Math.sin(footAngle) * footLength * 0.3;
-        ctx.beginPath();
-        ctx.moveTo(footX, footY);
-        ctx.lineTo(footEndX, footEndY + 1);
-        ctx.stroke();
-    }
-
-    drawLeg(leftLegAngle, leftKneeBend, leftFootAngle, -1);
-    drawLeg(rightLegAngle, rightKneeBend, rightFootAngle, 1);
-
-    // Arms
-    const armSwing = isInAir ? Math.sin(m.legPhase + Math.PI / 2) * 0.6 : (isMoving ? Math.sin(m.legPhase) * 0.3 : 0.1);
-    const jumpArmRaise = isInAir ? -8 : 0;
-
+    // Arms - swing opposite to legs
     ctx.beginPath();
-    ctx.moveTo(centerX, bodyTop + 10);
-    ctx.lineTo(centerX - 8 - armSwing * 5, bodyTop + 18 + jumpArmRaise);
-    ctx.moveTo(centerX, bodyTop + 10);
-    ctx.lineTo(centerX + 8 + armSwing * 5, bodyTop + 18 + jumpArmRaise);
+    ctx.moveTo(centerX, bodyTop + 4);
+    ctx.lineTo(centerX - 9, bodyTop + 12 - walkOffset + jumpArmOffset);
+    ctx.moveTo(centerX, bodyTop + 4);
+    ctx.lineTo(centerX + 9, bodyTop + 12 + walkOffset + jumpArmOffset);
+    ctx.stroke();
+
+    // Legs - swing with movement
+    ctx.beginPath();
+    ctx.moveTo(centerX, bodyBottom);
+    ctx.lineTo(centerX - 8, m.y + m.height + walkOffset);
+    ctx.moveTo(centerX, bodyBottom);
+    ctx.lineTo(centerX + 8, m.y + m.height - walkOffset);
     ctx.stroke();
 
     ctx.shadowBlur = 0;

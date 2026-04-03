@@ -21,11 +21,7 @@ const game = {
         facingRight: true,
         animFrame: 0,
         animTimer: 0,
-        // Animation state for realistic movement
-        legPhase: 0,
-        squatAmount: 0,
-        bodyStretch: 1,
-        state: 'falling' // 'falling', 'landing', 'getting_up', 'playing'
+        introFalling: true // True during intro fall, false when gameplay starts
     },
     platforms: [],
     hazards: [],
@@ -38,10 +34,7 @@ const game = {
     won: false,
     fallTransition: 0,
     shakeIntensity: 0,
-    lastCheckpoint: null,
-    introTimer: 0,
-    landingAnimationTimer: 0,
-    getUpAnimationTimer: 0
+    lastCheckpoint: null
 };
 
 // Physics constants
@@ -195,10 +188,8 @@ function initGame() {
     game.player.y = -100; // Start above the screen
     game.player.vx = 0;
     game.player.vy = 8; // Initial falling speed
-    game.player.state = 'falling';
-    game.player.squatAmount = 0;
-    game.player.bodyStretch = 1;
-    game.player.legPhase = 0;
+    game.player.introFalling = true;
+    game.player.animTimer = 0;
 
     // Camera starts showing bottom
     game.camera.y = game.gameHeight - gameCanvas.height;
@@ -273,7 +264,7 @@ function startPlatformerGame() {
 }
 
 function handleKeyDown(e) {
-    if (!gameActive || game.player.state !== 'playing') return;
+    if (!gameActive || game.player.introFalling) return;
 
     switch(e.key.toLowerCase()) {
         case 'a':
@@ -314,14 +305,12 @@ function handleKeyUp(e) {
 function updatePlayer() {
     const p = game.player;
 
-    // Handle intro animation states
-    if (p.state === 'falling') {
-        // Falling animation
+    // Handle intro falling
+    if (p.introFalling) {
         p.vy += GRAVITY * 0.8;
         p.vy = Math.min(p.vy, 15);
         p.y += p.vy;
-        p.legPhase += 0.2; // Flailing legs
-        p.bodyStretch = 1.1;
+        p.animTimer += 0.2; // Animate legs while falling
 
         // Trail particles
         if (Math.random() > 0.6) {
@@ -339,11 +328,11 @@ function updatePlayer() {
         const startPlat = game.platforms.find(pl => pl.isStart);
         if (p.y + p.height >= startPlat.y && p.y + p.height < startPlat.y + 50 &&
             p.x + p.width > startPlat.x && p.x < startPlat.x + startPlat.width) {
-            // LAND!
+            // Land and start gameplay!
             p.y = startPlat.y - p.height;
             p.vy = 0;
-            p.state = 'landing';
-            game.landingAnimationTimer = 0;
+            p.introFalling = false;
+            p.onGround = true;
             game.shakeIntensity = 25;
 
             // Big impact particles
@@ -357,48 +346,6 @@ function updatePlayer() {
                     color: ['#fbbf24', '#10b981', '#8b5cf6'][Math.floor(Math.random() * 3)]
                 });
             }
-        }
-        return;
-    }
-
-    if (p.state === 'landing') {
-        // Impact squat animation
-        game.landingAnimationTimer += 1;
-
-        if (game.landingAnimationTimer < 15) {
-            // Deep squat on impact
-            p.squatAmount = Math.sin(game.landingAnimationTimer / 15 * Math.PI) * 20;
-            p.bodyStretch = 1 - p.squatAmount / 50;
-        } else if (game.landingAnimationTimer < 40) {
-            // Recovery from squat
-            p.squatAmount *= 0.85;
-            p.bodyStretch += (1 - p.bodyStretch) * 0.1;
-        } else {
-            // Transition to getting up
-            p.state = 'getting_up';
-            game.getUpAnimationTimer = 0;
-        }
-        return;
-    }
-
-    if (p.state === 'getting_up') {
-        // Stand up animation
-        game.getUpAnimationTimer += 1;
-
-        if (game.getUpAnimationTimer < 20) {
-            // Slowly stand up
-            p.squatAmount = 8 * (1 - game.getUpAnimationTimer / 20);
-            p.bodyStretch = 0.9 + (game.getUpAnimationTimer / 20) * 0.1;
-        } else if (game.getUpAnimationTimer < 40) {
-            // Ready stance - slight bounce
-            const bounce = Math.sin((game.getUpAnimationTimer - 20) / 20 * Math.PI * 2) * 3;
-            p.squatAmount = bounce;
-        } else {
-            // Ready to play!
-            p.state = 'playing';
-            p.squatAmount = 0;
-            p.bodyStretch = 1;
-            p.onGround = true;
         }
         return;
     }
@@ -419,8 +366,6 @@ function updatePlayer() {
     if (keys.jump && p.onGround) {
         p.vy = JUMP_FORCE;
         p.onGround = false;
-        p.squatAmount = 0;
-        p.bodyStretch = 1.15;
         for (let i = 0; i < 8; i++) {
             game.particles.push({
                 x: p.x + p.width / 2,
@@ -436,25 +381,9 @@ function updatePlayer() {
     p.vy += GRAVITY;
     p.vy = Math.min(p.vy, MAX_FALL_SPEED);
 
-    // Update leg animation
-    if (!p.onGround) {
-        p.legPhase += 0.12;
-        if (p.vy < 0) {
-            p.bodyStretch = 1 + Math.min(Math.abs(p.vy) / 40, 0.12);
-        } else {
-            p.bodyStretch = 1 - Math.min(p.vy / 40, 0.08);
-        }
-    } else {
-        if (Math.abs(p.vx) > 0.5) {
-            p.legPhase += Math.abs(p.vx) * 0.15;
-        } else {
-            p.legPhase += 0.02;
-        }
-        // Recover from landing
-        if (p.squatAmount > 0.5) {
-            p.squatAmount *= 0.85;
-        }
-        p.bodyStretch += (1 - p.bodyStretch) * 0.15;
+    // Update animation timer
+    if (Math.abs(p.vx) > 0.5 || !p.onGround) {
+        p.animTimer += 0.15;
     }
 
     p.x += p.vx;
@@ -868,7 +797,7 @@ function drawGame() {
         ctx.fill();
     });
 
-    // Draw player with realistic animation
+    // Draw player - simple stick figure style
     const pl = game.player;
 
     ctx.shadowColor = '#8b5cf6';
@@ -880,16 +809,9 @@ function drawGame() {
     ctx.lineJoin = 'round';
 
     const centerX = pl.x + pl.width / 2;
-    const baseY = pl.y + pl.height;
-
-    // Apply body compression/stretch
-    const bodyHeight = 35 * pl.bodyStretch;
-    const squat = pl.squatAmount;
-
-    const headY = baseY - bodyHeight - 12 + squat * 0.5;
-    const bodyTop = baseY - bodyHeight + squat * 0.3;
-    const bodyBottom = baseY - 15 + squat * 0.5;
-    const hipY = bodyBottom;
+    const headY = pl.y + 12;
+    const bodyTop = pl.y + 20;
+    const bodyBottom = pl.y + 35;
 
     // Head
     ctx.beginPath();
@@ -900,94 +822,29 @@ function drawGame() {
 
     // Body
     ctx.beginPath();
-    ctx.moveTo(centerX, bodyTop + 8);
+    ctx.moveTo(centerX, bodyTop);
     ctx.lineTo(centerX, bodyBottom);
     ctx.stroke();
 
-    // Realistic leg animation
-    const isInAir = !pl.onGround && pl.state === 'playing';
-    const isFalling = pl.state === 'falling';
-    const isLanding = pl.state === 'landing';
-    const isGettingUp = pl.state === 'getting_up';
+    // Animation - simple swing based on movement
+    const isMoving = Math.abs(pl.vx) > 0.5 || !pl.onGround;
+    const walkOffset = isMoving ? Math.sin(pl.animTimer * Math.PI * 2) * 6 : 0;
+    const jumpArmOffset = !pl.onGround ? -10 : 0;
 
-    let leftLegAngle, rightLegAngle;
-    let leftKneeBend, rightKneeBend;
-
-    if (isFalling) {
-        // Flailing legs during fall
-        const fallPhase = pl.legPhase;
-        leftLegAngle = Math.sin(fallPhase) * 0.6;
-        rightLegAngle = Math.sin(fallPhase + Math.PI) * 0.6;
-        leftKneeBend = 0.4 + Math.sin(fallPhase * 1.5) * 0.3;
-        rightKneeBend = 0.4 + Math.sin(fallPhase * 1.5 + Math.PI) * 0.3;
-    } else if (isLanding || isGettingUp) {
-        // Squat position
-        leftLegAngle = -0.4;
-        rightLegAngle = 0.4;
-        leftKneeBend = 0.4 + squat / 25;
-        rightKneeBend = 0.4 + squat / 25;
-    } else if (isInAir) {
-        const airPhase = pl.legPhase;
-        leftLegAngle = Math.sin(airPhase) * 0.7;
-        rightLegAngle = Math.sin(airPhase + Math.PI) * 0.7;
-        leftKneeBend = 0.3 + Math.max(0, Math.sin(airPhase)) * 0.4;
-        rightKneeBend = 0.3 + Math.max(0, Math.sin(airPhase + Math.PI)) * 0.4;
-    } else if (Math.abs(pl.vx) > 0.5) {
-        // Running
-        const runPhase = pl.legPhase;
-        leftLegAngle = Math.sin(runPhase) * 0.5;
-        rightLegAngle = Math.sin(runPhase + Math.PI) * 0.5;
-        leftKneeBend = 0.2 + Math.max(0, -Math.sin(runPhase)) * 0.3;
-        rightKneeBend = 0.2 + Math.max(0, -Math.sin(runPhase + Math.PI)) * 0.3;
-    } else {
-        // Standing idle
-        leftLegAngle = -0.15;
-        rightLegAngle = 0.15;
-        leftKneeBend = 0.1;
-        rightKneeBend = 0.1;
-    }
-
-    const thighLength = 12 + squat * 0.3;
-    const shinLength = 12 + squat * 0.2;
-
-    function drawLeg(angle, kneeBend, side) {
-        const hipOffset = side * 4;
-        const hipX = centerX + hipOffset;
-
-        const kneeX = hipX + Math.sin(angle) * thighLength;
-        const kneeY = hipY + Math.cos(angle) * thighLength;
-
-        const shinAngle = angle + kneeBend * side * 0.5;
-        const footX = kneeX + Math.sin(shinAngle) * shinLength;
-        const footY = kneeY + Math.cos(shinAngle) * shinLength;
-
-        ctx.beginPath();
-        ctx.moveTo(hipX, hipY);
-        ctx.lineTo(kneeX, kneeY);
-        ctx.lineTo(footX, footY);
-        ctx.stroke();
-
-        // Foot
-        const footLength = 5;
-        const footDir = pl.facingRight ? 1 : -1;
-        ctx.beginPath();
-        ctx.moveTo(footX, footY);
-        ctx.lineTo(footX + footLength * footDir, footY + 2);
-        ctx.stroke();
-    }
-
-    drawLeg(leftLegAngle, leftKneeBend, -1);
-    drawLeg(rightLegAngle, rightKneeBend, 1);
-
-    // Arms
-    const armRaise = isInAir || isFalling ? -10 : (isLanding || isGettingUp ? 5 : 0);
-    const armSwing = Math.abs(pl.vx) > 0.5 ? Math.sin(pl.legPhase + Math.PI / 2) * 0.4 : 0;
-
+    // Arms - swing opposite to legs
     ctx.beginPath();
-    ctx.moveTo(centerX, bodyTop + 12);
-    ctx.lineTo(centerX - 10 - armSwing * 8, bodyTop + 22 + armRaise);
-    ctx.moveTo(centerX, bodyTop + 12);
-    ctx.lineTo(centerX + 10 + armSwing * 8, bodyTop + 22 + armRaise);
+    ctx.moveTo(centerX, bodyTop + 5);
+    ctx.lineTo(centerX - 12, bodyTop + 15 - walkOffset + jumpArmOffset);
+    ctx.moveTo(centerX, bodyTop + 5);
+    ctx.lineTo(centerX + 12, bodyTop + 15 + walkOffset + jumpArmOffset);
+    ctx.stroke();
+
+    // Legs - swing with movement
+    ctx.beginPath();
+    ctx.moveTo(centerX, bodyBottom);
+    ctx.lineTo(centerX - 10, pl.y + pl.height + walkOffset);
+    ctx.moveTo(centerX, bodyBottom);
+    ctx.lineTo(centerX + 10, pl.y + pl.height - walkOffset);
     ctx.stroke();
 
     ctx.shadowBlur = 0;

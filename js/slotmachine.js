@@ -13,8 +13,8 @@ let spinCount = 0;
 let guaranteedJackpotSpin = 3 + Math.floor(Math.random() * 3); // Random spin 3, 4, or 5
 
 spinBtn.addEventListener('click', () => {
-    spinCount++;
     if (isSpinning) return;
+    spinCount++;
     isSpinning = true;
     spinBtn.disabled = true;
     slotResult.textContent = '';
@@ -24,12 +24,12 @@ spinBtn.addEventListener('click', () => {
     reel3.classList.add('spinning');
 
     // Spin animation
-    let spinCount = 0;
+    let animCount = 0;
     const spinInterval = setInterval(() => {
         reel1.textContent = symbols[Math.floor(Math.random() * symbols.length)];
         reel2.textContent = symbols[Math.floor(Math.random() * symbols.length)];
         reel3.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-        spinCount++;
+        animCount++;
     }, 100);
 
     // Stop reels one by one

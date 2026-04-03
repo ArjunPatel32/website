@@ -174,11 +174,11 @@ function initGame() {
         });
     }
 
-    // Exit portal
+    // Exit portal - positioned high above the last platform so you must jump to reach it
     const topPlatform = game.platforms[platformCount - 1];
     game.exitPortal = {
         x: topPlatform.x + topPlatform.width / 2,
-        y: topPlatform.y - 120,
+        y: topPlatform.y - 220,
         radius: 60,
         pulsePhase: 0
     };
@@ -236,9 +236,10 @@ function startPlatformerGame() {
         document.querySelector('.container'),
         document.querySelector('.poll-container'),
         document.querySelector('.slot-machine'),
-        document.querySelector('.poker-card'),
+        document.querySelector('.poker-card-wrapper'),
         document.querySelector('.floating-objects'),
         document.querySelector('.aurora'),
+        document.querySelector('.spiral-galaxy'),
         document.querySelector('#stars'),
         document.querySelector('#mascot')
     ].filter(el => el);
@@ -897,9 +898,10 @@ function endGame() {
             document.querySelector('.container'),
             document.querySelector('.poll-container'),
             document.querySelector('.slot-machine'),
-            document.querySelector('.poker-card'),
+            document.querySelector('.poker-card-wrapper'),
             document.querySelector('.floating-objects'),
             document.querySelector('.aurora'),
+            document.querySelector('.spiral-galaxy'),
             document.querySelector('#stars'),
             document.querySelector('#mascot')
         ].filter(el => el);
@@ -925,9 +927,16 @@ function endGame() {
             gameCanvas.style.transition = '';
             gameUI.style.display = 'none';
 
+            // Fully reset all element styles
             mainElements.forEach(el => {
                 el.style.transition = '';
+                el.style.transform = '';
             });
+
+            // Reset slot machine completely
+            const slotMachine = document.getElementById('slotMachine');
+            slotMachine.style.position = '';
+            slotMachine.classList.remove('winning');
 
             keys.left = false;
             keys.right = false;

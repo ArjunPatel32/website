@@ -13,8 +13,8 @@ const game = {
     player: {
         x: 0,
         y: 0,
-        width: 30,
-        height: 50,
+        width: 40,
+        height: 65,
         vx: 0,
         vy: 0,
         onGround: false,
@@ -23,7 +23,9 @@ const game = {
         animTimer: 0,
         introFalling: true, // True during intro fall, false when gameplay starts
         landingBounce: false,
-        introSwayPhase: 0
+        introSwayPhase: 0,
+        jumpCooldown: 0, // Cooldown timer before can jump again
+        lastGroundTime: 0 // Track when we last touched ground
     },
     platforms: [],
     hazards: [],
@@ -58,209 +60,214 @@ function initGame() {
     gameCanvas.width = window.innerWidth;
     gameCanvas.height = window.innerHeight;
 
-    game.gameHeight = window.innerHeight * 4;
+    game.gameHeight = window.innerHeight * 5;
 
-    // Jump physics calculation for ensuring reachable platforms
-    // JUMP_FORCE = -10.5, GRAVITY = 0.45
-    // Max jump height ≈ 122px, but we want comfortable jumps
-    const MAX_SAFE_VERTICAL = 55;    // Comfortable vertical jump
-    const MAX_SAFE_HORIZONTAL = 85;  // Comfortable horizontal jump
-    // Max diagonal using Pythagorean: sqrt(55^2 + 85^2) ≈ 101px - very reachable
+    // Jump physics - be generous with distances
+    const MAX_SAFE_VERTICAL = 50;
+    const MAX_SAFE_HORIZONTAL = 80;
+    const MAX_DIAGONAL = Math.sqrt(MAX_SAFE_VERTICAL * MAX_SAFE_VERTICAL + MAX_SAFE_HORIZONTAL * MAX_SAFE_HORIZONTAL);
 
     game.platforms = [];
     game.movingPlatforms = [];
+    game.hazards = [];
+    game.crushers = [];
 
     const screenWidth = gameCanvas.width;
-    const numColumns = 5; // 5 columns of platforms across screen
+    const numColumns = 8; // More columns
     const columnWidth = screenWidth / numColumns;
-    const numRows = 20; // 20 rows going up
-    const rowHeight = (game.gameHeight - 300) / numRows;
+    const numRows = 35; // More rows
+    const rowHeight = (game.gameHeight - 400) / numRows;
 
-    // Starting platform at bottom center
+    // Platform sizes - bigger
+    const PLATFORM_WIDTH_MIN = 90;
+    const PLATFORM_WIDTH_MAX = 140;
+    const PLATFORM_HEIGHT = 18;
+    const CHECKPOINT_WIDTH = 180;
+
+    // Starting platform
     game.platforms.push({
-        x: screenWidth / 2 - 80,
-        y: game.gameHeight - 50,
-        width: 160,
-        height: 20,
+        x: screenWidth / 2 - 100,
+        y: game.gameHeight - 60,
+        width: 200,
+        height: 24,
         color1: '#10b981',
         color2: '#059669',
         glowColor: 'rgba(16, 185, 129, 0.5)',
         isStart: true,
         row: -1,
-        col: 2
+        col: Math.floor(numColumns / 2)
     });
 
-    // Generate grid of platforms with guaranteed connectivity
-    const platformGrid = []; // Track platforms by row for connectivity
+    // Track all platforms by position for obstacle checking
+    const allPlatformPositions = [];
+
+    // Generate dense grid of platforms
+    const platformGrid = [];
 
     for (let row = 0; row < numRows; row++) {
         platformGrid[row] = [];
-        const baseY = game.gameHeight - 150 - (row * rowHeight);
-        const isCheckpointRow = row === 5 || row === 10 || row === 15;
+        const baseY = game.gameHeight - 180 - (row * rowHeight);
+        const isCheckpointRow = row % 7 === 0 && row > 0; // Checkpoints every 7 rows
 
-        // Determine zone based on row
+        // Zone based on row
         let zone = 'intro';
-        if (row >= 5 && row < 10) zone = 'water';
-        else if (row >= 10 && row < 15) zone = 'lava';
-        else if (row >= 15) zone = 'final';
+        if (row >= 8 && row < 16) zone = 'water';
+        else if (row >= 16 && row < 26) zone = 'lava';
+        else if (row >= 26) zone = 'final';
 
-        // Place 2-4 platforms per row, spread across columns
-        const platformsThisRow = isCheckpointRow ? 3 : 2 + Math.floor(Math.random() * 3);
-        const columnsUsed = [];
+        // Place 4-7 platforms per row for dense coverage
+        const platformsThisRow = isCheckpointRow ? 5 : 4 + Math.floor(Math.random() * 4);
 
-        for (let p = 0; p < platformsThisRow; p++) {
-            // Pick a column that hasn't been used this row
-            let col;
-            do {
-                col = Math.floor(Math.random() * numColumns);
-            } while (columnsUsed.includes(col) && columnsUsed.length < numColumns);
-            columnsUsed.push(col);
+        // Distribute across columns more evenly
+        const columnOrder = [...Array(numColumns).keys()].sort(() => Math.random() - 0.5);
 
-            const baseX = col * columnWidth + columnWidth * 0.1;
-            const maxX = (col + 1) * columnWidth - columnWidth * 0.1;
+        for (let p = 0; p < Math.min(platformsThisRow, numColumns); p++) {
+            const col = columnOrder[p];
 
-            // Add some randomness to position within column
-            const x = baseX + Math.random() * (maxX - baseX - 80);
-            const y = baseY + (Math.random() - 0.5) * 20;
-            const width = isCheckpointRow ? 120 : 70 + Math.random() * 40;
+            const baseX = col * columnWidth + 10;
+            const maxX = (col + 1) * columnWidth - 10;
 
-            // Colors based on zone
+            const width = isCheckpointRow ? CHECKPOINT_WIDTH : PLATFORM_WIDTH_MIN + Math.random() * (PLATFORM_WIDTH_MAX - PLATFORM_WIDTH_MIN);
+            const x = baseX + Math.random() * Math.max(5, maxX - baseX - width);
+            const y = baseY + (Math.random() - 0.5) * 25;
+
+            // Zone colors
             let color1, color2, glowColor;
             if (zone === 'water') {
-                color1 = `hsl(${195 + Math.random() * 20}, 70%, 55%)`;
-                color2 = `hsl(${205 + Math.random() * 20}, 60%, 45%)`;
-                glowColor = 'rgba(56, 189, 248, 0.5)';
+                color1 = `hsl(${190 + Math.random() * 25}, 70%, 55%)`;
+                color2 = `hsl(${200 + Math.random() * 25}, 60%, 45%)`;
+                glowColor = 'rgba(56, 189, 248, 0.4)';
             } else if (zone === 'lava') {
-                color1 = `hsl(${10 + Math.random() * 20}, 85%, 55%)`;
-                color2 = `hsl(${0 + Math.random() * 15}, 75%, 45%)`;
-                glowColor = 'rgba(249, 115, 22, 0.5)';
+                color1 = `hsl(${5 + Math.random() * 25}, 85%, 55%)`;
+                color2 = `hsl(${0 + Math.random() * 20}, 75%, 45%)`;
+                glowColor = 'rgba(249, 115, 22, 0.4)';
             } else if (zone === 'final') {
-                color1 = `hsl(${280 + Math.random() * 30}, 80%, 60%)`;
-                color2 = `hsl(${290 + Math.random() * 30}, 70%, 50%)`;
-                glowColor = 'rgba(168, 85, 247, 0.5)';
+                color1 = `hsl(${275 + Math.random() * 35}, 80%, 60%)`;
+                color2 = `hsl(${285 + Math.random() * 35}, 70%, 50%)`;
+                glowColor = 'rgba(168, 85, 247, 0.4)';
             } else {
-                color1 = `hsl(${250 + Math.random() * 30}, 75%, 60%)`;
-                color2 = `hsl(${260 + Math.random() * 30}, 65%, 50%)`;
-                glowColor = 'rgba(139, 92, 246, 0.5)';
+                color1 = `hsl(${245 + Math.random() * 35}, 75%, 60%)`;
+                color2 = `hsl(${255 + Math.random() * 35}, 65%, 50%)`;
+                glowColor = 'rgba(139, 92, 246, 0.4)';
             }
 
+            const isCheckpoint = isCheckpointRow && p === Math.floor(platformsThisRow / 2);
             const platform = {
                 x: x,
                 y: y,
                 width: width,
-                height: isCheckpointRow ? 18 : 14,
-                color1: color1,
-                color2: color2,
-                glowColor: glowColor,
+                height: isCheckpoint ? 22 : PLATFORM_HEIGHT,
+                color1: isCheckpoint ? '#10b981' : color1,
+                color2: isCheckpoint ? '#059669' : color2,
+                glowColor: isCheckpoint ? 'rgba(16, 185, 129, 0.6)' : glowColor,
                 zone: zone,
                 row: row,
                 col: col,
-                isCheckpoint: isCheckpointRow && p === Math.floor(platformsThisRow / 2),
+                isCheckpoint: isCheckpoint,
                 checkpointId: row
             };
 
-            if (platform.isCheckpoint) {
-                platform.color1 = '#10b981';
-                platform.color2 = '#059669';
-                platform.glowColor = 'rgba(16, 185, 129, 0.6)';
-                platform.width = 130;
-            }
-
             game.platforms.push(platform);
             platformGrid[row].push(platform);
+            allPlatformPositions.push({ x: x, y: y, width: width, height: PLATFORM_HEIGHT });
         }
     }
 
-    // Now ensure every platform is reachable by adding bridge platforms where needed
+    // Ensure connectivity - add bridge platforms where needed
     for (let row = 1; row < numRows; row++) {
         const currentRowPlats = platformGrid[row];
         const prevRowPlats = platformGrid[row - 1];
+        if (!prevRowPlats || prevRowPlats.length === 0) continue;
 
         for (const plat of currentRowPlats) {
-            // Check if any platform from previous row can reach this one
             let isReachable = false;
+            let bestPrevPlat = null;
+            let bestDist = Infinity;
+
             for (const prevPlat of prevRowPlats) {
                 const dx = Math.abs((plat.x + plat.width/2) - (prevPlat.x + prevPlat.width/2));
-                const dy = Math.abs(plat.y - prevPlat.y);
+                const dy = plat.y - prevPlat.y; // Should be negative (going up)
                 const diagonalDist = Math.sqrt(dx * dx + dy * dy);
 
-                if (diagonalDist < MAX_SAFE_VERTICAL + MAX_SAFE_HORIZONTAL) {
+                if (diagonalDist < bestDist) {
+                    bestDist = diagonalDist;
+                    bestPrevPlat = prevPlat;
+                }
+
+                // Check if reachable considering obstacles
+                if (diagonalDist < MAX_DIAGONAL * 1.5) {
                     isReachable = true;
-                    break;
                 }
             }
 
-            // If not reachable, add a moving platform as a bridge
-            if (!isReachable && prevRowPlats.length > 0) {
-                const nearestPrev = prevRowPlats.reduce((nearest, p) => {
-                    const d1 = Math.abs(p.x - plat.x);
-                    const d2 = Math.abs(nearest.x - plat.x);
-                    return d1 < d2 ? p : nearest;
-                }, prevRowPlats[0]);
+            // Add stepping stone platforms if gap is too large
+            if (!isReachable && bestPrevPlat) {
+                const steps = Math.ceil(bestDist / (MAX_DIAGONAL * 0.8));
+                for (let s = 1; s < steps; s++) {
+                    const t = s / steps;
+                    const midX = bestPrevPlat.x + (plat.x - bestPrevPlat.x) * t + (Math.random() - 0.5) * 30;
+                    const midY = bestPrevPlat.y + (plat.y - bestPrevPlat.y) * t;
 
-                const midX = (plat.x + nearestPrev.x) / 2;
-                const midY = (plat.y + nearestPrev.y) / 2;
-
-                game.movingPlatforms.push({
-                    x: midX,
-                    y: midY,
-                    width: 65,
-                    height: 14,
-                    startX: midX,
-                    startY: midY,
-                    moveRange: 30 + Math.random() * 20,
-                    speed: 0.5 + Math.random() * 0.4,
-                    direction: 1,
-                    moveType: Math.random() > 0.5 ? 'horizontal' : 'vertical',
-                    color1: '#06b6d4',
-                    color2: '#0891b2',
-                    glowColor: 'rgba(6, 182, 212, 0.5)',
-                    isBridge: true
-                });
+                    game.movingPlatforms.push({
+                        x: midX,
+                        y: midY,
+                        width: 75 + Math.random() * 25,
+                        height: 16,
+                        startX: midX,
+                        startY: midY,
+                        moveRange: 20 + Math.random() * 25,
+                        speed: 0.4 + Math.random() * 0.4,
+                        direction: 1,
+                        moveType: Math.random() > 0.5 ? 'horizontal' : 'vertical',
+                        color1: '#06b6d4',
+                        color2: '#0891b2',
+                        glowColor: 'rgba(6, 182, 212, 0.5)',
+                        isBridge: true
+                    });
+                }
             }
         }
     }
 
-    // Add LOTS of extra moving platforms throughout for fun
+    // Add TONS of moving platforms for visual interest and alternative paths
     for (let row = 0; row < numRows; row++) {
-        const baseY = game.gameHeight - 150 - (row * rowHeight);
+        const baseY = game.gameHeight - 180 - (row * rowHeight);
 
-        // Add 2-3 moving platforms per row across different columns
-        const movingCount = 2 + Math.floor(Math.random() * 2);
+        // 4-6 moving platforms per row
+        const movingCount = 4 + Math.floor(Math.random() * 3);
         for (let m = 0; m < movingCount; m++) {
-            const col = Math.random() * numColumns;
-            const x = col * columnWidth + Math.random() * (columnWidth - 60);
-            const y = baseY + (Math.random() - 0.5) * 40;
+            const x = Math.random() * (screenWidth - 80);
+            const y = baseY + (Math.random() - 0.5) * rowHeight * 0.6;
 
             const moveType = Math.random();
             let type, color1, color2, glowColor;
 
-            if (moveType < 0.4) {
+            if (moveType < 0.35) {
                 type = 'horizontal';
                 color1 = '#f59e0b';
                 color2 = '#d97706';
-                glowColor = 'rgba(245, 158, 11, 0.5)';
-            } else if (moveType < 0.7) {
+                glowColor = 'rgba(245, 158, 11, 0.4)';
+            } else if (moveType < 0.65) {
                 type = 'vertical';
                 color1 = '#06b6d4';
                 color2 = '#0891b2';
-                glowColor = 'rgba(6, 182, 212, 0.5)';
+                glowColor = 'rgba(6, 182, 212, 0.4)';
             } else {
                 type = 'circular';
                 color1 = '#a855f7';
                 color2 = '#7c3aed';
-                glowColor = 'rgba(168, 85, 247, 0.5)';
+                glowColor = 'rgba(168, 85, 247, 0.4)';
             }
 
             game.movingPlatforms.push({
                 x: x,
                 y: y,
-                width: 50 + Math.random() * 30,
-                height: 14,
+                width: 70 + Math.random() * 40,
+                height: 16,
                 startX: x,
                 startY: y,
-                moveRange: 30 + Math.random() * 50,
-                speed: 0.4 + Math.random() * 0.8,
+                moveRange: 25 + Math.random() * 45,
+                speed: 0.3 + Math.random() * 0.6,
                 direction: Math.random() > 0.5 ? 1 : -1,
                 moveType: type,
                 phase: Math.random() * Math.PI * 2,
@@ -271,111 +278,127 @@ function initGame() {
         }
     }
 
-    // Add hazards
-    game.hazards = [];
+    // Helper function to check if position is clear of obstacles
+    function isPositionClearOfHazards(x, y, width, height, hazardList) {
+        for (const h of hazardList) {
+            const hx = h.baseX !== undefined ? h.baseX : h.x;
+            const hy = h.baseY !== undefined ? h.baseY : h.y;
+            const buffer = 40;
+            if (x < hx + h.width + buffer && x + width > hx - buffer &&
+                y < hy + h.height + buffer && y + height > hy - buffer) {
+                return false;
+            }
+        }
+        return true;
+    }
 
-    // Spikes - scattered on some static platforms
-    for (let i = 5; i < game.platforms.length; i += 6) {
+    // Add hazards - but check they don't block paths
+
+    // Spikes on platforms (sparse)
+    for (let i = 8; i < game.platforms.length; i += 10) {
         const plat = game.platforms[i];
         if (plat.isCheckpoint || plat.isStart) continue;
+        if (plat.width < 110) continue; // Only on wider platforms
 
+        const spikeX = plat.x + 20 + Math.random() * (plat.width - 60);
         game.hazards.push({
-            x: plat.x + (Math.random() > 0.5 ? 5 : plat.width - 22),
-            y: plat.y - 14,
-            width: 18,
-            height: 14,
+            x: spikeX,
+            y: plat.y - 16,
+            width: 20,
+            height: 16,
             type: 'spike'
         });
     }
 
-    // Water pools in water zone rows (5-9)
-    for (let row = 5; row < 10; row++) {
-        if (Math.random() > 0.5) {
-            const x = Math.random() * (screenWidth - 120);
-            game.hazards.push({
-                x: x,
-                y: game.gameHeight - 150 - (row * rowHeight) + rowHeight * 0.7,
-                width: 100 + Math.random() * 80,
-                height: 22,
-                type: 'water',
-                wavePhase: Math.random() * Math.PI * 2
-            });
-        }
+    // Water pools (water zone)
+    for (let row = 8; row < 16; row += 2) {
+        const x = 50 + Math.random() * (screenWidth - 200);
+        const y = game.gameHeight - 180 - (row * rowHeight) + rowHeight * 0.5;
+        const pool = {
+            x: x,
+            y: y,
+            width: 120 + Math.random() * 100,
+            height: 25,
+            type: 'water',
+            wavePhase: Math.random() * Math.PI * 2
+        };
+        // Make sure there's a path around it
+        game.hazards.push(pool);
     }
 
-    // Lava pools in lava zone rows (10-14)
-    for (let row = 10; row < 15; row++) {
-        if (Math.random() > 0.5) {
-            const x = Math.random() * (screenWidth - 100);
-            game.hazards.push({
-                x: x,
-                y: game.gameHeight - 150 - (row * rowHeight) + rowHeight * 0.7,
-                width: 80 + Math.random() * 60,
-                height: 20,
-                type: 'lava',
-                bubbleTimer: 0
-            });
-        }
+    // Lava pools (lava zone)
+    for (let row = 16; row < 26; row += 2) {
+        const x = 50 + Math.random() * (screenWidth - 180);
+        const y = game.gameHeight - 180 - (row * rowHeight) + rowHeight * 0.5;
+        game.hazards.push({
+            x: x,
+            y: y,
+            width: 100 + Math.random() * 80,
+            height: 22,
+            type: 'lava',
+            bubbleTimer: 0
+        });
     }
 
-    // Fire hazards floating around
-    for (let i = 0; i < 12; i++) {
-        const row = 2 + Math.floor(Math.random() * (numRows - 4));
-        const x = Math.random() * (screenWidth - 30);
-        const y = game.gameHeight - 150 - (row * rowHeight) - 30 - Math.random() * 40;
+    // Fire hazards (floating, moving)
+    for (let i = 0; i < 15; i++) {
+        const row = 3 + Math.floor(Math.random() * (numRows - 6));
+        const x = 50 + Math.random() * (screenWidth - 100);
+        const y = game.gameHeight - 180 - (row * rowHeight) - 20 - Math.random() * 50;
 
         game.hazards.push({
             x: x,
             y: y,
-            width: 22,
-            height: 22,
+            width: 24,
+            height: 24,
             baseX: x,
             baseY: y,
-            moveRange: 25 + Math.random() * 30,
-            speed: 0.01 + Math.random() * 0.015,
+            moveRange: 30 + Math.random() * 40,
+            speed: 0.008 + Math.random() * 0.012,
             phase: Math.random() * Math.PI * 2,
             moveType: Math.random() > 0.5 ? 'vertical' : 'horizontal',
             type: 'fire'
         });
     }
 
-    // Crushers in later rows
-    game.crushers = [];
-    for (let row = 12; row < numRows - 2; row += 3) {
-        const x = Math.random() * (screenWidth - 40);
-        const baseY = game.gameHeight - 150 - (row * rowHeight);
+    // Crushers (later zones only)
+    for (let row = 20; row < numRows - 3; row += 4) {
+        const x = 80 + Math.random() * (screenWidth - 160);
+        const baseY = game.gameHeight - 180 - (row * rowHeight);
 
         game.crushers.push({
             x: x,
-            y: baseY - 160,
-            width: 38,
-            height: 48,
-            baseY: baseY - 160,
-            targetY: baseY - 40,
+            y: baseY - 180,
+            width: 45,
+            height: 55,
+            baseY: baseY - 180,
+            targetY: baseY - 45,
             state: 'waiting',
-            waitTimer: 80 + Math.floor(Math.random() * 100),
+            waitTimer: 100 + Math.floor(Math.random() * 120),
             speed: 0
         });
     }
 
-    // Exit portal at the very top
-    const topY = game.gameHeight - 150 - ((numRows - 1) * rowHeight);
+    // Exit portal
+    const topY = game.gameHeight - 180 - ((numRows - 1) * rowHeight);
     game.exitPortal = {
         x: screenWidth / 2,
-        y: topY - 120,
-        radius: 60,
+        y: topY - 140,
+        radius: 70,
         pulsePhase: 0
     };
 
     // Player starts falling from top of screen
     game.player.x = gameCanvas.width / 2 - game.player.width / 2;
-    game.player.y = -100; // Start above the screen
+    game.player.y = -120; // Start above the screen
     game.player.vx = 0;
     game.player.vy = 6; // Initial falling speed (slower for smoother intro)
     game.player.introFalling = true;
     game.player.landingBounce = false;
     game.player.introSwayPhase = 0;
     game.player.animTimer = 0;
+    game.player.jumpCooldown = 0;
+    game.player.lastGroundTime = 0;
 
     // Camera starts showing bottom
     game.camera.y = game.gameHeight - gameCanvas.height;
@@ -587,9 +610,24 @@ function updatePlayer() {
     p.vx *= FRICTION;
     p.vx = Math.max(-MOVE_SPEED, Math.min(MOVE_SPEED, p.vx));
 
-    if (keys.jump && p.onGround) {
+    // Jump cooldown decreases each frame
+    if (p.jumpCooldown > 0) {
+        p.jumpCooldown--;
+    }
+
+    // Track time on ground
+    if (p.onGround) {
+        p.lastGroundTime++;
+    } else {
+        p.lastGroundTime = 0;
+    }
+
+    // Can only jump if: on ground, cooldown is 0, and been on ground for at least 15 frames (~0.25s)
+    if (keys.jump && p.onGround && p.jumpCooldown === 0 && p.lastGroundTime > 15) {
         p.vy = JUMP_FORCE;
         p.onGround = false;
+        p.jumpCooldown = 25; // ~0.4 second cooldown after jumping
+        p.lastGroundTime = 0;
         for (let i = 0; i < 8; i++) {
             game.particles.push({
                 x: p.x + p.width / 2,
@@ -1226,30 +1264,30 @@ function drawGame() {
         ctx.fill();
     });
 
-    // Draw player - simple stick figure style
+    // Draw player - bigger stick figure style
     const pl = game.player;
 
     ctx.shadowColor = '#8b5cf6';
-    ctx.shadowBlur = 15;
+    ctx.shadowBlur = 20;
 
     ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 4;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
     const centerX = pl.x + pl.width / 2;
-    const headY = pl.y + 12;
-    const bodyTop = pl.y + 20;
-    const bodyBottom = pl.y + 35;
+    const headY = pl.y + 16;
+    const bodyTop = pl.y + 28;
+    const bodyBottom = pl.y + 48;
 
-    // Head
+    // Head - bigger
     ctx.beginPath();
-    ctx.arc(centerX, headY, 8, 0, Math.PI * 2);
+    ctx.arc(centerX, headY, 11, 0, Math.PI * 2);
     ctx.fillStyle = '#fff';
     ctx.fill();
     ctx.stroke();
 
-    // Body
+    // Body - longer
     ctx.beginPath();
     ctx.moveTo(centerX, bodyTop);
     ctx.lineTo(centerX, bodyBottom);
@@ -1257,23 +1295,23 @@ function drawGame() {
 
     // Animation - simple swing based on movement
     const isMoving = Math.abs(pl.vx) > 0.5 || !pl.onGround;
-    const walkOffset = isMoving ? Math.sin(pl.animTimer * Math.PI * 2) * 6 : 0;
-    const jumpArmOffset = !pl.onGround ? -10 : 0;
+    const walkOffset = isMoving ? Math.sin(pl.animTimer * Math.PI * 2) * 8 : 0;
+    const jumpArmOffset = !pl.onGround ? -12 : 0;
 
-    // Arms - swing opposite to legs
+    // Arms - swing opposite to legs, longer
     ctx.beginPath();
-    ctx.moveTo(centerX, bodyTop + 5);
-    ctx.lineTo(centerX - 12, bodyTop + 15 - walkOffset + jumpArmOffset);
-    ctx.moveTo(centerX, bodyTop + 5);
-    ctx.lineTo(centerX + 12, bodyTop + 15 + walkOffset + jumpArmOffset);
+    ctx.moveTo(centerX, bodyTop + 6);
+    ctx.lineTo(centerX - 16, bodyTop + 20 - walkOffset + jumpArmOffset);
+    ctx.moveTo(centerX, bodyTop + 6);
+    ctx.lineTo(centerX + 16, bodyTop + 20 + walkOffset + jumpArmOffset);
     ctx.stroke();
 
-    // Legs - swing with movement
+    // Legs - swing with movement, longer
     ctx.beginPath();
     ctx.moveTo(centerX, bodyBottom);
-    ctx.lineTo(centerX - 10, pl.y + pl.height + walkOffset);
+    ctx.lineTo(centerX - 13, pl.y + pl.height + walkOffset);
     ctx.moveTo(centerX, bodyBottom);
-    ctx.lineTo(centerX + 10, pl.y + pl.height - walkOffset);
+    ctx.lineTo(centerX + 13, pl.y + pl.height - walkOffset);
     ctx.stroke();
 
     ctx.shadowBlur = 0;

@@ -330,14 +330,18 @@ function createTrapdoorAndFall() {
     `;
     document.body.appendChild(trapdoor);
 
-    // Position trapdoor around the mascot (canvas is fixed at 0,0 so mascot coords are viewport coords)
+    // Get mascot's EXACT current position and lock it
+    const mascotCenterX = mascot.x + mascot.width / 2;
+    const mascotBottomY = mascot.y + mascot.height;
+
+    // Position trapdoor exactly under the mascot
     trapdoor.style.cssText = `
         position: fixed;
-        left: ${mascot.x + mascot.width / 2 - 60}px;
-        top: ${mascot.y + mascot.height - 20}px;
-        width: 120px;
-        height: 60px;
-        z-index: 1500;
+        left: ${mascotCenterX - 70}px;
+        top: ${mascotBottomY - 10}px;
+        width: 140px;
+        height: 70px;
+        z-index: 1450;
         pointer-events: none;
     `;
 
@@ -349,11 +353,11 @@ function createTrapdoorAndFall() {
     const doorStyle = `
         position: absolute;
         width: 50%;
-        height: 20px;
+        height: 24px;
         background: linear-gradient(180deg, #2d1f3d 0%, #1a1225 100%);
         border: 2px solid #fbbf24;
         top: 0;
-        transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
         transform-origin: top;
         box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
     `;
@@ -363,37 +367,41 @@ function createTrapdoorAndFall() {
 
     voidBg.style.cssText = `
         position: absolute;
-        top: 20px;
+        top: 24px;
         left: 10%;
         width: 80%;
-        height: 40px;
+        height: 46px;
         background: radial-gradient(ellipse, #000 0%, #050508 50%, transparent 100%);
         opacity: 0;
-        transition: opacity 0.3s ease;
+        transition: opacity 0.4s ease;
     `;
 
-    // Animate trapdoor opening
+    // Step 1: Show the void first
+    setTimeout(() => {
+        voidBg.style.opacity = '1';
+    }, 100);
+
+    // Step 2: Open the trapdoor doors
     setTimeout(() => {
         leftDoor.style.transform = 'rotateX(-110deg)';
         rightDoor.style.transform = 'rotateX(-110deg)';
-        voidBg.style.opacity = '1';
 
         // Screen shake when trapdoor opens
         document.body.classList.add('screen-shake');
         setTimeout(() => document.body.classList.remove('screen-shake'), 300);
+    }, 300);
 
-        // Start mascot falling after doors open
-        setTimeout(() => {
-            mascotFallIntoGame();
+    // Step 3: AFTER doors are fully open, THEN make mascot fall
+    setTimeout(() => {
+        mascotFallIntoGame();
+    }, 1000); // Wait for doors to fully open
 
-            // Remove trapdoor after mascot falls through
-            setTimeout(() => {
-                trapdoor.style.transition = 'opacity 0.5s ease';
-                trapdoor.style.opacity = '0';
-                setTimeout(() => trapdoor.remove(), 500);
-            }, 800);
-        }, 400);
-    }, 100);
+    // Step 4: Remove trapdoor after mascot has fallen through
+    setTimeout(() => {
+        trapdoor.style.transition = 'opacity 0.6s ease';
+        trapdoor.style.opacity = '0';
+        setTimeout(() => trapdoor.remove(), 600);
+    }, 2000);
 }
 
 // Called when mascot finishes falling

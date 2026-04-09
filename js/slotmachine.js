@@ -10,7 +10,7 @@ const slotResult = document.getElementById('slotResult');
 
 let isSpinning = false;
 let spinCount = 0;
-let guaranteedJackpotSpin = 3 + Math.floor(Math.random() * 3); // Random spin 3, 4, or 5
+let guaranteedJackpotSpin = 2 + Math.floor(Math.random() * 2); // Random spin 2 or 3
 
 spinBtn.addEventListener('click', () => {
     if (isSpinning) return;
@@ -47,9 +47,9 @@ spinBtn.addEventListener('click', () => {
         clearInterval(spinInterval);
         reel3.classList.remove('spinning');
 
-        // Guarantee jackpot on spin 3-5, otherwise 20% chance after that
+        // Guarantee jackpot on spin 2-3, otherwise 25% chance after that
         const isGuaranteedSpin = spinCount === guaranteedJackpotSpin;
-        const forceJackpot = isGuaranteedSpin || (spinCount > 5 && Math.random() < 0.2);
+        const forceJackpot = isGuaranteedSpin || (spinCount > 3 && Math.random() < 0.25);
 
         if (forceJackpot) {
             const jackpotSymbol = symbols[Math.floor(Math.random() * symbols.length)];
@@ -232,90 +232,70 @@ function createIrisCloseEffect() {
 
     const ctx = irisCanvas.getContext('2d');
 
-    // Get mascot center position
-    const mascotCenterX = mascot.x + mascot.width / 2;
-    const mascotCenterY = mascot.y + mascot.height / 2;
+    // Lock mascot position at start of iris effect
+    const lockedMascotX = mascot.x + mascot.width / 2;
+    const lockedMascotY = mascot.y + mascot.height / 2;
 
-    // Calculate max radius needed to cover entire screen from mascot position
+    // Calculate max radius needed to cover entire screen
     const maxRadius = Math.sqrt(
-        Math.pow(Math.max(mascotCenterX, window.innerWidth - mascotCenterX), 2) +
-        Math.pow(Math.max(mascotCenterY, window.innerHeight - mascotCenterY), 2)
+        Math.pow(Math.max(lockedMascotX, window.innerWidth - lockedMascotX), 2) +
+        Math.pow(Math.max(lockedMascotY, window.innerHeight - lockedMascotY), 2)
     ) + 100;
 
     let currentRadius = maxRadius;
-    const targetRadius = 45; // Small circle around mascot
-    let phase = 'closing'; // 'closing', 'holding', 'complete'
+    const targetRadius = 50;
+    let phase = 'closing';
     let holdTimer = 0;
 
     function animateIris() {
         ctx.clearRect(0, 0, irisCanvas.width, irisCanvas.height);
 
-        // Update mascot position for tracking
-        const trackX = mascot.x + mascot.width / 2;
-        const trackY = mascot.y + mascot.height / 2;
-
         if (phase === 'closing') {
-            // Smooth eased closing - starts fast, slows down as it gets smaller
-            const progress = 1 - (currentRadius / maxRadius);
-            const easeAmount = 6 + (progress * 8); // Speeds up slightly then slows
-
-            if (currentRadius > 300) {
-                currentRadius -= easeAmount * 1.5; // Fast at start
-            } else if (currentRadius > 100) {
-                currentRadius -= easeAmount * 0.8; // Medium speed
-            } else {
-                currentRadius -= easeAmount * 0.4; // Slow at end
-            }
-
+            currentRadius -= 12; // Steady fast close
             if (currentRadius <= targetRadius) {
                 currentRadius = targetRadius;
                 phase = 'holding';
             }
         } else if (phase === 'holding') {
             holdTimer++;
-            // Gentle pulse while holding
-            currentRadius = targetRadius + Math.sin(holdTimer * 0.1) * 3;
+            currentRadius = targetRadius + Math.sin(holdTimer * 0.15) * 3;
 
-            if (holdTimer > 60) {
+            if (holdTimer > 40) {
                 phase = 'complete';
-                // Start the trapdoor fall
-                createTrapdoorAndFall();
+                // Start the fall immediately
+                mascotFallIntoGame();
 
-                // Fade out iris and cleanup
+                // Fade out iris
                 setTimeout(() => {
-                    irisCanvas.style.transition = 'opacity 0.5s ease';
+                    irisCanvas.style.transition = 'opacity 0.4s ease';
                     irisCanvas.style.opacity = '0';
                     setTimeout(() => {
                         irisCanvas.remove();
                         mascotCanvas.style.zIndex = '';
-                    }, 500);
-                }, 1200);
+                    }, 400);
+                }, 800);
             }
         }
 
         if (phase !== 'complete') {
-            // Draw the iris (black with circular hole)
+            // Draw iris centered on locked position
             ctx.fillStyle = '#000';
             ctx.beginPath();
             ctx.rect(0, 0, irisCanvas.width, irisCanvas.height);
-
-            // Cut out circular hole centered on mascot
-            ctx.moveTo(trackX + currentRadius, trackY);
-            ctx.arc(trackX, trackY, currentRadius, 0, Math.PI * 2, true);
+            ctx.moveTo(lockedMascotX + currentRadius, lockedMascotY);
+            ctx.arc(lockedMascotX, lockedMascotY, currentRadius, 0, Math.PI * 2, true);
             ctx.fill();
 
-            // Add subtle glow ring around the opening
-            ctx.strokeStyle = 'rgba(139, 92, 246, 0.4)';
+            ctx.strokeStyle = 'rgba(139, 92, 246, 0.5)';
             ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.arc(trackX, trackY, currentRadius + 2, 0, Math.PI * 2);
+            ctx.arc(lockedMascotX, lockedMascotY, currentRadius + 2, 0, Math.PI * 2);
             ctx.stroke();
 
             requestAnimationFrame(animateIris);
         }
     }
 
-    // Start animation
     requestAnimationFrame(animateIris);
 }
 

@@ -63,7 +63,7 @@ function initGame() {
     gameCanvas.width = window.innerWidth;
     gameCanvas.height = window.innerHeight;
 
-    game.gameHeight = window.innerHeight * 2.8; // Shorter game
+    game.gameHeight = window.innerHeight * 2.5; // Shorter game
 
     // Jump physics - be generous with distances
     const MAX_SAFE_VERTICAL = 55;
@@ -79,10 +79,10 @@ function initGame() {
     game.voidTendrils = [];
 
     const screenWidth = gameCanvas.width;
-    const numColumns = 7;
+    const numColumns = 9; // More columns
     const columnWidth = screenWidth / numColumns;
-    const numRows = 18; // Fewer rows for shorter game
-    const rowHeight = (game.gameHeight - 350) / numRows;
+    const numRows = 22; // More rows but closer together
+    const rowHeight = (game.gameHeight - 300) / numRows; // Smaller row height = closer platforms
 
     // Platform sizes
     const PLATFORM_WIDTH_MIN = 85;
@@ -117,21 +117,21 @@ function initGame() {
         });
     }
 
-    // Generate platforms - lots of platforms for easy gameplay
+    // Generate platforms - TONS of platforms for guaranteed possible gameplay
     const platformGrid = [];
 
     for (let row = 0; row < numRows; row++) {
         platformGrid[row] = [];
         const baseY = game.gameHeight - 160 - (row * rowHeight);
-        const isCheckpointRow = row % 5 === 0 && row > 0; // More frequent checkpoints
+        const isCheckpointRow = row % 4 === 0 && row > 0; // Checkpoint every 4 rows
 
         let zone = 'intro';
-        if (row >= 5 && row < 10) zone = 'water';
-        else if (row >= 10 && row < 15) zone = 'lava';
-        else if (row >= 15) zone = 'final';
+        if (row >= 6 && row < 12) zone = 'water';
+        else if (row >= 12 && row < 18) zone = 'lava';
+        else if (row >= 18) zone = 'final';
 
-        // 6-7 platforms per row - very dense for easy jumping
-        const platformsThisRow = isCheckpointRow ? 7 : 6 + Math.floor(Math.random() * 2);
+        // 7-9 platforms per row - extremely dense
+        const platformsThisRow = isCheckpointRow ? 9 : 7 + Math.floor(Math.random() * 3);
         const columnOrder = [...Array(numColumns).keys()].sort(() => Math.random() - 0.5);
 
         for (let p = 0; p < Math.min(platformsThisRow, numColumns); p++) {
@@ -180,10 +180,10 @@ function initGame() {
         }
     }
 
-    // Add ~150 moving platforms for more options
+    // Add tons of moving platforms
     for (let row = 0; row < numRows; row++) {
         const baseY = game.gameHeight - 160 - (row * rowHeight);
-        const movingCount = 4 + Math.floor(Math.random() * 3);
+        const movingCount = 5 + Math.floor(Math.random() * 4); // 5-8 per row
 
         for (let m = 0; m < movingCount; m++) {
             const x = Math.random() * (screenWidth - 70);

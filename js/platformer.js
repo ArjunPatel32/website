@@ -64,9 +64,9 @@ function initGame() {
     gameCanvas.width = window.innerWidth;
     gameCanvas.height = window.innerHeight;
 
-    game.gameHeight = window.innerHeight * 2.5; // Shorter game
+    game.gameHeight = window.innerHeight * 2; // Short game
 
-    // Jump physics - be generous with distances
+    // Jump physics
     const MAX_SAFE_VERTICAL = 55;
     const MAX_SAFE_HORIZONTAL = 90;
     const MAX_DIAGONAL = Math.sqrt(MAX_SAFE_VERTICAL * MAX_SAFE_VERTICAL + MAX_SAFE_HORIZONTAL * MAX_SAFE_HORIZONTAL);
@@ -82,8 +82,8 @@ function initGame() {
     const screenWidth = gameCanvas.width;
     const numColumns = 9;
     const columnWidth = screenWidth / numColumns;
-    const numRows = 17; // Reduced for shorter game
-    const rowHeight = (game.gameHeight - 300) / numRows;
+    const numRows = 20; // More rows = closer spacing = easier jumps
+    const rowHeight = (game.gameHeight - 250) / numRows; // ~85-90px per row, easily jumpable
 
     // Platform sizes
     const PLATFORM_WIDTH_MIN = 85;
@@ -142,7 +142,8 @@ function initGame() {
 
             const width = isCheckpointRow ? CHECKPOINT_WIDTH : PLATFORM_WIDTH_MIN + Math.random() * (PLATFORM_WIDTH_MAX - PLATFORM_WIDTH_MIN);
             const x = baseX + Math.random() * Math.max(5, maxX - baseX - width);
-            const y = baseY + (Math.random() - 0.5) * 20;
+            // Scatter heights much more - ±35 pixels variation
+            const y = baseY + (Math.random() - 0.5) * 70;
 
             let color1, color2, glowColor;
             if (zone === 'water') {
@@ -182,10 +183,10 @@ function initGame() {
         }
     }
 
-    // Add tons of moving platforms
+    // Add tons of moving platforms - these help bridge gaps
     for (let row = 0; row < numRows; row++) {
         const baseY = game.gameHeight - 160 - (row * rowHeight);
-        const movingCount = 5 + Math.floor(Math.random() * 4); // 5-8 per row
+        const movingCount = 6 + Math.floor(Math.random() * 5); // 6-10 per row
 
         for (let m = 0; m < movingCount; m++) {
             const x = Math.random() * (screenWidth - 70);
@@ -247,7 +248,7 @@ function initGame() {
     }
 
     // VOID ORBS - dark floating orbs that move in patterns (deadly)
-    for (let i = 0; i < 32; i++) {
+    for (let i = 0; i < 20; i++) {
         const row = 2 + Math.floor(Math.random() * (numRows - 4));
         const x = 40 + Math.random() * (screenWidth - 80);
         const y = game.gameHeight - 160 - (row * rowHeight) - Math.random() * 60;
@@ -310,7 +311,7 @@ function initGame() {
     }
 
     // FIRE HAZARDS - floating
-    for (let i = 0; i < 28; i++) {
+    for (let i = 0; i < 18; i++) {
         const row = 2 + Math.floor(Math.random() * (numRows - 4));
         const x = 30 + Math.random() * (screenWidth - 60);
         const y = game.gameHeight - 160 - (row * rowHeight) - 10 - Math.random() * 70;

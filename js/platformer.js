@@ -42,7 +42,8 @@ const game = {
     won: false,
     fallTransition: 0,
     shakeIntensity: 0,
-    lastCheckpoint: null
+    lastCheckpoint: null,
+    bestCheckpoint: null // Tracks the furthest checkpoint reached
 };
 
 // Physics constants
@@ -79,10 +80,10 @@ function initGame() {
     game.voidTendrils = [];
 
     const screenWidth = gameCanvas.width;
-    const numColumns = 9; // More columns
+    const numColumns = 9;
     const columnWidth = screenWidth / numColumns;
-    const numRows = 22; // More rows but closer together
-    const rowHeight = (game.gameHeight - 300) / numRows; // Smaller row height = closer platforms
+    const numRows = 17; // Reduced for shorter game
+    const rowHeight = (game.gameHeight - 300) / numRows;
 
     // Platform sizes
     const PLATFORM_WIDTH_MIN = 85;
@@ -123,12 +124,12 @@ function initGame() {
     for (let row = 0; row < numRows; row++) {
         platformGrid[row] = [];
         const baseY = game.gameHeight - 160 - (row * rowHeight);
-        const isCheckpointRow = row % 4 === 0 && row > 0; // Checkpoint every 4 rows
+        const isCheckpointRow = row % 3 === 0 && row > 0; // Checkpoint every 3 rows
 
         let zone = 'intro';
-        if (row >= 6 && row < 12) zone = 'water';
-        else if (row >= 12 && row < 18) zone = 'lava';
-        else if (row >= 18) zone = 'final';
+        if (row >= 5 && row < 10) zone = 'water';
+        else if (row >= 10 && row < 14) zone = 'lava';
+        else if (row >= 14) zone = 'final';
 
         // 7-9 platforms per row - extremely dense
         const platformsThisRow = isCheckpointRow ? 9 : 7 + Math.floor(Math.random() * 3);
@@ -162,10 +163,11 @@ function initGame() {
                 glowColor = 'rgba(139, 92, 246, 0.3)';
             }
 
-            const isCheckpoint = isCheckpointRow && p === Math.floor(platformsThisRow / 2);
+            // Multiple checkpoints per row - left side, middle, and right side
+            const isCheckpoint = isCheckpointRow && (p === 1 || p === Math.floor(platformsThisRow / 2) || p === platformsThisRow - 2);
             const platform = {
                 x: x, y: y,
-                width: width,
+                width: isCheckpoint ? CHECKPOINT_WIDTH : width,
                 height: isCheckpoint ? 20 : PLATFORM_HEIGHT,
                 color1: isCheckpoint ? '#10b981' : color1,
                 color2: isCheckpoint ? '#059669' : color2,
@@ -223,24 +225,23 @@ function initGame() {
 
     // ============ TONS OF OBSTACLES ============
 
-    // WALLS - maze-like barriers that block but don't kill
+    // WALLS - vertical barriers only (no horizontal - you'd get stuck on them)
     for (let row = 2; row < numRows - 2; row++) {
         if (Math.random() > 0.5) continue; // Skip half the rows
         const baseY = game.gameHeight - 160 - (row * rowHeight);
 
-        // 1-3 walls per row
-        const wallCount = 1 + Math.floor(Math.random() * 3);
+        // 1-2 walls per row
+        const wallCount = 1 + Math.floor(Math.random() * 2);
         for (let w = 0; w < wallCount; w++) {
-            const isVertical = Math.random() > 0.3;
             const x = 30 + Math.random() * (screenWidth - 80);
             const y = baseY - 20 - Math.random() * 60;
 
             game.walls.push({
                 x: x,
                 y: y,
-                width: isVertical ? 20 : 80 + Math.random() * 120,
-                height: isVertical ? 60 + Math.random() * 100 : 20,
-                isVertical: isVertical
+                width: 20, // Always vertical
+                height: 60 + Math.random() * 80,
+                isVertical: true
             });
         }
     }
@@ -405,6 +406,7 @@ function initGame() {
     game.shakeIntensity = 0;
     game.slideOffset = window.innerHeight;
     game.lastCheckpoint = null;
+    game.bestCheckpoint = null;
     game.introTimer = 0;
     game.landingAnimationTimer = 0;
     game.getUpAnimationTimer = 0;
@@ -477,6 +479,35 @@ function handleKeyDown(e) {
             keys.jump = true;
             e.preventDefault();
             break;
+        case 'r':
+            // Respawn at checkpoint
+            respawnAtCheckpoint();
+            break;
+    }
+}
+
+function respawnAtCheckpoint() {
+    const p = game.player;
+    const respawnPlatform = game.bestCheckpoint ||
+        game.platforms.find(pl => pl.isStart) ||
+        game.platforms[0];
+
+    p.x = respawnPlatform.x + respawnPlatform.width / 2 - p.width / 2;
+    p.y = respawnPlatform.y - p.height;
+    p.vx = 0;
+    p.vy = 0;
+    p.onGround = true;
+    game.shakeIntensity = 8;
+
+    for (let i = 0; i < 12; i++) {
+        game.particles.push({
+            x: p.x + p.width / 2,
+            y: p.y + p.height / 2,
+            vx: (Math.random() - 0.5) * 8,
+            vy: (Math.random() - 0.5) * 8,
+            life: 1,
+            color: '#10b981'
+        });
     }
 }
 
@@ -733,19 +764,23 @@ function updatePlayer() {
                 p.onGround = true;
                 p.squatAmount = Math.min(p.vy, 8); // Landing squash
 
-                if (plat.isCheckpoint && (!game.lastCheckpoint || plat.checkpointId > game.lastCheckpoint.checkpointId)) {
-                    game.lastCheckpoint = plat;
-                    for (let i = 0; i < 20; i++) {
-                        game.particles.push({
-                            x: plat.x + plat.width / 2,
-                            y: plat.y,
-                            vx: (Math.random() - 0.5) * 8,
-                            vy: -Math.random() * 6 - 2,
-                            life: 1.2,
-                            color: '#10b981'
-                        });
+                if (plat.isCheckpoint) {
+                    // Only save as best checkpoint if it's further up (higher checkpointId = further north)
+                    if (!game.bestCheckpoint || plat.checkpointId > game.bestCheckpoint.checkpointId) {
+                        game.bestCheckpoint = plat;
+                        // Celebration particles for new best checkpoint
+                        for (let i = 0; i < 20; i++) {
+                            game.particles.push({
+                                x: plat.x + plat.width / 2,
+                                y: plat.y,
+                                vx: (Math.random() - 0.5) * 8,
+                                vy: -Math.random() * 6 - 2,
+                                life: 1.2,
+                                color: '#10b981'
+                            });
+                        }
+                        game.shakeIntensity = 5;
                     }
-                    game.shakeIntensity = 5;
                 }
             }
         }
@@ -871,7 +906,8 @@ function updatePlayer() {
     }
 
     function respawnPlayer() {
-        const respawnPlatform = game.lastCheckpoint ||
+        // Use best checkpoint (furthest reached), not last touched
+        const respawnPlatform = game.bestCheckpoint ||
             game.platforms.find(pl => pl.isStart) ||
             game.platforms[game.platforms.length - 1];
 
@@ -879,6 +915,7 @@ function updatePlayer() {
         p.y = respawnPlatform.y - p.height;
         p.vx = 0;
         p.vy = 0;
+        p.onGround = true;
         game.shakeIntensity = 12;
 
         for (let i = 0; i < 15; i++) {
@@ -892,7 +929,7 @@ function updatePlayer() {
             });
         }
 
-        if (game.lastCheckpoint) {
+        if (game.bestCheckpoint) {
             for (let i = 0; i < 10; i++) {
                 game.particles.push({
                     x: p.x + p.width / 2,

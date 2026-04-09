@@ -46,12 +46,12 @@ const game = {
     bestCheckpoint: null // Tracks the furthest checkpoint reached
 };
 
-// Physics constants - fast and responsive (+10%)
-const GRAVITY = 1.1;
-const JUMP_FORCE = -16.5;
-const MOVE_SPEED = 9;
+// Physics constants - fast and responsive (+15% more)
+const GRAVITY = 1.25;
+const JUMP_FORCE = -19;
+const MOVE_SPEED = 10.5;
 const FRICTION = 0.89;
-const MAX_FALL_SPEED = 22;
+const MAX_FALL_SPEED = 25;
 
 // Input state
 const keys = {
@@ -544,10 +544,10 @@ function updatePlayer() {
 
     // Handle intro falling
     if (p.introFalling) {
-        // Fast intro fall
-        const introGravity = GRAVITY * 0.9;
+        // Fast intro fall (+15%)
+        const introGravity = GRAVITY * 0.95;
         p.vy += introGravity;
-        p.vy = Math.min(p.vy, 18); // Fast fall
+        p.vy = Math.min(p.vy, 22); // Fast fall
 
         // Smooth interpolation for position
         p.y += p.vy;
@@ -621,13 +621,13 @@ function updatePlayer() {
         return;
     }
 
-    // Normal gameplay - fast acceleration (+10%)
+    // Normal gameplay - fast acceleration (+15% more)
     if (keys.left) {
-        p.vx -= 1.0;
+        p.vx -= 1.15;
         p.facingRight = false;
     }
     if (keys.right) {
-        p.vx += 1.0;
+        p.vx += 1.15;
         p.facingRight = true;
     }
 

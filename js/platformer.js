@@ -124,7 +124,7 @@ function initGame() {
     for (let row = 0; row < numRows; row++) {
         platformGrid[row] = [];
         const baseY = game.gameHeight - 160 - (row * rowHeight);
-        const isCheckpointRow = row % 3 === 0 && row > 0; // Checkpoint every 3 rows
+        const isCheckpointRow = row % 2 === 0 && row > 0; // Checkpoint every 2 rows
 
         let zone = 'intro';
         if (row >= 5 && row < 10) zone = 'water';
@@ -164,16 +164,11 @@ function initGame() {
                 glowColor = 'rgba(139, 92, 246, 0.3)';
             }
 
-            // Checkpoints: one in each third of the screen (left, middle, right)
-            const thirdWidth = screenWidth / 3;
-            const minSpacing = screenWidth / 10;
-            const isLeftThird = x < thirdWidth - minSpacing;
-            const isMiddleThird = x >= thirdWidth + minSpacing && x < thirdWidth * 2 - minSpacing;
-            const isRightThird = x >= thirdWidth * 2 + minSpacing;
+            // Checkpoints: 3 per checkpoint row (positions 1, middle, and second-to-last)
             const isCheckpoint = isCheckpointRow && (
-                (p === 0 && isLeftThird) ||
-                (p === Math.floor(platformsThisRow / 2) && isMiddleThird) ||
-                (p === platformsThisRow - 1 && isRightThird)
+                p === 1 ||
+                p === Math.floor(platformsThisRow / 2) ||
+                p === platformsThisRow - 2
             );
             const platform = {
                 x: x, y: y,

@@ -31,8 +31,11 @@ const game = {
     hazards: [],
     movingPlatforms: [],
     crushers: [],
+    walls: [],
+    voidOrbs: [],
     particles: [],
     bgStars: [],
+    voidTendrils: [],
     exitPortal: { x: 0, y: 0, radius: 60 },
     camera: { y: 0 },
     gameHeight: 0,
@@ -43,11 +46,11 @@ const game = {
 };
 
 // Physics constants
-const GRAVITY = 0.45;
-const JUMP_FORCE = -10.5;
-const MOVE_SPEED = 4.2;
-const FRICTION = 0.82;
-const MAX_FALL_SPEED = 12;
+const GRAVITY = 0.5;
+const JUMP_FORCE = -12;
+const MOVE_SPEED = 5;
+const FRICTION = 0.85;
+const MAX_FALL_SPEED = 14;
 
 // Input state
 const keys = {
@@ -60,36 +63,39 @@ function initGame() {
     gameCanvas.width = window.innerWidth;
     gameCanvas.height = window.innerHeight;
 
-    game.gameHeight = window.innerHeight * 5;
+    game.gameHeight = window.innerHeight * 4.5;
 
     // Jump physics - be generous with distances
-    const MAX_SAFE_VERTICAL = 50;
-    const MAX_SAFE_HORIZONTAL = 80;
+    const MAX_SAFE_VERTICAL = 55;
+    const MAX_SAFE_HORIZONTAL = 90;
     const MAX_DIAGONAL = Math.sqrt(MAX_SAFE_VERTICAL * MAX_SAFE_VERTICAL + MAX_SAFE_HORIZONTAL * MAX_SAFE_HORIZONTAL);
 
     game.platforms = [];
     game.movingPlatforms = [];
     game.hazards = [];
     game.crushers = [];
+    game.walls = [];
+    game.voidOrbs = [];
+    game.voidTendrils = [];
 
     const screenWidth = gameCanvas.width;
-    const numColumns = 8; // More columns
+    const numColumns = 7;
     const columnWidth = screenWidth / numColumns;
-    const numRows = 35; // More rows
-    const rowHeight = (game.gameHeight - 400) / numRows;
+    const numRows = 28;
+    const rowHeight = (game.gameHeight - 350) / numRows;
 
-    // Platform sizes - bigger
-    const PLATFORM_WIDTH_MIN = 90;
-    const PLATFORM_WIDTH_MAX = 140;
-    const PLATFORM_HEIGHT = 18;
-    const CHECKPOINT_WIDTH = 180;
+    // Platform sizes
+    const PLATFORM_WIDTH_MIN = 85;
+    const PLATFORM_WIDTH_MAX = 130;
+    const PLATFORM_HEIGHT = 16;
+    const CHECKPOINT_WIDTH = 160;
 
     // Starting platform
     game.platforms.push({
-        x: screenWidth / 2 - 100,
+        x: screenWidth / 2 - 90,
         y: game.gameHeight - 60,
-        width: 200,
-        height: 24,
+        width: 180,
+        height: 22,
         color1: '#10b981',
         color2: '#059669',
         glowColor: 'rgba(16, 185, 129, 0.5)',
@@ -98,292 +104,268 @@ function initGame() {
         col: Math.floor(numColumns / 2)
     });
 
-    // Track all platforms by position for obstacle checking
-    const allPlatformPositions = [];
+    // Generate void background tendrils
+    for (let i = 0; i < 25; i++) {
+        game.voidTendrils.push({
+            x: Math.random() * screenWidth,
+            y: Math.random() * game.gameHeight,
+            length: 150 + Math.random() * 300,
+            angle: Math.random() * Math.PI * 2,
+            speed: 0.002 + Math.random() * 0.004,
+            thickness: 20 + Math.random() * 40,
+            phase: Math.random() * Math.PI * 2
+        });
+    }
 
-    // Generate dense grid of platforms
+    // Generate platforms - aiming for ~225 total
     const platformGrid = [];
 
     for (let row = 0; row < numRows; row++) {
         platformGrid[row] = [];
-        const baseY = game.gameHeight - 180 - (row * rowHeight);
-        const isCheckpointRow = row % 7 === 0 && row > 0; // Checkpoints every 7 rows
+        const baseY = game.gameHeight - 160 - (row * rowHeight);
+        const isCheckpointRow = row % 6 === 0 && row > 0;
 
-        // Zone based on row
         let zone = 'intro';
-        if (row >= 8 && row < 16) zone = 'water';
-        else if (row >= 16 && row < 26) zone = 'lava';
-        else if (row >= 26) zone = 'final';
+        if (row >= 7 && row < 14) zone = 'water';
+        else if (row >= 14 && row < 22) zone = 'lava';
+        else if (row >= 22) zone = 'final';
 
-        // Place 4-7 platforms per row for dense coverage
-        const platformsThisRow = isCheckpointRow ? 5 : 4 + Math.floor(Math.random() * 4);
-
-        // Distribute across columns more evenly
+        // 3-5 platforms per row = ~28 rows * 4 avg = ~112 static platforms
+        const platformsThisRow = isCheckpointRow ? 4 : 3 + Math.floor(Math.random() * 3);
         const columnOrder = [...Array(numColumns).keys()].sort(() => Math.random() - 0.5);
 
         for (let p = 0; p < Math.min(platformsThisRow, numColumns); p++) {
             const col = columnOrder[p];
-
-            const baseX = col * columnWidth + 10;
-            const maxX = (col + 1) * columnWidth - 10;
+            const baseX = col * columnWidth + 15;
+            const maxX = (col + 1) * columnWidth - 15;
 
             const width = isCheckpointRow ? CHECKPOINT_WIDTH : PLATFORM_WIDTH_MIN + Math.random() * (PLATFORM_WIDTH_MAX - PLATFORM_WIDTH_MIN);
             const x = baseX + Math.random() * Math.max(5, maxX - baseX - width);
-            const y = baseY + (Math.random() - 0.5) * 25;
+            const y = baseY + (Math.random() - 0.5) * 20;
 
-            // Zone colors
             let color1, color2, glowColor;
             if (zone === 'water') {
-                color1 = `hsl(${190 + Math.random() * 25}, 70%, 55%)`;
-                color2 = `hsl(${200 + Math.random() * 25}, 60%, 45%)`;
-                glowColor = 'rgba(56, 189, 248, 0.4)';
+                color1 = `hsl(${190 + Math.random() * 25}, 70%, 50%)`;
+                color2 = `hsl(${200 + Math.random() * 25}, 60%, 40%)`;
+                glowColor = 'rgba(56, 189, 248, 0.3)';
             } else if (zone === 'lava') {
-                color1 = `hsl(${5 + Math.random() * 25}, 85%, 55%)`;
-                color2 = `hsl(${0 + Math.random() * 20}, 75%, 45%)`;
-                glowColor = 'rgba(249, 115, 22, 0.4)';
+                color1 = `hsl(${5 + Math.random() * 25}, 85%, 50%)`;
+                color2 = `hsl(${0 + Math.random() * 20}, 75%, 40%)`;
+                glowColor = 'rgba(249, 115, 22, 0.3)';
             } else if (zone === 'final') {
-                color1 = `hsl(${275 + Math.random() * 35}, 80%, 60%)`;
-                color2 = `hsl(${285 + Math.random() * 35}, 70%, 50%)`;
-                glowColor = 'rgba(168, 85, 247, 0.4)';
+                color1 = `hsl(${275 + Math.random() * 35}, 75%, 55%)`;
+                color2 = `hsl(${285 + Math.random() * 35}, 65%, 45%)`;
+                glowColor = 'rgba(168, 85, 247, 0.3)';
             } else {
-                color1 = `hsl(${245 + Math.random() * 35}, 75%, 60%)`;
-                color2 = `hsl(${255 + Math.random() * 35}, 65%, 50%)`;
-                glowColor = 'rgba(139, 92, 246, 0.4)';
+                color1 = `hsl(${245 + Math.random() * 35}, 70%, 55%)`;
+                color2 = `hsl(${255 + Math.random() * 35}, 60%, 45%)`;
+                glowColor = 'rgba(139, 92, 246, 0.3)';
             }
 
             const isCheckpoint = isCheckpointRow && p === Math.floor(platformsThisRow / 2);
             const platform = {
-                x: x,
-                y: y,
+                x: x, y: y,
                 width: width,
-                height: isCheckpoint ? 22 : PLATFORM_HEIGHT,
+                height: isCheckpoint ? 20 : PLATFORM_HEIGHT,
                 color1: isCheckpoint ? '#10b981' : color1,
                 color2: isCheckpoint ? '#059669' : color2,
-                glowColor: isCheckpoint ? 'rgba(16, 185, 129, 0.6)' : glowColor,
-                zone: zone,
-                row: row,
-                col: col,
+                glowColor: isCheckpoint ? 'rgba(16, 185, 129, 0.5)' : glowColor,
+                zone: zone, row: row, col: col,
                 isCheckpoint: isCheckpoint,
                 checkpointId: row
             };
 
             game.platforms.push(platform);
             platformGrid[row].push(platform);
-            allPlatformPositions.push({ x: x, y: y, width: width, height: PLATFORM_HEIGHT });
         }
     }
 
-    // Ensure connectivity - add bridge platforms where needed
-    for (let row = 1; row < numRows; row++) {
-        const currentRowPlats = platformGrid[row];
-        const prevRowPlats = platformGrid[row - 1];
-        if (!prevRowPlats || prevRowPlats.length === 0) continue;
-
-        for (const plat of currentRowPlats) {
-            let isReachable = false;
-            let bestPrevPlat = null;
-            let bestDist = Infinity;
-
-            for (const prevPlat of prevRowPlats) {
-                const dx = Math.abs((plat.x + plat.width/2) - (prevPlat.x + prevPlat.width/2));
-                const dy = plat.y - prevPlat.y; // Should be negative (going up)
-                const diagonalDist = Math.sqrt(dx * dx + dy * dy);
-
-                if (diagonalDist < bestDist) {
-                    bestDist = diagonalDist;
-                    bestPrevPlat = prevPlat;
-                }
-
-                // Check if reachable considering obstacles
-                if (diagonalDist < MAX_DIAGONAL * 1.5) {
-                    isReachable = true;
-                }
-            }
-
-            // Add stepping stone platforms if gap is too large
-            if (!isReachable && bestPrevPlat) {
-                const steps = Math.ceil(bestDist / (MAX_DIAGONAL * 0.8));
-                for (let s = 1; s < steps; s++) {
-                    const t = s / steps;
-                    const midX = bestPrevPlat.x + (plat.x - bestPrevPlat.x) * t + (Math.random() - 0.5) * 30;
-                    const midY = bestPrevPlat.y + (plat.y - bestPrevPlat.y) * t;
-
-                    game.movingPlatforms.push({
-                        x: midX,
-                        y: midY,
-                        width: 75 + Math.random() * 25,
-                        height: 16,
-                        startX: midX,
-                        startY: midY,
-                        moveRange: 20 + Math.random() * 25,
-                        speed: 0.4 + Math.random() * 0.4,
-                        direction: 1,
-                        moveType: Math.random() > 0.5 ? 'horizontal' : 'vertical',
-                        color1: '#06b6d4',
-                        color2: '#0891b2',
-                        glowColor: 'rgba(6, 182, 212, 0.5)',
-                        isBridge: true
-                    });
-                }
-            }
-        }
-    }
-
-    // Add TONS of moving platforms for visual interest and alternative paths
+    // Add ~100 moving platforms
     for (let row = 0; row < numRows; row++) {
-        const baseY = game.gameHeight - 180 - (row * rowHeight);
+        const baseY = game.gameHeight - 160 - (row * rowHeight);
+        const movingCount = 3 + Math.floor(Math.random() * 2);
 
-        // 4-6 moving platforms per row
-        const movingCount = 4 + Math.floor(Math.random() * 3);
         for (let m = 0; m < movingCount; m++) {
-            const x = Math.random() * (screenWidth - 80);
-            const y = baseY + (Math.random() - 0.5) * rowHeight * 0.6;
+            const x = Math.random() * (screenWidth - 70);
+            const y = baseY + (Math.random() - 0.5) * rowHeight * 0.5;
 
             const moveType = Math.random();
             let type, color1, color2, glowColor;
 
             if (moveType < 0.35) {
                 type = 'horizontal';
-                color1 = '#f59e0b';
-                color2 = '#d97706';
-                glowColor = 'rgba(245, 158, 11, 0.4)';
+                color1 = '#f59e0b'; color2 = '#d97706';
+                glowColor = 'rgba(245, 158, 11, 0.3)';
             } else if (moveType < 0.65) {
                 type = 'vertical';
-                color1 = '#06b6d4';
-                color2 = '#0891b2';
-                glowColor = 'rgba(6, 182, 212, 0.4)';
+                color1 = '#06b6d4'; color2 = '#0891b2';
+                glowColor = 'rgba(6, 182, 212, 0.3)';
             } else {
                 type = 'circular';
-                color1 = '#a855f7';
-                color2 = '#7c3aed';
-                glowColor = 'rgba(168, 85, 247, 0.4)';
+                color1 = '#a855f7'; color2 = '#7c3aed';
+                glowColor = 'rgba(168, 85, 247, 0.3)';
             }
 
             game.movingPlatforms.push({
-                x: x,
-                y: y,
-                width: 70 + Math.random() * 40,
-                height: 16,
-                startX: x,
-                startY: y,
-                moveRange: 25 + Math.random() * 45,
-                speed: 0.3 + Math.random() * 0.6,
+                x: x, y: y,
+                width: 65 + Math.random() * 35,
+                height: 14,
+                startX: x, startY: y,
+                moveRange: 25 + Math.random() * 40,
+                speed: 0.4 + Math.random() * 0.5,
                 direction: Math.random() > 0.5 ? 1 : -1,
                 moveType: type,
                 phase: Math.random() * Math.PI * 2,
-                color1: color1,
-                color2: color2,
-                glowColor: glowColor
+                color1: color1, color2: color2, glowColor: glowColor
             });
         }
     }
 
-    // Helper function to check if position is clear of obstacles
-    function isPositionClearOfHazards(x, y, width, height, hazardList) {
-        for (const h of hazardList) {
-            const hx = h.baseX !== undefined ? h.baseX : h.x;
-            const hy = h.baseY !== undefined ? h.baseY : h.y;
-            const buffer = 40;
-            if (x < hx + h.width + buffer && x + width > hx - buffer &&
-                y < hy + h.height + buffer && y + height > hy - buffer) {
-                return false;
-            }
+    // ============ TONS OF OBSTACLES ============
+
+    // WALLS - maze-like barriers that block but don't kill
+    for (let row = 2; row < numRows - 2; row++) {
+        const baseY = game.gameHeight - 160 - (row * rowHeight);
+
+        // 2-4 walls per row
+        const wallCount = 2 + Math.floor(Math.random() * 3);
+        for (let w = 0; w < wallCount; w++) {
+            const isVertical = Math.random() > 0.3;
+            const x = 30 + Math.random() * (screenWidth - 80);
+            const y = baseY - 20 - Math.random() * 60;
+
+            game.walls.push({
+                x: x,
+                y: y,
+                width: isVertical ? 20 : 80 + Math.random() * 120,
+                height: isVertical ? 60 + Math.random() * 100 : 20,
+                isVertical: isVertical
+            });
         }
-        return true;
     }
 
-    // Add hazards - but check they don't block paths
+    // VOID ORBS - dark floating orbs that move in patterns (deadly)
+    for (let i = 0; i < 40; i++) {
+        const row = 2 + Math.floor(Math.random() * (numRows - 4));
+        const x = 40 + Math.random() * (screenWidth - 80);
+        const y = game.gameHeight - 160 - (row * rowHeight) - Math.random() * 60;
 
-    // Spikes on platforms (sparse)
-    for (let i = 8; i < game.platforms.length; i += 10) {
+        const pattern = Math.floor(Math.random() * 4); // 0: circle, 1: figure8, 2: horizontal, 3: vertical
+
+        game.voidOrbs.push({
+            x: x, y: y,
+            baseX: x, baseY: y,
+            radius: 15 + Math.random() * 12,
+            pattern: pattern,
+            speed: 0.008 + Math.random() * 0.015,
+            phase: Math.random() * Math.PI * 2,
+            moveRange: 40 + Math.random() * 60
+        });
+    }
+
+    // SPIKES - more of them, scattered
+    for (let i = 5; i < game.platforms.length; i += 4) {
         const plat = game.platforms[i];
-        if (plat.isCheckpoint || plat.isStart) continue;
-        if (plat.width < 110) continue; // Only on wider platforms
+        if (plat.isCheckpoint || plat.isStart || plat.width < 90) continue;
 
-        const spikeX = plat.x + 20 + Math.random() * (plat.width - 60);
         game.hazards.push({
-            x: spikeX,
-            y: plat.y - 16,
-            width: 20,
-            height: 16,
+            x: plat.x + 10 + Math.random() * (plat.width - 40),
+            y: plat.y - 18,
+            width: 22,
+            height: 18,
             type: 'spike'
         });
     }
 
-    // Water pools (water zone)
-    for (let row = 8; row < 16; row += 2) {
-        const x = 50 + Math.random() * (screenWidth - 200);
-        const y = game.gameHeight - 180 - (row * rowHeight) + rowHeight * 0.5;
-        const pool = {
-            x: x,
-            y: y,
-            width: 120 + Math.random() * 100,
-            height: 25,
-            type: 'water',
-            wavePhase: Math.random() * Math.PI * 2
-        };
-        // Make sure there's a path around it
-        game.hazards.push(pool);
+    // WATER POOLS - water zone (rows 7-13)
+    for (let row = 7; row < 14; row++) {
+        const poolCount = 1 + Math.floor(Math.random() * 2);
+        for (let p = 0; p < poolCount; p++) {
+            game.hazards.push({
+                x: 30 + Math.random() * (screenWidth - 180),
+                y: game.gameHeight - 160 - (row * rowHeight) + rowHeight * 0.4,
+                width: 100 + Math.random() * 120,
+                height: 28,
+                type: 'water',
+                wavePhase: Math.random() * Math.PI * 2
+            });
+        }
     }
 
-    // Lava pools (lava zone)
-    for (let row = 16; row < 26; row += 2) {
-        const x = 50 + Math.random() * (screenWidth - 180);
-        const y = game.gameHeight - 180 - (row * rowHeight) + rowHeight * 0.5;
-        game.hazards.push({
-            x: x,
-            y: y,
-            width: 100 + Math.random() * 80,
-            height: 22,
-            type: 'lava',
-            bubbleTimer: 0
-        });
+    // LAVA POOLS - lava zone (rows 14-21)
+    for (let row = 14; row < 22; row++) {
+        const poolCount = 1 + Math.floor(Math.random() * 2);
+        for (let p = 0; p < poolCount; p++) {
+            game.hazards.push({
+                x: 30 + Math.random() * (screenWidth - 160),
+                y: game.gameHeight - 160 - (row * rowHeight) + rowHeight * 0.4,
+                width: 90 + Math.random() * 100,
+                height: 25,
+                type: 'lava',
+                bubbleTimer: 0
+            });
+        }
     }
 
-    // Fire hazards (floating, moving)
-    for (let i = 0; i < 15; i++) {
-        const row = 3 + Math.floor(Math.random() * (numRows - 6));
-        const x = 50 + Math.random() * (screenWidth - 100);
-        const y = game.gameHeight - 180 - (row * rowHeight) - 20 - Math.random() * 50;
+    // FIRE HAZARDS - lots more, floating
+    for (let i = 0; i < 35; i++) {
+        const row = 2 + Math.floor(Math.random() * (numRows - 4));
+        const x = 30 + Math.random() * (screenWidth - 60);
+        const y = game.gameHeight - 160 - (row * rowHeight) - 10 - Math.random() * 70;
 
         game.hazards.push({
-            x: x,
-            y: y,
-            width: 24,
-            height: 24,
-            baseX: x,
-            baseY: y,
-            moveRange: 30 + Math.random() * 40,
-            speed: 0.008 + Math.random() * 0.012,
+            x: x, y: y,
+            width: 26, height: 26,
+            baseX: x, baseY: y,
+            moveRange: 35 + Math.random() * 50,
+            speed: 0.006 + Math.random() * 0.012,
             phase: Math.random() * Math.PI * 2,
             moveType: Math.random() > 0.5 ? 'vertical' : 'horizontal',
             type: 'fire'
         });
     }
 
-    // Crushers (later zones only)
-    for (let row = 20; row < numRows - 3; row += 4) {
-        const x = 80 + Math.random() * (screenWidth - 160);
-        const baseY = game.gameHeight - 180 - (row * rowHeight);
+    // CRUSHERS - more of them
+    for (let row = 12; row < numRows - 2; row += 2) {
+        if (Math.random() > 0.6) continue;
+        const x = 60 + Math.random() * (screenWidth - 120);
+        const baseY = game.gameHeight - 160 - (row * rowHeight);
 
         game.crushers.push({
             x: x,
-            y: baseY - 180,
-            width: 45,
-            height: 55,
-            baseY: baseY - 180,
-            targetY: baseY - 45,
+            y: baseY - 200,
+            width: 50, height: 60,
+            baseY: baseY - 200,
+            targetY: baseY - 50,
             state: 'waiting',
-            waitTimer: 100 + Math.floor(Math.random() * 120),
+            waitTimer: 80 + Math.floor(Math.random() * 100),
             speed: 0
         });
     }
 
+    // LASER BEAMS - horizontal beams that sweep (new obstacle type)
+    for (let row = 5; row < numRows - 3; row += 3) {
+        if (Math.random() > 0.5) continue;
+        const y = game.gameHeight - 160 - (row * rowHeight) - 30;
+        const goingRight = Math.random() > 0.5;
+
+        game.hazards.push({
+            x: goingRight ? -100 : screenWidth + 100,
+            y: y,
+            width: 150,
+            height: 8,
+            baseX: goingRight ? -100 : screenWidth + 100,
+            speed: 2 + Math.random() * 2,
+            direction: goingRight ? 1 : -1,
+            type: 'laser'
+        });
+    }
+
     // Exit portal
-    const topY = game.gameHeight - 180 - ((numRows - 1) * rowHeight);
+    const topY = game.gameHeight - 160 - ((numRows - 1) * rowHeight);
     game.exitPortal = {
         x: screenWidth / 2,
-        y: topY - 140,
+        y: topY - 120,
         radius: 70,
         pulsePhase: 0
     };
@@ -622,11 +604,11 @@ function updatePlayer() {
         p.lastGroundTime = 0;
     }
 
-    // Can only jump if: on ground, cooldown is 0, and been on ground for at least 15 frames (~0.25s)
-    if (keys.jump && p.onGround && p.jumpCooldown === 0 && p.lastGroundTime > 15) {
+    // Can only jump if: on ground, cooldown is 0, and been on ground for at least 5 frames
+    if (keys.jump && p.onGround && p.jumpCooldown === 0 && p.lastGroundTime > 5) {
         p.vy = JUMP_FORCE;
         p.onGround = false;
-        p.jumpCooldown = 25; // ~0.4 second cooldown after jumping
+        p.jumpCooldown = 12; // ~0.2 second cooldown after jumping
         p.lastGroundTime = 0;
         for (let i = 0; i < 8; i++) {
             game.particles.push({
@@ -655,6 +637,87 @@ function updatePlayer() {
         p.x = gameCanvas.width;
     } else if (p.x > gameCanvas.width) {
         p.x = -p.width;
+    }
+
+    // Wall collisions - block movement but don't kill
+    if (game.walls) {
+        for (const wall of game.walls) {
+            // Check if player overlaps wall
+            if (p.x + p.width > wall.x && p.x < wall.x + wall.width &&
+                p.y + p.height > wall.y && p.y < wall.y + wall.height) {
+
+                // Determine which side to push out from
+                const overlapLeft = (p.x + p.width) - wall.x;
+                const overlapRight = (wall.x + wall.width) - p.x;
+                const overlapTop = (p.y + p.height) - wall.y;
+                const overlapBottom = (wall.y + wall.height) - p.y;
+
+                const minOverlapX = Math.min(overlapLeft, overlapRight);
+                const minOverlapY = Math.min(overlapTop, overlapBottom);
+
+                if (minOverlapX < minOverlapY) {
+                    // Push horizontally
+                    if (overlapLeft < overlapRight) {
+                        p.x = wall.x - p.width;
+                    } else {
+                        p.x = wall.x + wall.width;
+                    }
+                    p.vx = 0;
+                } else {
+                    // Push vertically
+                    if (overlapTop < overlapBottom) {
+                        p.y = wall.y - p.height;
+                        p.vy = 0;
+                        p.onGround = true;
+                    } else {
+                        p.y = wall.y + wall.height;
+                        p.vy = 0;
+                    }
+                }
+            }
+        }
+    }
+
+    // Void orb collisions - deadly
+    if (game.voidOrbs) {
+        for (const orb of game.voidOrbs) {
+            // Update orb position based on pattern
+            orb.phase += orb.speed;
+            if (orb.pattern === 0) { // Circle
+                orb.x = orb.baseX + Math.cos(orb.phase) * orb.moveRange;
+                orb.y = orb.baseY + Math.sin(orb.phase) * orb.moveRange;
+            } else if (orb.pattern === 1) { // Figure 8
+                orb.x = orb.baseX + Math.sin(orb.phase) * orb.moveRange;
+                orb.y = orb.baseY + Math.sin(orb.phase * 2) * (orb.moveRange * 0.5);
+            } else if (orb.pattern === 2) { // Horizontal
+                orb.x = orb.baseX + Math.sin(orb.phase) * orb.moveRange;
+            } else { // Vertical
+                orb.y = orb.baseY + Math.sin(orb.phase) * orb.moveRange;
+            }
+
+            // Check collision with player
+            const dx = (p.x + p.width/2) - orb.x;
+            const dy = (p.y + p.height/2) - orb.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < orb.radius + 15) {
+                respawnPlayer();
+                break;
+            }
+        }
+    }
+
+    // Laser beam collisions - deadly
+    for (const h of game.hazards) {
+        if (h.type === 'laser') {
+            // Update laser position
+            h.x += h.speed * h.direction;
+            // Reset when off screen
+            if (h.direction > 0 && h.x > gameCanvas.width + 200) {
+                h.x = -h.width - 100;
+            } else if (h.direction < 0 && h.x < -h.width - 200) {
+                h.x = gameCanvas.width + 100;
+            }
+        }
     }
 
     // Platform collision
@@ -912,8 +975,58 @@ function drawGame() {
     const shakeY = Math.cos(shakeTime * 1.3) * game.shakeIntensity * 0.5 + (Math.random() - 0.5) * game.shakeIntensity * 0.5;
     ctx.translate(shakeX, -game.camera.y + shakeY);
 
-    // Draw background stars
+    // Draw void background with tendrils
     const time = Date.now() * 0.001;
+
+    // Draw void tendrils - eerie swirling dark purple/black tendrils
+    if (game.voidTendrils) {
+        game.voidTendrils.forEach(tendril => {
+            const parallaxY = tendril.y + game.camera.y * 0.3;
+            const screenY = parallaxY - game.camera.y;
+
+            if (screenY > -tendril.length && screenY < gameCanvas.height + tendril.length) {
+                tendril.angle += tendril.speed;
+
+                ctx.save();
+                ctx.translate(tendril.x, parallaxY);
+                ctx.rotate(tendril.angle);
+
+                // Create gradient for tendril
+                const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, tendril.length);
+                grad.addColorStop(0, `rgba(88, 28, 135, ${0.3 + Math.sin(time + tendril.phase) * 0.1})`);
+                grad.addColorStop(0.5, `rgba(59, 7, 100, ${0.2 + Math.sin(time * 0.8 + tendril.phase) * 0.1})`);
+                grad.addColorStop(1, 'transparent');
+
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+
+                // Wavy tendril shape
+                for (let i = 0; i <= 20; i++) {
+                    const t = i / 20;
+                    const dist = t * tendril.length;
+                    const waveOffset = Math.sin(t * 4 + time * 2 + tendril.phase) * tendril.thickness * (1 - t) * 0.5;
+                    const angle = t * Math.PI * 0.5;
+
+                    if (i === 0) {
+                        ctx.moveTo(waveOffset, dist);
+                    } else {
+                        ctx.lineTo(waveOffset, dist);
+                    }
+                }
+                for (let i = 20; i >= 0; i--) {
+                    const t = i / 20;
+                    const dist = t * tendril.length;
+                    const waveOffset = Math.sin(t * 4 + time * 2 + tendril.phase + Math.PI) * tendril.thickness * (1 - t) * 0.5;
+                    ctx.lineTo(waveOffset + tendril.thickness * (1 - t), dist);
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+        });
+    }
+
+    // Draw dim background stars (fewer, dimmer for void theme)
     game.bgStars.forEach(star => {
         const parallaxY = star.y + game.camera.y * (1 - star.depth);
         const screenY = parallaxY - game.camera.y;
@@ -921,8 +1034,8 @@ function drawGame() {
         if (screenY > -50 && screenY < gameCanvas.height + 50) {
             const twinkle = Math.sin(time * star.twinkleSpeed + star.twinkleOffset) * 0.3 + 0.7;
             ctx.beginPath();
-            ctx.arc(star.x, parallaxY, star.radius, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(255, 255, 255, ${0.5 * twinkle * star.depth})`;
+            ctx.arc(star.x, parallaxY, star.radius * 0.7, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(139, 92, 246, ${0.25 * twinkle * star.depth})`; // Purple tint, dimmer
             ctx.fill();
         }
     });
@@ -1098,6 +1211,47 @@ function drawGame() {
         ctx.shadowBlur = 0;
     });
 
+    // Draw walls (maze barriers - block but don't kill)
+    if (game.walls) {
+        game.walls.forEach(wall => {
+            ctx.shadowColor = 'rgba(88, 28, 135, 0.5)';
+            ctx.shadowBlur = 10;
+
+            // Dark purple/gray gradient for void walls
+            const wallGrad = ctx.createLinearGradient(
+                wall.x, wall.y,
+                wall.x + (wall.isVertical ? wall.width : 0),
+                wall.y + (wall.isVertical ? 0 : wall.height)
+            );
+            wallGrad.addColorStop(0, '#1e1b4b');
+            wallGrad.addColorStop(0.5, '#312e81');
+            wallGrad.addColorStop(1, '#1e1b4b');
+
+            ctx.fillStyle = wallGrad;
+            ctx.beginPath();
+            ctx.roundRect(wall.x, wall.y, wall.width, wall.height, 4);
+            ctx.fill();
+
+            // Border glow
+            ctx.strokeStyle = 'rgba(139, 92, 246, 0.4)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Inner pattern - small dots
+            ctx.fillStyle = 'rgba(139, 92, 246, 0.2)';
+            const dotSpacing = 15;
+            for (let dx = dotSpacing; dx < wall.width - 5; dx += dotSpacing) {
+                for (let dy = dotSpacing; dy < wall.height - 5; dy += dotSpacing) {
+                    ctx.beginPath();
+                    ctx.arc(wall.x + dx, wall.y + dy, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            ctx.shadowBlur = 0;
+        });
+    }
+
     // Draw hazards
     game.hazards.forEach(h => {
         if (h.type === 'spike') {
@@ -1210,6 +1364,30 @@ function drawGame() {
             ctx.moveTo(h.x + 5, h.y + 2);
             ctx.lineTo(h.x + h.width - 5, h.y + 2);
             ctx.stroke();
+        } else if (h.type === 'laser') {
+            // Laser beam - bright red/pink sweeping beam
+            ctx.shadowColor = '#ef4444';
+            ctx.shadowBlur = 30;
+
+            // Main beam
+            const laserGrad = ctx.createLinearGradient(h.x, h.y, h.x + h.width, h.y);
+            laserGrad.addColorStop(0, 'rgba(239, 68, 68, 0.3)');
+            laserGrad.addColorStop(0.3, '#ef4444');
+            laserGrad.addColorStop(0.5, '#fca5a5');
+            laserGrad.addColorStop(0.7, '#ef4444');
+            laserGrad.addColorStop(1, 'rgba(239, 68, 68, 0.3)');
+
+            ctx.fillStyle = laserGrad;
+            ctx.fillRect(h.x, h.y, h.width, h.height);
+
+            // Core bright line
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(h.x + 10, h.y + h.height / 2 - 1, h.width - 20, 2);
+
+            // Pulsing glow effect
+            const pulse = Math.sin(time * 10) * 0.3 + 0.7;
+            ctx.fillStyle = `rgba(252, 165, 165, ${pulse * 0.5})`;
+            ctx.fillRect(h.x, h.y - 4, h.width, h.height + 8);
         }
         ctx.shadowBlur = 0;
     });
@@ -1253,6 +1431,74 @@ function drawGame() {
             }
 
             ctx.shadowBlur = 0;
+        });
+    }
+
+    // Draw void orbs (deadly moving orbs)
+    if (game.voidOrbs) {
+        game.voidOrbs.forEach(orb => {
+            ctx.save();
+
+            // Outer glow
+            ctx.shadowColor = '#581c87';
+            ctx.shadowBlur = 25;
+
+            // Dark swirling void orb
+            const orbGrad = ctx.createRadialGradient(
+                orb.x, orb.y, 0,
+                orb.x, orb.y, orb.radius
+            );
+            orbGrad.addColorStop(0, '#000');
+            orbGrad.addColorStop(0.3, '#1e1b4b');
+            orbGrad.addColorStop(0.6, '#581c87');
+            orbGrad.addColorStop(0.85, '#7c3aed');
+            orbGrad.addColorStop(1, 'rgba(124, 58, 237, 0.3)');
+
+            ctx.fillStyle = orbGrad;
+            ctx.beginPath();
+            ctx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Swirling inner pattern
+            ctx.strokeStyle = 'rgba(139, 92, 246, 0.6)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 3; i++) {
+                const spiralAngle = time * 2 + (i * Math.PI * 2 / 3) + orb.phase;
+                const spiralRadius = orb.radius * 0.6;
+                ctx.beginPath();
+                ctx.arc(
+                    orb.x + Math.cos(spiralAngle) * spiralRadius * 0.3,
+                    orb.y + Math.sin(spiralAngle) * spiralRadius * 0.3,
+                    orb.radius * 0.3,
+                    spiralAngle,
+                    spiralAngle + Math.PI
+                );
+                ctx.stroke();
+            }
+
+            // Center eye/core
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(orb.x, orb.y, orb.radius * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Particle trail effect
+            const trailAngle = time * 3 + orb.phase;
+            for (let i = 0; i < 4; i++) {
+                const angle = trailAngle + (i * Math.PI / 2);
+                const dist = orb.radius + 5 + Math.sin(time * 4 + i) * 5;
+                ctx.fillStyle = `rgba(139, 92, 246, ${0.6 - i * 0.15})`;
+                ctx.beginPath();
+                ctx.arc(
+                    orb.x + Math.cos(angle) * dist,
+                    orb.y + Math.sin(angle) * dist,
+                    3 - i * 0.5,
+                    0, Math.PI * 2
+                );
+                ctx.fill();
+            }
+
+            ctx.restore();
         });
     }
 

@@ -46,12 +46,12 @@ const game = {
     bestCheckpoint: null // Tracks the furthest checkpoint reached
 };
 
-// Physics constants - fast and responsive
-const GRAVITY = 1.0;
-const JUMP_FORCE = -15;
-const MOVE_SPEED = 8;
+// Physics constants - fast and responsive (+10%)
+const GRAVITY = 1.1;
+const JUMP_FORCE = -16.5;
+const MOVE_SPEED = 9;
 const FRICTION = 0.89;
-const MAX_FALL_SPEED = 20;
+const MAX_FALL_SPEED = 22;
 
 // Input state
 const keys = {
@@ -621,13 +621,13 @@ function updatePlayer() {
         return;
     }
 
-    // Normal gameplay - fast acceleration
+    // Normal gameplay - fast acceleration (+10%)
     if (keys.left) {
-        p.vx -= 0.9;
+        p.vx -= 1.0;
         p.facingRight = false;
     }
     if (keys.right) {
-        p.vx += 0.9;
+        p.vx += 1.0;
         p.facingRight = true;
     }
 

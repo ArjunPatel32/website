@@ -486,15 +486,16 @@ body {
     75% { transform: translate(-20px, -10px) rotate(3deg); }
 }
 
-/* Black hole */
+/* Black hole - TOP RIGHT */
 .black-hole {
-    position: absolute;
+    position: fixed;
     width: 110px;
     height: 110px;
     top: 10%;
     right: 10%;
-    left: auto;
+    left: auto !important;
     animation: floatBlackHole 30s ease-in-out infinite;
+    z-index: 10;
 }
 
 .event-horizon {
@@ -602,14 +603,14 @@ body {
     75% { transform: translate(-15px, -10px); }
 }
 
-/* Eye-shaped Nebula (like Helix/Cat's Eye) */
+/* Eye-shaped Nebula (like Helix/Cat's Eye) - TOP LEFT */
 .spiral-galaxy {
     position: fixed;
     width: 180px;
     height: 180px;
-    top: 15%;
+    top: 12%;
     left: 8%;
-    right: auto;
+    right: auto !important;
     pointer-events: none;
     z-index: 5;
 }

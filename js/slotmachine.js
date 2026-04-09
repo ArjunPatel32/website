@@ -149,17 +149,16 @@ function triggerJackpot() {
 }
 
 function createDimOverlayAndFall() {
-    // Find the platform closest to center of screen
+    // Find the platform closest to horizontal center of screen
     const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
 
     let closestPlatform = mascotPlatforms[0];
     let closestDist = Infinity;
 
     for (const plat of mascotPlatforms) {
         const platCenterX = plat.x + plat.width / 2;
-        const platCenterY = plat.y;
-        const dist = Math.sqrt(Math.pow(platCenterX - centerX, 2) + Math.pow(platCenterY - centerY, 2));
+        // Only consider horizontal distance - find platform closest to center X
+        const dist = Math.abs(platCenterX - centerX);
         if (dist < closestDist) {
             closestDist = dist;
             closestPlatform = plat;

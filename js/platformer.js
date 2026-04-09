@@ -46,12 +46,12 @@ const game = {
     bestCheckpoint: null // Tracks the furthest checkpoint reached
 };
 
-// Physics constants
-const GRAVITY = 0.85;
-const JUMP_FORCE = -14;
-const MOVE_SPEED = 7;
-const FRICTION = 0.88;
-const MAX_FALL_SPEED = 18;
+// Physics constants - fast and responsive
+const GRAVITY = 1.0;
+const JUMP_FORCE = -15;
+const MOVE_SPEED = 8;
+const FRICTION = 0.89;
+const MAX_FALL_SPEED = 20;
 
 // Input state
 const keys = {
@@ -164,8 +164,17 @@ function initGame() {
                 glowColor = 'rgba(139, 92, 246, 0.3)';
             }
 
-            // Multiple checkpoints per row - left side, middle, and right side
-            const isCheckpoint = isCheckpointRow && (p === 1 || p === Math.floor(platformsThisRow / 2) || p === platformsThisRow - 2);
+            // Checkpoints: one in each third of the screen (left, middle, right)
+            const thirdWidth = screenWidth / 3;
+            const minSpacing = screenWidth / 10;
+            const isLeftThird = x < thirdWidth - minSpacing;
+            const isMiddleThird = x >= thirdWidth + minSpacing && x < thirdWidth * 2 - minSpacing;
+            const isRightThird = x >= thirdWidth * 2 + minSpacing;
+            const isCheckpoint = isCheckpointRow && (
+                (p === 0 && isLeftThird) ||
+                (p === Math.floor(platformsThisRow / 2) && isMiddleThird) ||
+                (p === platformsThisRow - 1 && isRightThird)
+            );
             const platform = {
                 x: x, y: y,
                 width: isCheckpoint ? CHECKPOINT_WIDTH : width,
@@ -248,7 +257,7 @@ function initGame() {
     }
 
     // VOID ORBS - dark floating orbs that move in patterns (deadly)
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 30; i++) {
         const row = 2 + Math.floor(Math.random() * (numRows - 4));
         const x = 40 + Math.random() * (screenWidth - 80);
         const y = game.gameHeight - 160 - (row * rowHeight) - Math.random() * 60;
@@ -535,10 +544,10 @@ function updatePlayer() {
 
     // Handle intro falling
     if (p.introFalling) {
-        // Smooth eased gravity for intro
-        const introGravity = GRAVITY * 0.8;
+        // Fast intro fall
+        const introGravity = GRAVITY * 0.9;
         p.vy += introGravity;
-        p.vy = Math.min(p.vy, 14); // Max fall speed for intro
+        p.vy = Math.min(p.vy, 18); // Fast fall
 
         // Smooth interpolation for position
         p.y += p.vy;
@@ -612,13 +621,13 @@ function updatePlayer() {
         return;
     }
 
-    // Normal gameplay
+    // Normal gameplay - fast acceleration
     if (keys.left) {
-        p.vx -= 0.7;
+        p.vx -= 0.9;
         p.facingRight = false;
     }
     if (keys.right) {
-        p.vx += 0.7;
+        p.vx += 0.9;
         p.facingRight = true;
     }
 

@@ -491,8 +491,9 @@ body {
     position: absolute;
     width: 110px;
     height: 110px;
-    top: 15%;
-    left: 8%;
+    top: 10%;
+    right: 10%;
+    left: auto;
     animation: floatBlackHole 30s ease-in-out infinite;
 }
 
@@ -606,8 +607,9 @@ body {
     position: fixed;
     width: 180px;
     height: 180px;
-    top: 10%;
-    right: 10%;
+    top: 15%;
+    left: 8%;
+    right: auto;
     pointer-events: none;
     z-index: 5;
 }
@@ -1391,14 +1393,16 @@ body {
     .spiral-galaxy {
         width: 120px;
         height: 120px;
-        top: 8%;
-        right: 5%;
+        top: 12%;
+        left: 5%;
+        right: auto;
     }
 
     .black-hole {
         width: 80px;
         height: 80px;
-        left: 5%;
+        right: 5%;
+        left: auto;
     }
 
     .black-hole .accretion-disk {

@@ -58,277 +58,311 @@ function initGame() {
     gameCanvas.width = window.innerWidth;
     gameCanvas.height = window.innerHeight;
 
-    game.gameHeight = window.innerHeight * 3;
+    game.gameHeight = window.innerHeight * 4;
 
-    // Generate platforms with more variety and easier jumps
+    // Jump physics calculation for ensuring reachable platforms
+    // JUMP_FORCE = -10.5, GRAVITY = 0.45
+    // Max jump height ≈ 122px, but we want comfortable jumps
+    const MAX_SAFE_VERTICAL = 55;    // Comfortable vertical jump
+    const MAX_SAFE_HORIZONTAL = 85;  // Comfortable horizontal jump
+    // Max diagonal using Pythagorean: sqrt(55^2 + 85^2) ≈ 101px - very reachable
+
     game.platforms = [];
-    const platformCount = 22;
-    const baseVerticalSpacing = 75; // Reduced for easier jumps
-    const maxHorizontalJump = 100; // Reduced horizontal distance
+    game.movingPlatforms = [];
 
-    let lastX = gameCanvas.width / 2 - 80;
-    let lastWidth = 160;
+    const screenWidth = gameCanvas.width;
+    const numColumns = 5; // 5 columns of platforms across screen
+    const columnWidth = screenWidth / numColumns;
+    const numRows = 20; // 20 rows going up
+    const rowHeight = (game.gameHeight - 300) / numRows;
 
-    const checkpointIndices = [6, 13, 19];
-
-    // Create zones for variety
-    const zones = [
-        { start: 0, end: 6, type: 'intro' },
-        { start: 7, end: 13, type: 'water' },
-        { start: 14, end: 19, type: 'lava' },
-        { start: 20, end: 22, type: 'final' }
-    ];
-
-    function getZone(index) {
-        for (const zone of zones) {
-            if (index >= zone.start && index <= zone.end) return zone.type;
-        }
-        return 'intro';
-    }
-
-    for (let i = 0; i < platformCount; i++) {
-        const zone = getZone(i);
-        // Less vertical variation for more consistent jumps
-        const verticalVariation = (Math.random() - 0.5) * 15;
-        const y = game.gameHeight - 180 - (i * baseVerticalSpacing) + verticalVariation;
-        const isCheckpoint = checkpointIndices.includes(i);
-        const width = isCheckpoint ? 150 : 90 + Math.random() * 50;
-
-        const lastCenter = lastX + lastWidth / 2;
-
-        // Gentler horizontal variation
-        let biasDirection = 0;
-        if (i % 5 === 0) biasDirection = -50;
-        if (i % 5 === 2) biasDirection = 50;
-
-        const minX = Math.max(60, lastCenter - maxHorizontalJump - width / 2 + biasDirection);
-        const maxX = Math.min(gameCanvas.width - width - 60, lastCenter + maxHorizontalJump - width / 2 + biasDirection);
-
-        const x = minX + Math.random() * Math.max(20, maxX - minX);
-
-        if (isCheckpoint) {
-            game.platforms.push({
-                x: x,
-                y: y,
-                width: width,
-                height: 18,
-                color1: '#10b981',
-                color2: '#059669',
-                glowColor: 'rgba(16, 185, 129, 0.6)',
-                isCheckpoint: true,
-                checkpointId: i,
-                zone: zone
-            });
-        } else {
-            let color1, color2, glowColor;
-            if (zone === 'water') {
-                color1 = `hsl(${200 + (i * 5) % 30}, 70%, 55%)`;
-                color2 = `hsl(${210 + (i * 8) % 40}, 60%, 45%)`;
-                glowColor = `hsla(205, 70%, 55%, 0.5)`;
-            } else if (zone === 'lava') {
-                color1 = `hsl(${15 + (i * 5) % 25}, 85%, 55%)`;
-                color2 = `hsl(${5 + (i * 8) % 20}, 75%, 45%)`;
-                glowColor = `hsla(15, 85%, 55%, 0.5)`;
-            } else {
-                color1 = `hsl(${260 + (i * 8) % 60}, 80%, 60%)`;
-                color2 = `hsl(${280 + (i * 12) % 80}, 70%, 50%)`;
-                glowColor = `hsla(${270 + (i * 10) % 70}, 80%, 60%, 0.5)`;
-            }
-
-            game.platforms.push({
-                x: x,
-                y: y,
-                width: width,
-                height: 16,
-                color1: color1,
-                color2: color2,
-                glowColor: glowColor,
-                zone: zone
-            });
-        }
-
-        lastX = x;
-        lastWidth = width;
-    }
-
-    // Starting platform
+    // Starting platform at bottom center
     game.platforms.push({
-        x: gameCanvas.width / 2 - 80,
+        x: screenWidth / 2 - 80,
         y: game.gameHeight - 50,
         width: 160,
         height: 20,
         color1: '#10b981',
         color2: '#059669',
         glowColor: 'rgba(16, 185, 129, 0.5)',
-        isStart: true
+        isStart: true,
+        row: -1,
+        col: 2
     });
 
-    // Add hazards (fewer and more spread out)
+    // Generate grid of platforms with guaranteed connectivity
+    const platformGrid = []; // Track platforms by row for connectivity
+
+    for (let row = 0; row < numRows; row++) {
+        platformGrid[row] = [];
+        const baseY = game.gameHeight - 150 - (row * rowHeight);
+        const isCheckpointRow = row === 5 || row === 10 || row === 15;
+
+        // Determine zone based on row
+        let zone = 'intro';
+        if (row >= 5 && row < 10) zone = 'water';
+        else if (row >= 10 && row < 15) zone = 'lava';
+        else if (row >= 15) zone = 'final';
+
+        // Place 2-4 platforms per row, spread across columns
+        const platformsThisRow = isCheckpointRow ? 3 : 2 + Math.floor(Math.random() * 3);
+        const columnsUsed = [];
+
+        for (let p = 0; p < platformsThisRow; p++) {
+            // Pick a column that hasn't been used this row
+            let col;
+            do {
+                col = Math.floor(Math.random() * numColumns);
+            } while (columnsUsed.includes(col) && columnsUsed.length < numColumns);
+            columnsUsed.push(col);
+
+            const baseX = col * columnWidth + columnWidth * 0.1;
+            const maxX = (col + 1) * columnWidth - columnWidth * 0.1;
+
+            // Add some randomness to position within column
+            const x = baseX + Math.random() * (maxX - baseX - 80);
+            const y = baseY + (Math.random() - 0.5) * 20;
+            const width = isCheckpointRow ? 120 : 70 + Math.random() * 40;
+
+            // Colors based on zone
+            let color1, color2, glowColor;
+            if (zone === 'water') {
+                color1 = `hsl(${195 + Math.random() * 20}, 70%, 55%)`;
+                color2 = `hsl(${205 + Math.random() * 20}, 60%, 45%)`;
+                glowColor = 'rgba(56, 189, 248, 0.5)';
+            } else if (zone === 'lava') {
+                color1 = `hsl(${10 + Math.random() * 20}, 85%, 55%)`;
+                color2 = `hsl(${0 + Math.random() * 15}, 75%, 45%)`;
+                glowColor = 'rgba(249, 115, 22, 0.5)';
+            } else if (zone === 'final') {
+                color1 = `hsl(${280 + Math.random() * 30}, 80%, 60%)`;
+                color2 = `hsl(${290 + Math.random() * 30}, 70%, 50%)`;
+                glowColor = 'rgba(168, 85, 247, 0.5)';
+            } else {
+                color1 = `hsl(${250 + Math.random() * 30}, 75%, 60%)`;
+                color2 = `hsl(${260 + Math.random() * 30}, 65%, 50%)`;
+                glowColor = 'rgba(139, 92, 246, 0.5)';
+            }
+
+            const platform = {
+                x: x,
+                y: y,
+                width: width,
+                height: isCheckpointRow ? 18 : 14,
+                color1: color1,
+                color2: color2,
+                glowColor: glowColor,
+                zone: zone,
+                row: row,
+                col: col,
+                isCheckpoint: isCheckpointRow && p === Math.floor(platformsThisRow / 2),
+                checkpointId: row
+            };
+
+            if (platform.isCheckpoint) {
+                platform.color1 = '#10b981';
+                platform.color2 = '#059669';
+                platform.glowColor = 'rgba(16, 185, 129, 0.6)';
+                platform.width = 130;
+            }
+
+            game.platforms.push(platform);
+            platformGrid[row].push(platform);
+        }
+    }
+
+    // Now ensure every platform is reachable by adding bridge platforms where needed
+    for (let row = 1; row < numRows; row++) {
+        const currentRowPlats = platformGrid[row];
+        const prevRowPlats = platformGrid[row - 1];
+
+        for (const plat of currentRowPlats) {
+            // Check if any platform from previous row can reach this one
+            let isReachable = false;
+            for (const prevPlat of prevRowPlats) {
+                const dx = Math.abs((plat.x + plat.width/2) - (prevPlat.x + prevPlat.width/2));
+                const dy = Math.abs(plat.y - prevPlat.y);
+                const diagonalDist = Math.sqrt(dx * dx + dy * dy);
+
+                if (diagonalDist < MAX_SAFE_VERTICAL + MAX_SAFE_HORIZONTAL) {
+                    isReachable = true;
+                    break;
+                }
+            }
+
+            // If not reachable, add a moving platform as a bridge
+            if (!isReachable && prevRowPlats.length > 0) {
+                const nearestPrev = prevRowPlats.reduce((nearest, p) => {
+                    const d1 = Math.abs(p.x - plat.x);
+                    const d2 = Math.abs(nearest.x - plat.x);
+                    return d1 < d2 ? p : nearest;
+                }, prevRowPlats[0]);
+
+                const midX = (plat.x + nearestPrev.x) / 2;
+                const midY = (plat.y + nearestPrev.y) / 2;
+
+                game.movingPlatforms.push({
+                    x: midX,
+                    y: midY,
+                    width: 65,
+                    height: 14,
+                    startX: midX,
+                    startY: midY,
+                    moveRange: 30 + Math.random() * 20,
+                    speed: 0.5 + Math.random() * 0.4,
+                    direction: 1,
+                    moveType: Math.random() > 0.5 ? 'horizontal' : 'vertical',
+                    color1: '#06b6d4',
+                    color2: '#0891b2',
+                    glowColor: 'rgba(6, 182, 212, 0.5)',
+                    isBridge: true
+                });
+            }
+        }
+    }
+
+    // Add LOTS of extra moving platforms throughout for fun
+    for (let row = 0; row < numRows; row++) {
+        const baseY = game.gameHeight - 150 - (row * rowHeight);
+
+        // Add 2-3 moving platforms per row across different columns
+        const movingCount = 2 + Math.floor(Math.random() * 2);
+        for (let m = 0; m < movingCount; m++) {
+            const col = Math.random() * numColumns;
+            const x = col * columnWidth + Math.random() * (columnWidth - 60);
+            const y = baseY + (Math.random() - 0.5) * 40;
+
+            const moveType = Math.random();
+            let type, color1, color2, glowColor;
+
+            if (moveType < 0.4) {
+                type = 'horizontal';
+                color1 = '#f59e0b';
+                color2 = '#d97706';
+                glowColor = 'rgba(245, 158, 11, 0.5)';
+            } else if (moveType < 0.7) {
+                type = 'vertical';
+                color1 = '#06b6d4';
+                color2 = '#0891b2';
+                glowColor = 'rgba(6, 182, 212, 0.5)';
+            } else {
+                type = 'circular';
+                color1 = '#a855f7';
+                color2 = '#7c3aed';
+                glowColor = 'rgba(168, 85, 247, 0.5)';
+            }
+
+            game.movingPlatforms.push({
+                x: x,
+                y: y,
+                width: 50 + Math.random() * 30,
+                height: 14,
+                startX: x,
+                startY: y,
+                moveRange: 30 + Math.random() * 50,
+                speed: 0.4 + Math.random() * 0.8,
+                direction: Math.random() > 0.5 ? 1 : -1,
+                moveType: type,
+                phase: Math.random() * Math.PI * 2,
+                color1: color1,
+                color2: color2,
+                glowColor: glowColor
+            });
+        }
+    }
+
+    // Add hazards
     game.hazards = [];
 
-    // Spikes on some platforms - less frequent
-    for (let i = 3; i < platformCount - 1; i += 4) {
-        if (checkpointIndices.includes(i)) continue;
-
+    // Spikes - scattered on some static platforms
+    for (let i = 5; i < game.platforms.length; i += 6) {
         const plat = game.platforms[i];
-        const spikeOnLeft = Math.random() > 0.5;
-        const spikeWidth = 20;
+        if (plat.isCheckpoint || plat.isStart) continue;
+
         game.hazards.push({
-            x: spikeOnLeft ? plat.x + 5 : plat.x + plat.width - spikeWidth - 5,
-            y: plat.y - 16,
-            width: spikeWidth,
-            height: 16,
+            x: plat.x + (Math.random() > 0.5 ? 5 : plat.width - 22),
+            y: plat.y - 14,
+            width: 18,
+            height: 14,
             type: 'spike'
         });
     }
 
-    // Water pools - fewer and smaller
-    for (let i = 8; i <= 12; i += 2) {
-        if (checkpointIndices.includes(i)) continue;
-        const plat = game.platforms[i];
+    // Water pools in water zone rows (5-9)
+    for (let row = 5; row < 10; row++) {
+        if (Math.random() > 0.5) {
+            const x = Math.random() * (screenWidth - 120);
+            game.hazards.push({
+                x: x,
+                y: game.gameHeight - 150 - (row * rowHeight) + rowHeight * 0.7,
+                width: 100 + Math.random() * 80,
+                height: 22,
+                type: 'water',
+                wavePhase: Math.random() * Math.PI * 2
+            });
+        }
+    }
+
+    // Lava pools in lava zone rows (10-14)
+    for (let row = 10; row < 15; row++) {
+        if (Math.random() > 0.5) {
+            const x = Math.random() * (screenWidth - 100);
+            game.hazards.push({
+                x: x,
+                y: game.gameHeight - 150 - (row * rowHeight) + rowHeight * 0.7,
+                width: 80 + Math.random() * 60,
+                height: 20,
+                type: 'lava',
+                bubbleTimer: 0
+            });
+        }
+    }
+
+    // Fire hazards floating around
+    for (let i = 0; i < 12; i++) {
+        const row = 2 + Math.floor(Math.random() * (numRows - 4));
+        const x = Math.random() * (screenWidth - 30);
+        const y = game.gameHeight - 150 - (row * rowHeight) - 30 - Math.random() * 40;
+
         game.hazards.push({
-            x: plat.x - 30,
-            y: plat.y + 50,
-            width: plat.width + 60,
-            height: 20,
-            type: 'water',
-            wavePhase: Math.random() * Math.PI * 2
-        });
-    }
-
-    // Lava pools - fewer
-    for (let i = 15; i <= 18; i += 2) {
-        if (checkpointIndices.includes(i)) continue;
-        const plat = game.platforms[i];
-        game.hazards.push({
-            x: plat.x + plat.width / 2 - 35,
-            y: plat.y + 45,
-            width: 70,
-            height: 18,
-            type: 'lava',
-            bubbleTimer: 0
-        });
-    }
-
-    // LOTS of moving platforms spread across the screen
-    game.movingPlatforms = [];
-
-    // Horizontal moving platforms - many more, scattered throughout
-    for (let i = 2; i < platformCount - 1; i += 2) {
-        if (checkpointIndices.includes(i)) continue;
-        const plat = game.platforms[i];
-
-        // Add platform to left or right of main platform
-        const side = Math.random() > 0.5 ? -1 : 1;
-        const offsetX = side * (80 + Math.random() * 60);
-
-        game.movingPlatforms.push({
-            x: plat.x + offsetX,
-            y: plat.y - 10 - Math.random() * 30,
-            width: 55 + Math.random() * 25,
-            height: 14,
-            startX: plat.x + offsetX,
-            startY: plat.y - 10 - Math.random() * 30,
-            moveRange: 50 + Math.random() * 40,
-            speed: 0.8 + Math.random() * 0.8,
-            direction: Math.random() > 0.5 ? 1 : -1,
-            moveType: 'horizontal',
-            color1: '#f59e0b',
-            color2: '#d97706',
-            glowColor: 'rgba(245, 158, 11, 0.5)'
-        });
-    }
-
-    // Vertical moving platforms - bridges between gaps
-    for (let i = 4; i < platformCount - 2; i += 3) {
-        const plat = game.platforms[i];
-        const nextPlat = game.platforms[i + 1];
-        if (!nextPlat) continue;
-
-        // Place between current and next platform
-        const midX = (plat.x + nextPlat.x) / 2 + (Math.random() - 0.5) * 50;
-        const midY = (plat.y + nextPlat.y) / 2;
-
-        game.movingPlatforms.push({
-            x: midX,
-            y: midY,
-            width: 60,
-            height: 14,
-            startX: midX,
-            startY: midY,
-            moveRange: 40 + Math.random() * 30,
-            speed: 0.6 + Math.random() * 0.5,
-            direction: 1,
-            moveType: 'vertical',
-            color1: '#06b6d4',
-            color2: '#0891b2',
-            glowColor: 'rgba(6, 182, 212, 0.5)'
-        });
-    }
-
-    // Diagonal/circular moving platforms - add visual interest
-    for (let i = 5; i < platformCount - 3; i += 5) {
-        const plat = game.platforms[i];
-        game.movingPlatforms.push({
-            x: plat.x + plat.width + 40,
-            y: plat.y - 20,
-            width: 55,
-            height: 14,
-            startX: plat.x + plat.width + 40,
-            startY: plat.y - 20,
-            moveRange: 35,
-            speed: 0.7,
-            direction: 1,
-            moveType: 'circular',
-            phase: Math.random() * Math.PI * 2,
-            color1: '#a855f7',
-            color2: '#7c3aed',
-            glowColor: 'rgba(168, 85, 247, 0.5)'
-        });
-    }
-
-    // Fire hazards - less frequent, more spread out
-    for (let i = 3; i < platformCount - 2; i += 5) {
-        if (checkpointIndices.includes(i) || checkpointIndices.includes(i + 1)) continue;
-
-        const plat = game.platforms[i];
-        game.hazards.push({
-            x: plat.x + plat.width / 2 - 10,
-            y: plat.y - 60,
-            width: 20,
-            height: 20,
-            baseX: plat.x + plat.width / 2 - 10,
-            baseY: plat.y - 60,
-            moveRange: 30,
-            speed: 0.012,
+            x: x,
+            y: y,
+            width: 22,
+            height: 22,
+            baseX: x,
+            baseY: y,
+            moveRange: 25 + Math.random() * 30,
+            speed: 0.01 + Math.random() * 0.015,
             phase: Math.random() * Math.PI * 2,
             moveType: Math.random() > 0.5 ? 'vertical' : 'horizontal',
             type: 'fire'
         });
     }
 
-    // Crushers - only in lava zone, fewer
+    // Crushers in later rows
     game.crushers = [];
-    for (let i = 15; i < platformCount - 2; i += 5) {
-        const plat = game.platforms[i];
+    for (let row = 12; row < numRows - 2; row += 3) {
+        const x = Math.random() * (screenWidth - 40);
+        const baseY = game.gameHeight - 150 - (row * rowHeight);
+
         game.crushers.push({
-            x: plat.x + plat.width / 2 - 18,
-            y: plat.y - 180,
-            width: 36,
-            height: 45,
-            baseY: plat.y - 180,
-            targetY: plat.y - 50,
+            x: x,
+            y: baseY - 160,
+            width: 38,
+            height: 48,
+            baseY: baseY - 160,
+            targetY: baseY - 40,
             state: 'waiting',
-            waitTimer: 90 + Math.floor(Math.random() * 120),
+            waitTimer: 80 + Math.floor(Math.random() * 100),
             speed: 0
         });
     }
 
-    // Exit portal
-    const topPlatform = game.platforms[platformCount - 1];
+    // Exit portal at the very top
+    const topY = game.gameHeight - 150 - ((numRows - 1) * rowHeight);
     game.exitPortal = {
-        x: topPlatform.x + topPlatform.width / 2,
-        y: topPlatform.y - 150,
+        x: screenWidth / 2,
+        y: topY - 120,
         radius: 60,
         pulsePhase: 0
     };

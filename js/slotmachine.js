@@ -243,8 +243,7 @@ function createIrisCloseEffect() {
     ) + 100;
 
     let currentRadius = maxRadius;
-    const targetRadius = 50; // Small circle around mascot
-    const closeSpeed = 12; // Pixels per frame to close
+    const targetRadius = 45; // Small circle around mascot
     let phase = 'closing'; // 'closing', 'holding', 'complete'
     let holdTimer = 0;
 
@@ -256,11 +255,16 @@ function createIrisCloseEffect() {
         const trackY = mascot.y + mascot.height / 2;
 
         if (phase === 'closing') {
-            currentRadius -= closeSpeed;
+            // Smooth eased closing - starts fast, slows down as it gets smaller
+            const progress = 1 - (currentRadius / maxRadius);
+            const easeAmount = 6 + (progress * 8); // Speeds up slightly then slows
 
-            // Ease out as we get closer
-            if (currentRadius < 200) {
-                currentRadius -= closeSpeed * 0.3;
+            if (currentRadius > 300) {
+                currentRadius -= easeAmount * 1.5; // Fast at start
+            } else if (currentRadius > 100) {
+                currentRadius -= easeAmount * 0.8; // Medium speed
+            } else {
+                currentRadius -= easeAmount * 0.4; // Slow at end
             }
 
             if (currentRadius <= targetRadius) {
@@ -269,10 +273,10 @@ function createIrisCloseEffect() {
             }
         } else if (phase === 'holding') {
             holdTimer++;
-            // Pulse the circle slightly while holding
-            currentRadius = targetRadius + Math.sin(holdTimer * 0.15) * 5;
+            // Gentle pulse while holding
+            currentRadius = targetRadius + Math.sin(holdTimer * 0.1) * 3;
 
-            if (holdTimer > 40) {
+            if (holdTimer > 60) {
                 phase = 'complete';
                 // Start the trapdoor fall
                 createTrapdoorAndFall();
@@ -300,18 +304,11 @@ function createIrisCloseEffect() {
             ctx.arc(trackX, trackY, currentRadius, 0, Math.PI * 2, true);
             ctx.fill();
 
-            // Add glow ring around the opening
-            ctx.strokeStyle = 'rgba(139, 92, 246, 0.6)';
-            ctx.lineWidth = 4;
+            // Add subtle glow ring around the opening
+            ctx.strokeStyle = 'rgba(139, 92, 246, 0.4)';
+            ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.arc(trackX, trackY, currentRadius + 2, 0, Math.PI * 2);
-            ctx.stroke();
-
-            // Inner glow
-            ctx.strokeStyle = 'rgba(236, 72, 153, 0.4)';
-            ctx.lineWidth = 8;
-            ctx.beginPath();
-            ctx.arc(trackX, trackY, currentRadius + 8, 0, Math.PI * 2);
             ctx.stroke();
 
             requestAnimationFrame(animateIris);

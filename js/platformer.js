@@ -58,25 +58,25 @@ function initGame() {
     gameCanvas.width = window.innerWidth;
     gameCanvas.height = window.innerHeight;
 
-    game.gameHeight = window.innerHeight * 3.5;
+    game.gameHeight = window.innerHeight * 3;
 
-    // Generate platforms with more interesting layout
+    // Generate platforms with more variety and easier jumps
     game.platforms = [];
-    const platformCount = 18;
-    const baseVerticalSpacing = 95;
-    const maxHorizontalJump = 140;
+    const platformCount = 22;
+    const baseVerticalSpacing = 75; // Reduced for easier jumps
+    const maxHorizontalJump = 100; // Reduced horizontal distance
 
     let lastX = gameCanvas.width / 2 - 80;
     let lastWidth = 160;
 
-    const checkpointIndices = [5, 11, 16];
+    const checkpointIndices = [6, 13, 19];
 
     // Create zones for variety
     const zones = [
-        { start: 0, end: 5, type: 'intro' },      // Easy intro
-        { start: 6, end: 10, type: 'water' },     // Water hazard zone
-        { start: 11, end: 14, type: 'lava' },     // Lava/fire zone
-        { start: 15, end: 17, type: 'final' }     // Final challenge
+        { start: 0, end: 6, type: 'intro' },
+        { start: 7, end: 13, type: 'water' },
+        { start: 14, end: 19, type: 'lava' },
+        { start: 20, end: 22, type: 'final' }
     ];
 
     function getZone(index) {
@@ -88,23 +88,23 @@ function initGame() {
 
     for (let i = 0; i < platformCount; i++) {
         const zone = getZone(i);
-        // Vary vertical spacing for interest
-        const verticalVariation = (Math.random() - 0.5) * 30;
+        // Less vertical variation for more consistent jumps
+        const verticalVariation = (Math.random() - 0.5) * 15;
         const y = game.gameHeight - 180 - (i * baseVerticalSpacing) + verticalVariation;
         const isCheckpoint = checkpointIndices.includes(i);
-        const width = isCheckpoint ? 140 : 80 + Math.random() * 60;
+        const width = isCheckpoint ? 150 : 90 + Math.random() * 50;
 
         const lastCenter = lastX + lastWidth / 2;
 
-        // Add more horizontal variation - sometimes go far left/right
+        // Gentler horizontal variation
         let biasDirection = 0;
-        if (i % 4 === 0) biasDirection = -80; // Push left sometimes
-        if (i % 4 === 2) biasDirection = 80;  // Push right sometimes
+        if (i % 5 === 0) biasDirection = -50;
+        if (i % 5 === 2) biasDirection = 50;
 
-        const minX = Math.max(50, lastCenter - maxHorizontalJump - width / 2 + biasDirection);
-        const maxX = Math.min(gameCanvas.width - width - 50, lastCenter + maxHorizontalJump - width / 2 + biasDirection);
+        const minX = Math.max(60, lastCenter - maxHorizontalJump - width / 2 + biasDirection);
+        const maxX = Math.min(gameCanvas.width - width - 60, lastCenter + maxHorizontalJump - width / 2 + biasDirection);
 
-        const x = minX + Math.random() * Math.max(10, maxX - minX);
+        const x = minX + Math.random() * Math.max(20, maxX - minX);
 
         if (isCheckpoint) {
             game.platforms.push({
@@ -120,7 +120,6 @@ function initGame() {
                 zone: zone
             });
         } else {
-            // Zone-based coloring
             let color1, color2, glowColor;
             if (zone === 'water') {
                 color1 = `hsl(${200 + (i * 5) % 30}, 70%, 55%)`;
@@ -164,77 +163,75 @@ function initGame() {
         isStart: true
     });
 
-    // Add hazards
+    // Add hazards (fewer and more spread out)
     game.hazards = [];
 
-    // Spikes on some platforms
-    for (let i = 2; i < platformCount - 1; i += 3) {
+    // Spikes on some platforms - less frequent
+    for (let i = 3; i < platformCount - 1; i += 4) {
         if (checkpointIndices.includes(i)) continue;
 
         const plat = game.platforms[i];
         const spikeOnLeft = Math.random() > 0.5;
-        const spikeWidth = 22;
+        const spikeWidth = 20;
         game.hazards.push({
-            x: spikeOnLeft ? plat.x : plat.x + plat.width - spikeWidth,
-            y: plat.y - 18,
+            x: spikeOnLeft ? plat.x + 5 : plat.x + plat.width - spikeWidth - 5,
+            y: plat.y - 16,
             width: spikeWidth,
-            height: 18,
+            height: 16,
             type: 'spike'
         });
     }
 
-    // Water pools in water zone (deadly pools between platforms)
-    for (let i = 6; i <= 10; i++) {
+    // Water pools - fewer and smaller
+    for (let i = 8; i <= 12; i += 2) {
         if (checkpointIndices.includes(i)) continue;
         const plat = game.platforms[i];
-        const nextPlat = game.platforms[i + 1];
-        if (nextPlat && Math.random() > 0.4) {
-            const poolX = Math.min(plat.x, nextPlat.x) - 20;
-            const poolWidth = Math.abs(nextPlat.x - plat.x) + 100;
-            game.hazards.push({
-                x: poolX,
-                y: plat.y + 60,
-                width: poolWidth,
-                height: 25,
-                type: 'water',
-                wavePhase: Math.random() * Math.PI * 2
-            });
-        }
+        game.hazards.push({
+            x: plat.x - 30,
+            y: plat.y + 50,
+            width: plat.width + 60,
+            height: 20,
+            type: 'water',
+            wavePhase: Math.random() * Math.PI * 2
+        });
     }
 
-    // Lava pools in lava zone
-    for (let i = 11; i <= 14; i++) {
+    // Lava pools - fewer
+    for (let i = 15; i <= 18; i += 2) {
         if (checkpointIndices.includes(i)) continue;
         const plat = game.platforms[i];
-        if (Math.random() > 0.5) {
-            game.hazards.push({
-                x: plat.x + plat.width / 2 - 40,
-                y: plat.y + 50,
-                width: 80,
-                height: 20,
-                type: 'lava',
-                bubbleTimer: 0
-            });
-        }
+        game.hazards.push({
+            x: plat.x + plat.width / 2 - 35,
+            y: plat.y + 45,
+            width: 70,
+            height: 18,
+            type: 'lava',
+            bubbleTimer: 0
+        });
     }
 
-    // Add moving platforms - both horizontal and vertical
+    // LOTS of moving platforms spread across the screen
     game.movingPlatforms = [];
 
-    // Horizontal moving platforms
-    for (let i = 3; i < platformCount - 2; i += 5) {
+    // Horizontal moving platforms - many more, scattered throughout
+    for (let i = 2; i < platformCount - 1; i += 2) {
+        if (checkpointIndices.includes(i)) continue;
         const plat = game.platforms[i];
-        const moveRange = 60 + Math.random() * 50;
+
+        // Add platform to left or right of main platform
+        const side = Math.random() > 0.5 ? -1 : 1;
+        const offsetX = side * (80 + Math.random() * 60);
+
         game.movingPlatforms.push({
-            x: plat.x,
-            y: plat.y - 55,
-            width: 65,
+            x: plat.x + offsetX,
+            y: plat.y - 10 - Math.random() * 30,
+            width: 55 + Math.random() * 25,
             height: 14,
-            startX: plat.x,
-            startY: plat.y - 55,
-            moveRange: moveRange,
-            speed: 1.2 + Math.random() * 0.8,
-            direction: 1,
+            startX: plat.x + offsetX,
+            startY: plat.y - 10 - Math.random() * 30,
+            moveRange: 50 + Math.random() * 40,
+            speed: 0.8 + Math.random() * 0.8,
+            direction: Math.random() > 0.5 ? 1 : -1,
             moveType: 'horizontal',
             color1: '#f59e0b',
             color2: '#d97706',
@@ -242,18 +239,25 @@ function initGame() {
         });
     }
 
-    // Vertical moving platforms
-    for (let i = 7; i < platformCount - 2; i += 6) {
+    // Vertical moving platforms - bridges between gaps
+    for (let i = 4; i < platformCount - 2; i += 3) {
         const plat = game.platforms[i];
+        const nextPlat = game.platforms[i + 1];
+        if (!nextPlat) continue;
+
+        // Place between current and next platform
+        const midX = (plat.x + nextPlat.x) / 2 + (Math.random() - 0.5) * 50;
+        const midY = (plat.y + nextPlat.y) / 2;
+
         game.movingPlatforms.push({
-            x: plat.x + plat.width + 30,
-            y: plat.y,
+            x: midX,
+            y: midY,
             width: 60,
             height: 14,
-            startX: plat.x + plat.width + 30,
-            startY: plat.y,
-            moveRange: 70,
-            speed: 0.8 + Math.random() * 0.6,
+            startX: midX,
+            startY: midY,
+            moveRange: 40 + Math.random() * 30,
+            speed: 0.6 + Math.random() * 0.5,
             direction: 1,
             moveType: 'vertical',
             color1: '#06b6d4',
@@ -262,49 +266,69 @@ function initGame() {
         });
     }
 
-    // Add floating fire hazards with movement patterns
-    for (let i = 1; i < platformCount - 2; i += 4) {
-        if (checkpointIndices.includes(i) || checkpointIndices.includes(i + 1) || checkpointIndices.includes(i - 1)) continue;
+    // Diagonal/circular moving platforms - add visual interest
+    for (let i = 5; i < platformCount - 3; i += 5) {
+        const plat = game.platforms[i];
+        game.movingPlatforms.push({
+            x: plat.x + plat.width + 40,
+            y: plat.y - 20,
+            width: 55,
+            height: 14,
+            startX: plat.x + plat.width + 40,
+            startY: plat.y - 20,
+            moveRange: 35,
+            speed: 0.7,
+            direction: 1,
+            moveType: 'circular',
+            phase: Math.random() * Math.PI * 2,
+            color1: '#a855f7',
+            color2: '#7c3aed',
+            glowColor: 'rgba(168, 85, 247, 0.5)'
+        });
+    }
+
+    // Fire hazards - less frequent, more spread out
+    for (let i = 3; i < platformCount - 2; i += 5) {
+        if (checkpointIndices.includes(i) || checkpointIndices.includes(i + 1)) continue;
 
         const plat = game.platforms[i];
-        const moveType = Math.random() > 0.5 ? 'vertical' : 'horizontal';
         game.hazards.push({
-            x: plat.x + plat.width / 2 - 12,
-            y: plat.y - 70,
-            width: 24,
-            height: 24,
-            baseX: plat.x + plat.width / 2 - 12,
-            baseY: plat.y - 70,
-            moveRange: 35 + Math.random() * 25,
-            speed: 0.015 + Math.random() * 0.01,
+            x: plat.x + plat.width / 2 - 10,
+            y: plat.y - 60,
+            width: 20,
+            height: 20,
+            baseX: plat.x + plat.width / 2 - 10,
+            baseY: plat.y - 60,
+            moveRange: 30,
+            speed: 0.012,
             phase: Math.random() * Math.PI * 2,
-            moveType: moveType,
+            moveType: Math.random() > 0.5 ? 'vertical' : 'horizontal',
             type: 'fire'
         });
     }
 
-    // Add falling hazards (crushers) in later sections
+    // Crushers - only in lava zone, fewer
     game.crushers = [];
-    for (let i = 12; i < platformCount - 1; i += 4) {
+    for (let i = 15; i < platformCount - 2; i += 5) {
         const plat = game.platforms[i];
         game.crushers.push({
-            x: plat.x + plat.width / 2 - 20,
-            y: plat.y - 200,
-            width: 40,
-            height: 50,
-            baseY: plat.y - 200,
-            targetY: plat.y - 55,
-            state: 'waiting', // waiting, falling, rising
-            waitTimer: 60 + Math.floor(Math.random() * 120),
+            x: plat.x + plat.width / 2 - 18,
+            y: plat.y - 180,
+            width: 36,
+            height: 45,
+            baseY: plat.y - 180,
+            targetY: plat.y - 50,
+            state: 'waiting',
+            waitTimer: 90 + Math.floor(Math.random() * 120),
             speed: 0
         });
     }
 
-    // Exit portal - positioned high above the last platform
+    // Exit portal
     const topPlatform = game.platforms[platformCount - 1];
     game.exitPortal = {
         x: topPlatform.x + topPlatform.width / 2,
-        y: topPlatform.y - 180,
+        y: topPlatform.y - 150,
         radius: 60,
         pulsePhase: 0
     };
@@ -593,32 +617,42 @@ function updatePlayer() {
 
     // Moving platform collision
     for (const mp of game.movingPlatforms) {
+        // Store previous position for player carry
+        const prevX = mp.x;
+        const prevY = mp.y;
+
         // Update platform position based on movement type
         if (mp.moveType === 'vertical') {
             mp.y += mp.speed * mp.direction;
             if (mp.y > mp.startY + mp.moveRange || mp.y < mp.startY - mp.moveRange) {
                 mp.direction *= -1;
             }
-        } else {
+        } else if (mp.moveType === 'horizontal') {
             mp.x += mp.speed * mp.direction;
             if (mp.x > mp.startX + mp.moveRange || mp.x < mp.startX - mp.moveRange) {
                 mp.direction *= -1;
             }
+        } else if (mp.moveType === 'circular') {
+            // Circular motion
+            mp.phase += mp.speed * 0.05;
+            mp.x = mp.startX + Math.cos(mp.phase) * mp.moveRange;
+            mp.y = mp.startY + Math.sin(mp.phase) * mp.moveRange;
         }
 
+        // Calculate delta for carrying player
+        const deltaX = mp.x - prevX;
+        const deltaY = mp.y - prevY;
+
         if (p.x + p.width > mp.x && p.x < mp.x + mp.width) {
-            if (p.vy > 0 &&
+            if (p.vy >= 0 &&
                 p.y + p.height > mp.y &&
-                p.y + p.height < mp.y + mp.height + p.vy + 5) {
+                p.y + p.height < mp.y + mp.height + Math.max(p.vy, 5) + 5) {
                 p.y = mp.y - p.height;
                 p.vy = 0;
                 p.onGround = true;
-                // Carry player with platform
-                if (mp.moveType === 'horizontal') {
-                    p.x += mp.speed * mp.direction;
-                } else if (mp.moveType === 'vertical') {
-                    p.y += mp.speed * mp.direction;
-                }
+                // Carry player with platform movement
+                p.x += deltaX;
+                p.y += deltaY;
             }
         }
     }
@@ -983,6 +1017,8 @@ function drawGame() {
         ctx.textAlign = 'center';
         if (mp.moveType === 'vertical') {
             ctx.fillText(mp.direction > 0 ? '\u2193' : '\u2191', mp.x + mp.width / 2, mp.y + mp.height / 2 + 3);
+        } else if (mp.moveType === 'circular') {
+            ctx.fillText('\u27F3', mp.x + mp.width / 2, mp.y + mp.height / 2 + 3); // Circular arrow
         } else {
             ctx.fillText(mp.direction > 0 ? '\u2192' : '\u2190', mp.x + mp.width / 2, mp.y + mp.height / 2 + 3);
         }

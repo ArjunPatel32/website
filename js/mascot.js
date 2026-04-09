@@ -353,7 +353,16 @@ function updateMascot() {
     } else if (m.state === 'centered') {
         // Mascot is standing still at center, waiting for iris to close
         m.animTimer += 0.02; // Slow idle animation
-        // Don't move, just wait
+        // Keep mascot firmly on platform - don't let it move at all
+        m.vx = 0;
+        m.vy = 0;
+        m.onGround = true;
+        // Anchor to target platform if it exists
+        if (m.targetCenterPlatform) {
+            const plat = m.targetCenterPlatform;
+            m.x = plat.x + plat.width / 2 - m.width / 2;
+            m.y = plat.y - m.height;
+        }
     } else if (m.state === 'falling') {
         // Smooth eased gravity for falling
         m.vy += 0.4;

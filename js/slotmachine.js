@@ -320,29 +320,25 @@ function createIrisCloseEffect() {
 }
 
 function createTrapdoorAndFall() {
-    // Create trapdoor overlay under the mascot
-    const trapdoor = document.createElement('div');
-    trapdoor.className = 'trapdoor-container';
-    trapdoor.innerHTML = `
-        <div class="trapdoor-left"></div>
-        <div class="trapdoor-right"></div>
-        <div class="trapdoor-void"></div>
-    `;
-    document.body.appendChild(trapdoor);
-
-    // Use the target center platform position (more reliable than current mascot position)
+    // Get the platform position FIRST before creating anything
     let trapdoorCenterX, trapdoorTopY;
     if (mascot.targetCenterPlatform) {
         const plat = mascot.targetCenterPlatform;
         trapdoorCenterX = plat.x + plat.width / 2;
         trapdoorTopY = plat.y;
-        // Also lock mascot to exact platform position
-        mascot.x = plat.x + plat.width / 2 - mascot.width / 2;
-        mascot.y = plat.y - mascot.height;
     } else {
         trapdoorCenterX = mascot.x + mascot.width / 2;
         trapdoorTopY = mascot.y + mascot.height;
     }
+
+    // Create trapdoor overlay - doors only, no void element
+    const trapdoor = document.createElement('div');
+    trapdoor.className = 'trapdoor-container';
+    trapdoor.innerHTML = `
+        <div class="trapdoor-left"></div>
+        <div class="trapdoor-right"></div>
+    `;
+    document.body.appendChild(trapdoor);
 
     // Position trapdoor exactly at the platform
     trapdoor.style.cssText = `
@@ -350,7 +346,7 @@ function createTrapdoorAndFall() {
         left: ${trapdoorCenterX - 70}px;
         top: ${trapdoorTopY - 10}px;
         width: 140px;
-        height: 70px;
+        height: 40px;
         z-index: 1450;
         pointer-events: none;
     `;
@@ -358,7 +354,6 @@ function createTrapdoorAndFall() {
     // Style the trapdoor pieces
     const leftDoor = trapdoor.querySelector('.trapdoor-left');
     const rightDoor = trapdoor.querySelector('.trapdoor-right');
-    const voidBg = trapdoor.querySelector('.trapdoor-void');
 
     const doorStyle = `
         position: absolute;
@@ -367,51 +362,35 @@ function createTrapdoorAndFall() {
         background: linear-gradient(180deg, #2d1f3d 0%, #1a1225 100%);
         border: 2px solid #fbbf24;
         top: 0;
-        transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         transform-origin: top;
-        box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+        box-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
     `;
 
     leftDoor.style.cssText = doorStyle + 'left: 0; border-radius: 4px 0 0 4px; transform-origin: top left;';
     rightDoor.style.cssText = doorStyle + 'right: 0; border-radius: 0 4px 4px 0; transform-origin: top right;';
 
-    voidBg.style.cssText = `
-        position: absolute;
-        top: 24px;
-        left: 10%;
-        width: 80%;
-        height: 46px;
-        background: radial-gradient(ellipse, #000 0%, #050508 50%, transparent 100%);
-        opacity: 0;
-        transition: opacity 0.4s ease;
-    `;
-
-    // Step 1: Show the void first
+    // Step 1: Open the trapdoor doors immediately
     setTimeout(() => {
-        voidBg.style.opacity = '1';
-    }, 100);
-
-    // Step 2: Open the trapdoor doors
-    setTimeout(() => {
-        leftDoor.style.transform = 'rotateX(-110deg)';
-        rightDoor.style.transform = 'rotateX(-110deg)';
+        leftDoor.style.transform = 'rotateX(-100deg)';
+        rightDoor.style.transform = 'rotateX(-100deg)';
 
         // Screen shake when trapdoor opens
         document.body.classList.add('screen-shake');
-        setTimeout(() => document.body.classList.remove('screen-shake'), 300);
-    }, 300);
+        setTimeout(() => document.body.classList.remove('screen-shake'), 200);
+    }, 100);
 
-    // Step 3: AFTER doors are fully open, THEN make mascot fall
+    // Step 2: AFTER doors are open, make mascot fall
     setTimeout(() => {
         mascotFallIntoGame();
-    }, 1000); // Wait for doors to fully open
+    }, 700);
 
-    // Step 4: Remove trapdoor after mascot has fallen through
+    // Step 3: Remove trapdoor after mascot has fallen through
     setTimeout(() => {
-        trapdoor.style.transition = 'opacity 0.6s ease';
+        trapdoor.style.transition = 'opacity 0.5s ease';
         trapdoor.style.opacity = '0';
-        setTimeout(() => trapdoor.remove(), 600);
-    }, 2000);
+        setTimeout(() => trapdoor.remove(), 500);
+    }, 1500);
 }
 
 // Called when mascot finishes falling

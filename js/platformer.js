@@ -63,7 +63,7 @@ function initGame() {
     gameCanvas.width = window.innerWidth;
     gameCanvas.height = window.innerHeight;
 
-    game.gameHeight = window.innerHeight * 4.5;
+    game.gameHeight = window.innerHeight * 2.8; // Shorter game
 
     // Jump physics - be generous with distances
     const MAX_SAFE_VERTICAL = 55;
@@ -81,7 +81,7 @@ function initGame() {
     const screenWidth = gameCanvas.width;
     const numColumns = 7;
     const columnWidth = screenWidth / numColumns;
-    const numRows = 28;
+    const numRows = 18; // Fewer rows for shorter game
     const rowHeight = (game.gameHeight - 350) / numRows;
 
     // Platform sizes
@@ -104,8 +104,8 @@ function initGame() {
         col: Math.floor(numColumns / 2)
     });
 
-    // Generate void background tendrils - more and larger
-    for (let i = 0; i < 40; i++) {
+    // Generate void background tendrils
+    for (let i = 0; i < 25; i++) {
         game.voidTendrils.push({
             x: Math.random() * screenWidth,
             y: Math.random() * game.gameHeight,
@@ -117,21 +117,21 @@ function initGame() {
         });
     }
 
-    // Generate platforms - aiming for ~300+ total for easier gameplay
+    // Generate platforms - lots of platforms for easy gameplay
     const platformGrid = [];
 
     for (let row = 0; row < numRows; row++) {
         platformGrid[row] = [];
         const baseY = game.gameHeight - 160 - (row * rowHeight);
-        const isCheckpointRow = row % 6 === 0 && row > 0;
+        const isCheckpointRow = row % 5 === 0 && row > 0; // More frequent checkpoints
 
         let zone = 'intro';
-        if (row >= 7 && row < 14) zone = 'water';
-        else if (row >= 14 && row < 22) zone = 'lava';
-        else if (row >= 22) zone = 'final';
+        if (row >= 5 && row < 10) zone = 'water';
+        else if (row >= 10 && row < 15) zone = 'lava';
+        else if (row >= 15) zone = 'final';
 
-        // 5-7 platforms per row for much easier gameplay
-        const platformsThisRow = isCheckpointRow ? 6 : 5 + Math.floor(Math.random() * 3);
+        // 6-7 platforms per row - very dense for easy jumping
+        const platformsThisRow = isCheckpointRow ? 7 : 6 + Math.floor(Math.random() * 2);
         const columnOrder = [...Array(numColumns).keys()].sort(() => Math.random() - 0.5);
 
         for (let p = 0; p < Math.min(platformsThisRow, numColumns); p++) {
@@ -223,13 +223,13 @@ function initGame() {
 
     // ============ TONS OF OBSTACLES ============
 
-    // WALLS - maze-like barriers that block but don't kill (fewer for easier gameplay)
+    // WALLS - maze-like barriers that block but don't kill
     for (let row = 2; row < numRows - 2; row++) {
-        if (Math.random() > 0.6) continue; // Skip some rows entirely
+        if (Math.random() > 0.5) continue; // Skip half the rows
         const baseY = game.gameHeight - 160 - (row * rowHeight);
 
-        // 1-2 walls per row (reduced)
-        const wallCount = 1 + Math.floor(Math.random() * 2);
+        // 1-3 walls per row
+        const wallCount = 1 + Math.floor(Math.random() * 3);
         for (let w = 0; w < wallCount; w++) {
             const isVertical = Math.random() > 0.3;
             const x = 30 + Math.random() * (screenWidth - 80);
@@ -245,8 +245,8 @@ function initGame() {
         }
     }
 
-    // VOID ORBS - dark floating orbs that move in patterns (deadly) - reduced count
-    for (let i = 0; i < 25; i++) {
+    // VOID ORBS - dark floating orbs that move in patterns (deadly)
+    for (let i = 0; i < 32; i++) {
         const row = 2 + Math.floor(Math.random() * (numRows - 4));
         const x = 40 + Math.random() * (screenWidth - 80);
         const y = game.gameHeight - 160 - (row * rowHeight) - Math.random() * 60;
@@ -308,8 +308,8 @@ function initGame() {
         }
     }
 
-    // FIRE HAZARDS - floating (reduced for easier gameplay)
-    for (let i = 0; i < 20; i++) {
+    // FIRE HAZARDS - floating
+    for (let i = 0; i < 28; i++) {
         const row = 2 + Math.floor(Math.random() * (numRows - 4));
         const x = 30 + Math.random() * (screenWidth - 60);
         const y = game.gameHeight - 160 - (row * rowHeight) - 10 - Math.random() * 70;

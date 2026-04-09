@@ -149,44 +149,173 @@ function triggerJackpot() {
 }
 
 function createDimOverlayAndFall() {
-    // Create a dark overlay that dims everything except the mascot
-    const dimOverlay = document.createElement('div');
-    dimOverlay.className = 'jackpot-dim-overlay';
-    dimOverlay.style.cssText = `
+    // Make mascot jump to center platform first
+    makeMascotJumpToCenter();
+
+    // Wait for mascot to reach center, then start iris close
+    setTimeout(() => {
+        createIrisCloseEffect();
+    }, 800);
+}
+
+function makeMascotJumpToCenter() {
+    // Find the platform closest to center of screen
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+
+    let closestPlatform = mascotPlatforms[0];
+    let closestDist = Infinity;
+
+    for (const plat of mascotPlatforms) {
+        const platCenterX = plat.x + plat.width / 2;
+        const platCenterY = plat.y;
+        const dist = Math.sqrt(Math.pow(platCenterX - centerX, 2) + Math.pow(platCenterY - centerY, 2));
+        if (dist < closestDist) {
+            closestDist = dist;
+            closestPlatform = plat;
+        }
+    }
+
+    // Calculate jump trajectory to center platform
+    const startX = mascot.x + mascot.width / 2;
+    const startY = mascot.y + mascot.height;
+    const endX = closestPlatform.x + closestPlatform.width / 2;
+    const endY = closestPlatform.y;
+
+    const dx = endX - startX;
+    const dy = endY - startY;
+
+    // Calculate jump physics
+    const apexHeight = Math.min(startY, endY) - 100;
+    const rise = startY - apexHeight;
+    const MASCOT_GRAVITY = 0.4;
+
+    const vy0 = -Math.sqrt(2 * MASCOT_GRAVITY * Math.max(rise, 50));
+    const discriminant = vy0 * vy0 + 2 * MASCOT_GRAVITY * dy;
+    const totalTime = (-vy0 + Math.sqrt(Math.max(0, discriminant))) / MASCOT_GRAVITY;
+    const vx0 = dx / Math.max(totalTime, 1);
+
+    // Apply jump
+    mascot.vy = vy0;
+    mascot.vx = vx0;
+    mascot.onGround = false;
+    mascot.facingRight = dx > 0;
+    mascot.isRunning = false;
+
+    // Store target platform for landing
+    mascot.targetCenterPlatform = closestPlatform;
+}
+
+function createIrisCloseEffect() {
+    const mascotCanvas = document.getElementById('mascot');
+    mascotCanvas.style.zIndex = '1500';
+
+    // Create canvas for iris effect
+    const irisCanvas = document.createElement('canvas');
+    irisCanvas.id = 'irisCloseCanvas';
+    irisCanvas.width = window.innerWidth;
+    irisCanvas.height = window.innerHeight;
+    irisCanvas.style.cssText = `
         position: fixed;
         top: 0;
         left: 0;
         width: 100vw;
         height: 100vh;
-        background: rgba(0, 0, 0, 0);
         z-index: 1400;
         pointer-events: none;
-        transition: background 0.8s ease;
     `;
-    document.body.appendChild(dimOverlay);
+    document.body.appendChild(irisCanvas);
 
-    // Make sure the mascot canvas is above the dim overlay
-    const mascotCanvas = document.getElementById('mascot');
-    mascotCanvas.style.zIndex = '1500';
+    const ctx = irisCanvas.getContext('2d');
 
-    // Gradually dim the screen
-    requestAnimationFrame(() => {
-        dimOverlay.style.background = 'rgba(0, 0, 0, 0.85)';
-    });
+    // Get mascot center position
+    const mascotCenterX = mascot.x + mascot.width / 2;
+    const mascotCenterY = mascot.y + mascot.height / 2;
 
-    // After dimming, create trapdoor and drop
-    setTimeout(() => {
-        createTrapdoorAndFall();
+    // Calculate max radius needed to cover entire screen from mascot position
+    const maxRadius = Math.sqrt(
+        Math.pow(Math.max(mascotCenterX, window.innerWidth - mascotCenterX), 2) +
+        Math.pow(Math.max(mascotCenterY, window.innerHeight - mascotCenterY), 2)
+    ) + 100;
 
-        // Remove dim overlay when mascot falls through
-        setTimeout(() => {
-            dimOverlay.style.background = 'rgba(0, 0, 0, 0)';
-            setTimeout(() => {
-                dimOverlay.remove();
-                mascotCanvas.style.zIndex = '';
-            }, 800);
-        }, 1500);
-    }, 800);
+    let currentRadius = maxRadius;
+    const targetRadius = 50; // Small circle around mascot
+    const closeSpeed = 12; // Pixels per frame to close
+    let phase = 'closing'; // 'closing', 'holding', 'complete'
+    let holdTimer = 0;
+
+    function animateIris() {
+        ctx.clearRect(0, 0, irisCanvas.width, irisCanvas.height);
+
+        // Update mascot position for tracking
+        const trackX = mascot.x + mascot.width / 2;
+        const trackY = mascot.y + mascot.height / 2;
+
+        if (phase === 'closing') {
+            currentRadius -= closeSpeed;
+
+            // Ease out as we get closer
+            if (currentRadius < 200) {
+                currentRadius -= closeSpeed * 0.3;
+            }
+
+            if (currentRadius <= targetRadius) {
+                currentRadius = targetRadius;
+                phase = 'holding';
+            }
+        } else if (phase === 'holding') {
+            holdTimer++;
+            // Pulse the circle slightly while holding
+            currentRadius = targetRadius + Math.sin(holdTimer * 0.15) * 5;
+
+            if (holdTimer > 40) {
+                phase = 'complete';
+                // Start the trapdoor fall
+                createTrapdoorAndFall();
+
+                // Fade out iris and cleanup
+                setTimeout(() => {
+                    irisCanvas.style.transition = 'opacity 0.5s ease';
+                    irisCanvas.style.opacity = '0';
+                    setTimeout(() => {
+                        irisCanvas.remove();
+                        mascotCanvas.style.zIndex = '';
+                    }, 500);
+                }, 1200);
+            }
+        }
+
+        if (phase !== 'complete') {
+            // Draw the iris (black with circular hole)
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.rect(0, 0, irisCanvas.width, irisCanvas.height);
+
+            // Cut out circular hole centered on mascot
+            ctx.moveTo(trackX + currentRadius, trackY);
+            ctx.arc(trackX, trackY, currentRadius, 0, Math.PI * 2, true);
+            ctx.fill();
+
+            // Add glow ring around the opening
+            ctx.strokeStyle = 'rgba(139, 92, 246, 0.6)';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(trackX, trackY, currentRadius + 2, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Inner glow
+            ctx.strokeStyle = 'rgba(236, 72, 153, 0.4)';
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.arc(trackX, trackY, currentRadius + 8, 0, Math.PI * 2);
+            ctx.stroke();
+
+            requestAnimationFrame(animateIris);
+        }
+    }
+
+    // Start animation
+    requestAnimationFrame(animateIris);
 }
 
 function createTrapdoorAndFall() {
@@ -223,7 +352,7 @@ function createTrapdoorAndFall() {
         background: linear-gradient(180deg, #2d1f3d 0%, #1a1225 100%);
         border: 2px solid #fbbf24;
         top: 0;
-        transition: transform 0.5s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+        transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
         transform-origin: top;
         box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
     `;

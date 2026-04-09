@@ -1298,25 +1298,603 @@ body {
 }
 
 /* Responsive */
-@media (max-width: 480px) {
+
+/* Large screens / smaller laptops */
+@media (max-width: 1200px) {
+    .floating-logo {
+        width: 55px;
+        height: 55px;
+    }
+
+    .logo-1, .logo-6 {
+        width: 66px;
+        height: 66px;
+    }
+
+    .spiral-galaxy {
+        width: 150px;
+        height: 150px;
+    }
+
+    .black-hole {
+        width: 90px;
+        height: 90px;
+    }
+
+    .black-hole .accretion-disk {
+        width: 82px;
+        height: 82px;
+    }
+
+    .black-hole .disk-2 {
+        width: 57px;
+        height: 57px;
+    }
+
+    .black-hole .disk-3 {
+        width: 34px;
+        height: 34px;
+    }
+
+    .black-hole .gravitational-lens {
+        width: 90px;
+        height: 90px;
+    }
+
+    .black-hole .event-horizon {
+        width: 23px;
+        height: 23px;
+    }
+}
+
+/* Medium screens / tablets landscape */
+@media (max-width: 1024px) {
+    .container {
+        padding: 30px 20px;
+    }
+
+    .profile-img {
+        width: 200px;
+        height: 200px;
+    }
+
+    .profile-wrapper {
+        margin-bottom: 30px;
+    }
+
+    .tagline {
+        font-size: 1rem;
+        margin-bottom: 30px;
+    }
+
+    .bio {
+        max-width: 480px;
+        font-size: 0.9rem;
+        margin-bottom: 40px;
+    }
+
+    .work-badge {
+        padding: 10px 20px;
+        margin-bottom: 30px;
+    }
+
+    .floating-logo {
+        width: 50px;
+        height: 50px;
+    }
+
+    .logo-1, .logo-6 {
+        width: 60px;
+        height: 60px;
+    }
+
+    .spiral-galaxy {
+        width: 120px;
+        height: 120px;
+        top: 8%;
+        right: 5%;
+    }
+
+    .black-hole {
+        width: 80px;
+        height: 80px;
+        left: 5%;
+    }
+
+    .black-hole .accretion-disk {
+        width: 72px;
+        height: 72px;
+    }
+
+    .black-hole .disk-2 {
+        width: 50px;
+        height: 50px;
+    }
+
+    .black-hole .disk-3 {
+        width: 30px;
+        height: 30px;
+    }
+
+    .black-hole .gravitational-lens {
+        width: 80px;
+        height: 80px;
+    }
+
+    .black-hole .event-horizon {
+        width: 20px;
+        height: 20px;
+    }
+
+    .poll-container {
+        bottom: 20px;
+        right: 20px;
+        padding: 20px 24px;
+    }
+
+    .poll-question {
+        font-size: 1.1rem;
+    }
+
+    .slot-machine {
+        bottom: 20px;
+        left: 20px;
+        padding: 14px;
+    }
+
+    .poker-card-wrapper {
+        bottom: 60px;
+    }
+}
+
+/* Tablets portrait */
+@media (max-width: 768px) {
+    .container {
+        padding: 25px 15px;
+    }
+
     .profile-img {
         width: 180px;
         height: 180px;
     }
 
+    .profile-wrapper {
+        margin-bottom: 25px;
+    }
+
+    .name {
+        margin-bottom: 10px;
+    }
+
+    .tagline {
+        font-size: 0.95rem;
+        margin-bottom: 25px;
+    }
+
+    .bio {
+        max-width: 400px;
+        font-size: 0.85rem;
+        margin-bottom: 35px;
+        line-height: 1.7;
+    }
+
+    .bio li {
+        margin-bottom: 10px;
+    }
+
+    .work-badge {
+        padding: 10px 18px;
+        gap: 10px;
+        margin-bottom: 25px;
+    }
+
+    .work-badge span {
+        font-size: 0.9rem;
+    }
+
+    .work-logo {
+        width: 28px;
+        height: 28px;
+    }
+
     .social-links {
-        gap: 16px;
+        gap: 18px;
     }
 
     .social-link {
+        width: 46px;
+        height: 46px;
+    }
+
+    .social-link svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .email-link {
+        margin-top: 25px;
+        font-size: 0.85rem;
+    }
+
+    /* Hide decorative floating elements on tablets */
+    .floating-logo {
+        width: 45px;
+        height: 45px;
+        opacity: 0.7;
+    }
+
+    .logo-1, .logo-6 {
+        width: 54px;
+        height: 54px;
+    }
+
+    .spiral-galaxy {
+        width: 100px;
+        height: 100px;
+        opacity: 0.6;
+    }
+
+    .black-hole {
+        width: 70px;
+        height: 70px;
+        opacity: 0.6;
+    }
+
+    .black-hole .accretion-disk {
+        width: 63px;
+        height: 63px;
+    }
+
+    .black-hole .disk-2 {
         width: 44px;
         height: 44px;
     }
 
+    .black-hole .disk-3 {
+        width: 26px;
+        height: 26px;
+    }
+
+    .black-hole .gravitational-lens {
+        width: 70px;
+        height: 70px;
+    }
+
+    .black-hole .event-horizon {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* Stack poll and slot machine vertically on right side */
+    .poll-container {
+        bottom: auto;
+        top: 15px;
+        right: 15px;
+        left: auto;
+        padding: 16px 20px;
+        min-width: 180px;
+    }
+
+    .poll-question {
+        font-size: 1rem;
+        margin-bottom: 16px;
+    }
+
+    .poll-btn {
+        padding: 12px 24px;
+        font-size: 0.9rem;
+    }
+
+    .slot-machine {
+        bottom: auto;
+        top: 15px;
+        left: 15px;
+        padding: 12px;
+    }
+
+    .slot-title {
+        font-size: 0.8rem;
+        margin-bottom: 10px;
+    }
+
+    .slot-reel {
+        width: 32px;
+        height: 40px;
+        font-size: 20px;
+    }
+
+    .slot-btn {
+        padding: 8px;
+        font-size: 0.75rem;
+    }
+
+    .slot-result {
+        font-size: 0.75rem;
+    }
+
+    .poker-card-wrapper {
+        bottom: 50px;
+    }
+
+    .poker-card {
+        width: 45px;
+        height: 63px;
+        font-size: 24px;
+    }
+
+    .poker-card::before,
+    .poker-card::after {
+        font-size: 10px;
+    }
+
+    .game-title {
+        font-size: 1.3rem;
+    }
+
+    .game-instructions {
+        font-size: 0.8rem;
+    }
+
+    .jackpot-text {
+        font-size: 3rem;
+    }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+    .container {
+        padding: 20px 15px;
+        justify-content: flex-start;
+        padding-top: 60px;
+    }
+
+    .profile-img {
+        width: 150px;
+        height: 150px;
+    }
+
+    .profile-wrapper {
+        margin-bottom: 20px;
+    }
+
+    .profile-wrapper::after {
+        top: -15px;
+        left: -15px;
+        right: -15px;
+        bottom: -15px;
+    }
+
+    .name {
+        margin-bottom: 8px;
+    }
+
+    .tagline {
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+    }
+
+    .bio {
+        max-width: 100%;
+        font-size: 0.8rem;
+        margin-bottom: 30px;
+        line-height: 1.6;
+    }
+
+    .bio li {
+        margin-bottom: 8px;
+        padding-left: 16px;
+    }
+
+    .bio li::before {
+        width: 5px;
+        height: 5px;
+        top: 8px;
+    }
+
+    .work-badge {
+        padding: 8px 16px;
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+
+    .work-badge span {
+        font-size: 0.85rem;
+    }
+
+    .work-logo {
+        width: 24px;
+        height: 24px;
+    }
+
+    .social-links {
+        gap: 14px;
+    }
+
+    .social-link {
+        width: 42px;
+        height: 42px;
+    }
+
+    .social-link svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .email-link {
+        margin-top: 20px;
+        font-size: 0.8rem;
+    }
+
+    /* Hide decorative elements on mobile */
+    .floating-logo,
+    .black-hole,
+    .spiral-galaxy {
+        display: none;
+    }
+
+    /* Full-width poll at bottom */
     .poll-container {
         bottom: 15px;
+        top: auto;
         right: 15px;
         left: 15px;
+        padding: 14px 18px;
+        min-width: auto;
+    }
+
+    .poll-question {
+        font-size: 0.95rem;
+        margin-bottom: 14px;
+    }
+
+    .poll-buttons {
+        gap: 12px;
+    }
+
+    .poll-btn {
+        padding: 10px 20px;
+        font-size: 0.85rem;
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* Hide slot machine on very small screens */
+    .slot-machine {
+        display: none;
+    }
+
+    .poker-card-wrapper {
+        bottom: 100px;
+    }
+
+    .poker-card {
+        width: 40px;
+        height: 56px;
+        font-size: 20px;
+    }
+
+    .poker-card::before,
+    .poker-card::after {
+        font-size: 9px;
+    }
+
+    .game-ui {
+        top: 15px;
+        width: 90%;
+    }
+
+    .game-title {
+        font-size: 1.1rem;
+    }
+
+    .game-instructions {
+        font-size: 0.75rem;
+    }
+
+    .jackpot-text {
+        font-size: 2.5rem;
+    }
+}
+
+/* Extra small phones */
+@media (max-width: 360px) {
+    .container {
+        padding: 15px 12px;
+        padding-top: 50px;
+    }
+
+    .profile-img {
+        width: 130px;
+        height: 130px;
+    }
+
+    .tagline {
+        font-size: 0.85rem;
+    }
+
+    .bio {
+        font-size: 0.75rem;
+    }
+
+    .social-links {
+        gap: 12px;
+    }
+
+    .social-link {
+        width: 38px;
+        height: 38px;
+    }
+
+    .social-link svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .poll-container {
+        padding: 12px 14px;
+    }
+
+    .poll-question {
+        font-size: 0.85rem;
+    }
+
+    .poll-btn {
+        padding: 8px 16px;
+        font-size: 0.8rem;
+    }
+}
+
+/* Landscape orientation on mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+    .container {
+        padding: 15px 20px;
+        justify-content: center;
+    }
+
+    .profile-img {
+        width: 100px;
+        height: 100px;
+    }
+
+    .profile-wrapper {
+        margin-bottom: 15px;
+    }
+
+    .name {
+        margin-bottom: 5px;
+    }
+
+    .tagline {
+        margin-bottom: 15px;
+        font-size: 0.85rem;
+    }
+
+    .bio {
+        display: none;
+    }
+
+    .work-badge {
+        margin-bottom: 15px;
+        padding: 8px 16px;
+    }
+
+    .social-links {
+        gap: 12px;
+    }
+
+    .social-link {
+        width: 36px;
+        height: 36px;
+    }
+
+    .email-link {
+        margin-top: 15px;
+    }
+
+    .poll-container,
+    .slot-machine,
+    .poker-card-wrapper {
+        display: none;
     }
 
     .floating-logo,

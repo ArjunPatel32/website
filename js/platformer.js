@@ -21,11 +21,14 @@ const game = {
         facingRight: true,
         animFrame: 0,
         animTimer: 0,
-        introFalling: true // True during intro fall, false when gameplay starts
+        introFalling: true, // True during intro fall, false when gameplay starts
+        landingBounce: false,
+        introSwayPhase: 0
     },
     platforms: [],
     hazards: [],
     movingPlatforms: [],
+    crushers: [],
     particles: [],
     bgStars: [],
     exitPortal: { x: 0, y: 0, radius: 60 },
@@ -38,10 +41,10 @@ const game = {
 };
 
 // Physics constants
-const GRAVITY = 0.4;
-const JUMP_FORCE = -13;
-const MOVE_SPEED = 3.5;
-const FRICTION = 0.78;
+const GRAVITY = 0.45;
+const JUMP_FORCE = -10.5;
+const MOVE_SPEED = 4.2;
+const FRICTION = 0.82;
 const MAX_FALL_SPEED = 12;
 
 // Input state
@@ -55,29 +58,53 @@ function initGame() {
     gameCanvas.width = window.innerWidth;
     gameCanvas.height = window.innerHeight;
 
-    game.gameHeight = window.innerHeight * 3;
+    game.gameHeight = window.innerHeight * 3.5;
 
-    // Generate platforms
+    // Generate platforms with more interesting layout
     game.platforms = [];
-    const platformCount = 14;
-    const verticalSpacing = 110;
-    const maxHorizontalJump = 160;
+    const platformCount = 18;
+    const baseVerticalSpacing = 95;
+    const maxHorizontalJump = 140;
 
     let lastX = gameCanvas.width / 2 - 80;
     let lastWidth = 160;
 
-    const checkpointIndices = [4, 9];
+    const checkpointIndices = [5, 11, 16];
+
+    // Create zones for variety
+    const zones = [
+        { start: 0, end: 5, type: 'intro' },      // Easy intro
+        { start: 6, end: 10, type: 'water' },     // Water hazard zone
+        { start: 11, end: 14, type: 'lava' },     // Lava/fire zone
+        { start: 15, end: 17, type: 'final' }     // Final challenge
+    ];
+
+    function getZone(index) {
+        for (const zone of zones) {
+            if (index >= zone.start && index <= zone.end) return zone.type;
+        }
+        return 'intro';
+    }
 
     for (let i = 0; i < platformCount; i++) {
-        const y = game.gameHeight - 180 - (i * verticalSpacing);
+        const zone = getZone(i);
+        // Vary vertical spacing for interest
+        const verticalVariation = (Math.random() - 0.5) * 30;
+        const y = game.gameHeight - 180 - (i * baseVerticalSpacing) + verticalVariation;
         const isCheckpoint = checkpointIndices.includes(i);
-        const width = isCheckpoint ? 140 : 100 + Math.random() * 50;
+        const width = isCheckpoint ? 140 : 80 + Math.random() * 60;
 
         const lastCenter = lastX + lastWidth / 2;
-        const minX = Math.max(40, lastCenter - maxHorizontalJump - width / 2);
-        const maxX = Math.min(gameCanvas.width - width - 40, lastCenter + maxHorizontalJump - width / 2);
 
-        const x = minX + Math.random() * (maxX - minX);
+        // Add more horizontal variation - sometimes go far left/right
+        let biasDirection = 0;
+        if (i % 4 === 0) biasDirection = -80; // Push left sometimes
+        if (i % 4 === 2) biasDirection = 80;  // Push right sometimes
+
+        const minX = Math.max(50, lastCenter - maxHorizontalJump - width / 2 + biasDirection);
+        const maxX = Math.min(gameCanvas.width - width - 50, lastCenter + maxHorizontalJump - width / 2 + biasDirection);
+
+        const x = minX + Math.random() * Math.max(10, maxX - minX);
 
         if (isCheckpoint) {
             game.platforms.push({
@@ -89,17 +116,35 @@ function initGame() {
                 color2: '#059669',
                 glowColor: 'rgba(16, 185, 129, 0.6)',
                 isCheckpoint: true,
-                checkpointId: i
+                checkpointId: i,
+                zone: zone
             });
         } else {
+            // Zone-based coloring
+            let color1, color2, glowColor;
+            if (zone === 'water') {
+                color1 = `hsl(${200 + (i * 5) % 30}, 70%, 55%)`;
+                color2 = `hsl(${210 + (i * 8) % 40}, 60%, 45%)`;
+                glowColor = `hsla(205, 70%, 55%, 0.5)`;
+            } else if (zone === 'lava') {
+                color1 = `hsl(${15 + (i * 5) % 25}, 85%, 55%)`;
+                color2 = `hsl(${5 + (i * 8) % 20}, 75%, 45%)`;
+                glowColor = `hsla(15, 85%, 55%, 0.5)`;
+            } else {
+                color1 = `hsl(${260 + (i * 8) % 60}, 80%, 60%)`;
+                color2 = `hsl(${280 + (i * 12) % 80}, 70%, 50%)`;
+                glowColor = `hsla(${270 + (i * 10) % 70}, 80%, 60%, 0.5)`;
+            }
+
             game.platforms.push({
                 x: x,
                 y: y,
                 width: width,
                 height: 16,
-                color1: `hsl(${260 + (i * 8) % 60}, 80%, 60%)`,
-                color2: `hsl(${280 + (i * 12) % 80}, 70%, 50%)`,
-                glowColor: `hsla(${270 + (i * 10) % 70}, 80%, 60%, 0.5)`
+                color1: color1,
+                color2: color2,
+                glowColor: glowColor,
+                zone: zone
             });
         }
 
@@ -121,64 +166,145 @@ function initGame() {
 
     // Add hazards
     game.hazards = [];
-    for (let i = 2; i < platformCount - 1; i += 2) {
+
+    // Spikes on some platforms
+    for (let i = 2; i < platformCount - 1; i += 3) {
         if (checkpointIndices.includes(i)) continue;
 
         const plat = game.platforms[i];
         const spikeOnLeft = Math.random() > 0.5;
-        const spikeWidth = 25;
+        const spikeWidth = 22;
         game.hazards.push({
             x: spikeOnLeft ? plat.x : plat.x + plat.width - spikeWidth,
-            y: plat.y - 20,
+            y: plat.y - 18,
             width: spikeWidth,
-            height: 20,
+            height: 18,
             type: 'spike'
         });
     }
 
-    // Add moving platforms
-    game.movingPlatforms = [];
-    for (let i = 3; i < platformCount - 1; i += 4) {
+    // Water pools in water zone (deadly pools between platforms)
+    for (let i = 6; i <= 10; i++) {
+        if (checkpointIndices.includes(i)) continue;
         const plat = game.platforms[i];
-        const moveRange = 80 + Math.random() * 60;
+        const nextPlat = game.platforms[i + 1];
+        if (nextPlat && Math.random() > 0.4) {
+            const poolX = Math.min(plat.x, nextPlat.x) - 20;
+            const poolWidth = Math.abs(nextPlat.x - plat.x) + 100;
+            game.hazards.push({
+                x: poolX,
+                y: plat.y + 60,
+                width: poolWidth,
+                height: 25,
+                type: 'water',
+                wavePhase: Math.random() * Math.PI * 2
+            });
+        }
+    }
+
+    // Lava pools in lava zone
+    for (let i = 11; i <= 14; i++) {
+        if (checkpointIndices.includes(i)) continue;
+        const plat = game.platforms[i];
+        if (Math.random() > 0.5) {
+            game.hazards.push({
+                x: plat.x + plat.width / 2 - 40,
+                y: plat.y + 50,
+                width: 80,
+                height: 20,
+                type: 'lava',
+                bubbleTimer: 0
+            });
+        }
+    }
+
+    // Add moving platforms - both horizontal and vertical
+    game.movingPlatforms = [];
+
+    // Horizontal moving platforms
+    for (let i = 3; i < platformCount - 2; i += 5) {
+        const plat = game.platforms[i];
+        const moveRange = 60 + Math.random() * 50;
         game.movingPlatforms.push({
             x: plat.x,
-            y: plat.y - 60,
-            width: 70,
+            y: plat.y - 55,
+            width: 65,
             height: 14,
             startX: plat.x,
+            startY: plat.y - 55,
             moveRange: moveRange,
-            speed: 1.5 + Math.random(),
+            speed: 1.2 + Math.random() * 0.8,
             direction: 1,
+            moveType: 'horizontal',
             color1: '#f59e0b',
             color2: '#d97706',
             glowColor: 'rgba(245, 158, 11, 0.5)'
         });
     }
 
-    // Add floating fire hazards
-    for (let i = 1; i < platformCount - 2; i += 3) {
+    // Vertical moving platforms
+    for (let i = 7; i < platformCount - 2; i += 6) {
+        const plat = game.platforms[i];
+        game.movingPlatforms.push({
+            x: plat.x + plat.width + 30,
+            y: plat.y,
+            width: 60,
+            height: 14,
+            startX: plat.x + plat.width + 30,
+            startY: plat.y,
+            moveRange: 70,
+            speed: 0.8 + Math.random() * 0.6,
+            direction: 1,
+            moveType: 'vertical',
+            color1: '#06b6d4',
+            color2: '#0891b2',
+            glowColor: 'rgba(6, 182, 212, 0.5)'
+        });
+    }
+
+    // Add floating fire hazards with movement patterns
+    for (let i = 1; i < platformCount - 2; i += 4) {
         if (checkpointIndices.includes(i) || checkpointIndices.includes(i + 1) || checkpointIndices.includes(i - 1)) continue;
 
         const plat = game.platforms[i];
+        const moveType = Math.random() > 0.5 ? 'vertical' : 'horizontal';
         game.hazards.push({
-            x: plat.x + plat.width / 2 - 15,
-            y: plat.y - 80,
-            width: 30,
-            height: 30,
-            baseY: plat.y - 80,
-            moveRange: 40,
-            speed: 0.02,
+            x: plat.x + plat.width / 2 - 12,
+            y: plat.y - 70,
+            width: 24,
+            height: 24,
+            baseX: plat.x + plat.width / 2 - 12,
+            baseY: plat.y - 70,
+            moveRange: 35 + Math.random() * 25,
+            speed: 0.015 + Math.random() * 0.01,
             phase: Math.random() * Math.PI * 2,
+            moveType: moveType,
             type: 'fire'
         });
     }
 
-    // Exit portal - positioned high above the last platform so you must jump to reach it
+    // Add falling hazards (crushers) in later sections
+    game.crushers = [];
+    for (let i = 12; i < platformCount - 1; i += 4) {
+        const plat = game.platforms[i];
+        game.crushers.push({
+            x: plat.x + plat.width / 2 - 20,
+            y: plat.y - 200,
+            width: 40,
+            height: 50,
+            baseY: plat.y - 200,
+            targetY: plat.y - 55,
+            state: 'waiting', // waiting, falling, rising
+            waitTimer: 60 + Math.floor(Math.random() * 120),
+            speed: 0
+        });
+    }
+
+    // Exit portal - positioned high above the last platform
     const topPlatform = game.platforms[platformCount - 1];
     game.exitPortal = {
         x: topPlatform.x + topPlatform.width / 2,
-        y: topPlatform.y - 220,
+        y: topPlatform.y - 180,
         radius: 60,
         pulsePhase: 0
     };
@@ -187,8 +313,10 @@ function initGame() {
     game.player.x = gameCanvas.width / 2 - game.player.width / 2;
     game.player.y = -100; // Start above the screen
     game.player.vx = 0;
-    game.player.vy = 8; // Initial falling speed
+    game.player.vy = 6; // Initial falling speed (slower for smoother intro)
     game.player.introFalling = true;
+    game.player.landingBounce = false;
+    game.player.introSwayPhase = 0;
     game.player.animTimer = 0;
 
     // Camera starts showing bottom
@@ -216,6 +344,9 @@ function initGame() {
     game.introTimer = 0;
     game.landingAnimationTimer = 0;
     game.getUpAnimationTimer = 0;
+
+    // Initialize crushers if not already set
+    if (!game.crushers) game.crushers = [];
 }
 
 function startPlatformerGame() {
@@ -308,20 +439,31 @@ function updatePlayer() {
 
     // Handle intro falling
     if (p.introFalling) {
-        p.vy += GRAVITY * 0.8;
-        p.vy = Math.min(p.vy, 15);
-        p.y += p.vy;
-        p.animTimer += 0.03; // Much slower leg animation while falling
+        // Smooth eased gravity for intro
+        const introGravity = GRAVITY * 0.6;
+        p.vy += introGravity;
+        p.vy = Math.min(p.vy, 10); // Slower max fall for smoother landing
 
-        // Trail particles
-        if (Math.random() > 0.6) {
+        // Smooth interpolation for position
+        p.y += p.vy;
+
+        // Gentle swaying motion while falling
+        if (!p.introSwayPhase) p.introSwayPhase = 0;
+        p.introSwayPhase += 0.08;
+        const swayAmount = Math.sin(p.introSwayPhase) * 0.5;
+        p.x += swayAmount;
+
+        p.animTimer += 0.04; // Smooth leg animation while falling
+
+        // Trail particles with varied colors
+        if (Math.random() > 0.5) {
             game.particles.push({
-                x: p.x + p.width / 2,
+                x: p.x + p.width / 2 + (Math.random() - 0.5) * 10,
                 y: p.y,
-                vx: (Math.random() - 0.5) * 2,
-                vy: -3,
-                life: 1,
-                color: '#fbbf24'
+                vx: (Math.random() - 0.5) * 1.5,
+                vy: -2 - Math.random() * 2,
+                life: 1.2,
+                color: Math.random() > 0.5 ? '#fbbf24' : '#8b5cf6'
             });
         }
 
@@ -329,23 +471,46 @@ function updatePlayer() {
         const startPlat = game.platforms.find(pl => pl.isStart);
         if (p.y + p.height >= startPlat.y && p.y + p.height < startPlat.y + 50 &&
             p.x + p.width > startPlat.x && p.x < startPlat.x + startPlat.width) {
-            // Land and start gameplay!
-            p.y = startPlat.y - p.height;
-            p.vy = 0;
-            p.introFalling = false;
-            p.onGround = true;
-            game.shakeIntensity = 25;
 
-            // Big impact particles
-            for (let i = 0; i < 20; i++) {
-                game.particles.push({
-                    x: p.x + p.width / 2,
-                    y: p.y + p.height,
-                    vx: (Math.random() - 0.5) * 12,
-                    vy: -Math.random() * 8 - 2,
-                    life: 1.5,
-                    color: ['#fbbf24', '#10b981', '#8b5cf6'][Math.floor(Math.random() * 3)]
-                });
+            // Smooth landing with slight bounce
+            p.y = startPlat.y - p.height;
+
+            // Small bounce effect
+            if (!p.landingBounce) {
+                p.landingBounce = true;
+                p.vy = -3; // Small bounce up
+                game.shakeIntensity = 15;
+
+                // Initial landing particles
+                for (let i = 0; i < 12; i++) {
+                    game.particles.push({
+                        x: p.x + p.width / 2,
+                        y: p.y + p.height,
+                        vx: (Math.random() - 0.5) * 8,
+                        vy: -Math.random() * 5 - 1,
+                        life: 1.2,
+                        color: ['#fbbf24', '#10b981', '#8b5cf6'][Math.floor(Math.random() * 3)]
+                    });
+                }
+            } else if (p.vy >= 0) {
+                // Final landing after bounce
+                p.vy = 0;
+                p.introFalling = false;
+                p.onGround = true;
+                p.landingBounce = false;
+                game.shakeIntensity = 8;
+
+                // Final landing particles
+                for (let i = 0; i < 10; i++) {
+                    game.particles.push({
+                        x: p.x + p.width / 2,
+                        y: p.y + p.height,
+                        vx: (Math.random() - 0.5) * 6,
+                        vy: -Math.random() * 4 - 1,
+                        life: 1,
+                        color: '#10b981'
+                    });
+                }
             }
         }
         return;
@@ -428,9 +593,17 @@ function updatePlayer() {
 
     // Moving platform collision
     for (const mp of game.movingPlatforms) {
-        mp.x += mp.speed * mp.direction;
-        if (mp.x > mp.startX + mp.moveRange || mp.x < mp.startX - mp.moveRange) {
-            mp.direction *= -1;
+        // Update platform position based on movement type
+        if (mp.moveType === 'vertical') {
+            mp.y += mp.speed * mp.direction;
+            if (mp.y > mp.startY + mp.moveRange || mp.y < mp.startY - mp.moveRange) {
+                mp.direction *= -1;
+            }
+        } else {
+            mp.x += mp.speed * mp.direction;
+            if (mp.x > mp.startX + mp.moveRange || mp.x < mp.startX - mp.moveRange) {
+                mp.direction *= -1;
+            }
         }
 
         if (p.x + p.width > mp.x && p.x < mp.x + mp.width) {
@@ -440,19 +613,80 @@ function updatePlayer() {
                 p.y = mp.y - p.height;
                 p.vy = 0;
                 p.onGround = true;
-                p.x += mp.speed * mp.direction;
+                // Carry player with platform
+                if (mp.moveType === 'horizontal') {
+                    p.x += mp.speed * mp.direction;
+                } else if (mp.moveType === 'vertical') {
+                    p.y += mp.speed * mp.direction;
+                }
+            }
+        }
+    }
+
+    // Crusher hazards
+    if (game.crushers) {
+        for (const crusher of game.crushers) {
+            // Update crusher state
+            if (crusher.state === 'waiting') {
+                crusher.waitTimer--;
+                if (crusher.waitTimer <= 0) {
+                    crusher.state = 'falling';
+                    crusher.speed = 0;
+                }
+            } else if (crusher.state === 'falling') {
+                crusher.speed += 0.8;
+                crusher.y += crusher.speed;
+                if (crusher.y >= crusher.targetY) {
+                    crusher.y = crusher.targetY;
+                    crusher.state = 'rising';
+                    crusher.speed = 0;
+                    game.shakeIntensity = Math.max(game.shakeIntensity, 8);
+                }
+            } else if (crusher.state === 'rising') {
+                crusher.speed += 0.1;
+                crusher.y -= crusher.speed;
+                if (crusher.y <= crusher.baseY) {
+                    crusher.y = crusher.baseY;
+                    crusher.state = 'waiting';
+                    crusher.waitTimer = 90 + Math.floor(Math.random() * 90);
+                    crusher.speed = 0;
+                }
+            }
+
+            // Check collision with player
+            const pad = 5;
+            if (p.x + p.width - pad > crusher.x + pad &&
+                p.x + pad < crusher.x + crusher.width - pad &&
+                p.y + p.height - pad > crusher.y + pad &&
+                p.y + pad < crusher.y + crusher.height - pad) {
+                respawnPlayer();
+                break;
             }
         }
     }
 
     // Hazard collisions
     for (const h of game.hazards) {
+        // Update hazard movement
         if (h.type === 'fire') {
             h.phase += h.speed;
-            h.y = h.baseY + Math.sin(h.phase) * h.moveRange;
+            if (h.moveType === 'horizontal') {
+                h.x = h.baseX + Math.sin(h.phase) * h.moveRange;
+            } else {
+                h.y = h.baseY + Math.sin(h.phase) * h.moveRange;
+            }
+        } else if (h.type === 'water') {
+            h.wavePhase += 0.05;
+        } else if (h.type === 'lava') {
+            h.bubbleTimer += 1;
         }
 
-        const pad = 5;
+        // Collision detection
+        let pad = 5;
+        if (h.type === 'water' || h.type === 'lava') {
+            pad = 8; // Slightly more forgiving for pools
+        }
+
         if (p.x + p.width - pad > h.x + pad &&
             p.x + pad < h.x + h.width - pad &&
             p.y + p.height - pad > h.y + pad &&
@@ -536,9 +770,17 @@ function updatePlayer() {
 function updateCamera() {
     const targetY = game.player.y - gameCanvas.height / 2;
     const clampedTarget = Math.max(0, Math.min(game.gameHeight - gameCanvas.height, targetY));
-    game.camera.y += (clampedTarget - game.camera.y) * 0.08;
 
-    game.shakeIntensity *= 0.95;
+    // Smoother camera follow with easing
+    const cameraSpeed = game.player.introFalling ? 0.04 : 0.06;
+    const diff = clampedTarget - game.camera.y;
+
+    // Use smooth interpolation
+    game.camera.y += diff * cameraSpeed;
+
+    // Smooth shake decay
+    game.shakeIntensity *= 0.92;
+    if (game.shakeIntensity < 0.5) game.shakeIntensity = 0;
 }
 
 function updateParticles() {
@@ -558,8 +800,10 @@ function drawGame() {
     ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
 
     ctx.save();
-    const shakeX = (Math.random() - 0.5) * game.shakeIntensity;
-    const shakeY = (Math.random() - 0.5) * game.shakeIntensity;
+    // Smoother shake using sin waves instead of pure random
+    const shakeTime = Date.now() * 0.02;
+    const shakeX = Math.sin(shakeTime * 1.5) * game.shakeIntensity * 0.5 + (Math.random() - 0.5) * game.shakeIntensity * 0.5;
+    const shakeY = Math.cos(shakeTime * 1.3) * game.shakeIntensity * 0.5 + (Math.random() - 0.5) * game.shakeIntensity * 0.5;
     ctx.translate(shakeX, -game.camera.y + shakeY);
 
     // Draw background stars
@@ -733,10 +977,15 @@ function drawGame() {
         ctx.roundRect(mp.x, mp.y, mp.width, mp.height, 4);
         ctx.fill();
 
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        // Direction indicator
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
         ctx.font = '10px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(mp.direction > 0 ? '\u2192' : '\u2190', mp.x + mp.width / 2, mp.y + mp.height / 2 + 3);
+        if (mp.moveType === 'vertical') {
+            ctx.fillText(mp.direction > 0 ? '\u2193' : '\u2191', mp.x + mp.width / 2, mp.y + mp.height / 2 + 3);
+        } else {
+            ctx.fillText(mp.direction > 0 ? '\u2192' : '\u2190', mp.x + mp.width / 2, mp.y + mp.height / 2 + 3);
+        }
 
         ctx.shadowBlur = 0;
     });
@@ -784,11 +1033,120 @@ function drawGame() {
 
             ctx.fillStyle = '#fff';
             ctx.beginPath();
-            ctx.arc(h.x + h.width / 2 + wobble, h.y + h.height / 2, 5, 0, Math.PI * 2);
+            ctx.arc(h.x + h.width / 2 + wobble, h.y + h.height / 2, 4, 0, Math.PI * 2);
             ctx.fill();
+        } else if (h.type === 'water') {
+            // Water pool - blue with wave animation
+            ctx.shadowColor = '#3b82f6';
+            ctx.shadowBlur = 15;
+
+            const waterGrad = ctx.createLinearGradient(h.x, h.y, h.x, h.y + h.height);
+            waterGrad.addColorStop(0, 'rgba(59, 130, 246, 0.7)');
+            waterGrad.addColorStop(0.5, 'rgba(37, 99, 235, 0.8)');
+            waterGrad.addColorStop(1, 'rgba(29, 78, 216, 0.9)');
+
+            ctx.fillStyle = waterGrad;
+            ctx.beginPath();
+
+            // Wavy top edge
+            ctx.moveTo(h.x, h.y + h.height);
+            ctx.lineTo(h.x, h.y + 5);
+            for (let wx = 0; wx <= h.width; wx += 10) {
+                const waveY = Math.sin((wx / 20) + h.wavePhase) * 4;
+                ctx.lineTo(h.x + wx, h.y + waveY);
+            }
+            ctx.lineTo(h.x + h.width, h.y + h.height);
+            ctx.closePath();
+            ctx.fill();
+
+            // Surface shine
+            ctx.strokeStyle = 'rgba(147, 197, 253, 0.6)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let wx = 5; wx < h.width - 5; wx += 10) {
+                const waveY = Math.sin((wx / 20) + h.wavePhase) * 4;
+                if (wx === 5) ctx.moveTo(h.x + wx, h.y + waveY);
+                else ctx.lineTo(h.x + wx, h.y + waveY);
+            }
+            ctx.stroke();
+        } else if (h.type === 'lava') {
+            // Lava pool - orange/red with bubbles
+            ctx.shadowColor = '#f97316';
+            ctx.shadowBlur = 20;
+
+            const lavaGrad = ctx.createLinearGradient(h.x, h.y, h.x, h.y + h.height);
+            lavaGrad.addColorStop(0, '#fbbf24');
+            lavaGrad.addColorStop(0.4, '#f97316');
+            lavaGrad.addColorStop(1, '#dc2626');
+
+            ctx.fillStyle = lavaGrad;
+            ctx.beginPath();
+            ctx.roundRect(h.x, h.y, h.width, h.height, 3);
+            ctx.fill();
+
+            // Bubbles
+            ctx.fillStyle = '#fef3c7';
+            for (let b = 0; b < 3; b++) {
+                const bubbleX = h.x + 10 + (b * h.width / 3);
+                const bubbleY = h.y + 5 + Math.sin(time * 3 + b * 2) * 5;
+                const bubbleSize = 3 + Math.sin(time * 5 + b) * 1.5;
+                ctx.beginPath();
+                ctx.arc(bubbleX, bubbleY, bubbleSize, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Surface glow
+            ctx.strokeStyle = '#fef3c7';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(h.x + 5, h.y + 2);
+            ctx.lineTo(h.x + h.width - 5, h.y + 2);
+            ctx.stroke();
         }
         ctx.shadowBlur = 0;
     });
+
+    // Draw crushers
+    if (game.crushers) {
+        game.crushers.forEach(crusher => {
+            ctx.shadowColor = '#6b7280';
+            ctx.shadowBlur = 10;
+
+            // Crusher body
+            const crusherGrad = ctx.createLinearGradient(crusher.x, crusher.y, crusher.x, crusher.y + crusher.height);
+            crusherGrad.addColorStop(0, '#4b5563');
+            crusherGrad.addColorStop(0.5, '#374151');
+            crusherGrad.addColorStop(1, '#1f2937');
+
+            ctx.fillStyle = crusherGrad;
+            ctx.beginPath();
+            ctx.roundRect(crusher.x, crusher.y, crusher.width, crusher.height, 4);
+            ctx.fill();
+
+            // Spikes on bottom
+            ctx.fillStyle = '#dc2626';
+            const spikeCount = 4;
+            const spikeW = crusher.width / spikeCount;
+            for (let i = 0; i < spikeCount; i++) {
+                ctx.beginPath();
+                ctx.moveTo(crusher.x + i * spikeW, crusher.y + crusher.height);
+                ctx.lineTo(crusher.x + i * spikeW + spikeW / 2, crusher.y + crusher.height + 10);
+                ctx.lineTo(crusher.x + (i + 1) * spikeW, crusher.y + crusher.height);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Warning indicator when about to fall
+            if (crusher.state === 'waiting' && crusher.waitTimer < 30) {
+                ctx.fillStyle = `rgba(239, 68, 68, ${0.5 + Math.sin(time * 10) * 0.3})`;
+                ctx.beginPath();
+                ctx.arc(crusher.x + crusher.width / 2, crusher.y + crusher.height + 25, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.shadowBlur = 0;
+        });
+    }
 
     // Draw particles
     game.particles.forEach(p => {
@@ -852,10 +1210,12 @@ function drawGame() {
 
     ctx.restore();
 
-    // Fall transition overlay
+    // Fall transition overlay - smooth fade with easing
     if (game.fallTransition > 0) {
-        game.fallTransition -= 0.015;
-        ctx.fillStyle = `rgba(0, 0, 0, ${Math.max(0, game.fallTransition)})`;
+        // Ease out cubic for smoother fade
+        game.fallTransition -= 0.012;
+        const easedAlpha = game.fallTransition * game.fallTransition * game.fallTransition;
+        ctx.fillStyle = `rgba(0, 0, 0, ${Math.max(0, easedAlpha)})`;
         ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
     }
 }

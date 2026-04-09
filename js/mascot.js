@@ -285,24 +285,36 @@ function updateMascot() {
             m.isRunning = false;
         }
     } else if (m.state === 'falling') {
-        m.vy += 0.5;
-        m.y += m.vy;
-        m.x += m.vx;
-        m.animTimer += 0.08;
+        // Smooth eased gravity for falling
+        m.vy += 0.4;
+        m.vy = Math.min(m.vy, 12); // Cap fall speed
 
-        if (Math.random() > 0.5) {
+        // Smooth position update
+        m.y += m.vy;
+        m.x += m.vx * 0.95; // Dampen horizontal movement
+
+        // Gentle swaying while falling
+        if (!m.fallSwayPhase) m.fallSwayPhase = 0;
+        m.fallSwayPhase += 0.1;
+        m.x += Math.sin(m.fallSwayPhase) * 0.3;
+
+        m.animTimer += 0.06;
+
+        // Trail particles
+        if (Math.random() > 0.4) {
             m.particles.push({
-                x: m.x + m.width / 2,
+                x: m.x + m.width / 2 + (Math.random() - 0.5) * 8,
                 y: m.y,
-                vx: (Math.random() - 0.5) * 2,
-                vy: -2,
+                vx: (Math.random() - 0.5) * 1.5,
+                vy: -1.5 - Math.random(),
                 life: 1,
-                color: '#fbbf24'
+                color: Math.random() > 0.5 ? '#fbbf24' : '#8b5cf6'
             });
         }
 
         if (m.y > mascotCanvas.height + 50) {
             m.state = 'playing';
+            m.fallSwayPhase = 0;
             actuallyStartPlatformer();
         }
     } else if (m.state === 'rising') {
@@ -444,9 +456,10 @@ function mascotLoop() {
 // Function to trigger mascot falling (called on jackpot)
 function mascotFallIntoGame() {
     mascot.state = 'falling';
-    mascot.vy = 5;
-    mascot.vx = (Math.random() - 0.5) * 3;
+    mascot.vy = 3; // Start with gentler fall
+    mascot.vx = 0; // Fall straight down for cleaner animation
     mascot.onGround = false;
+    mascot.isRunning = false;
     if (mascot.y > mascotCanvas.height) {
         mascot.y = mascotCanvas.height / 2;
     }

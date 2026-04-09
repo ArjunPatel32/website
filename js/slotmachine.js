@@ -330,15 +330,25 @@ function createTrapdoorAndFall() {
     `;
     document.body.appendChild(trapdoor);
 
-    // Get mascot's EXACT current position and lock it
-    const mascotCenterX = mascot.x + mascot.width / 2;
-    const mascotBottomY = mascot.y + mascot.height;
+    // Use the target center platform position (more reliable than current mascot position)
+    let trapdoorCenterX, trapdoorTopY;
+    if (mascot.targetCenterPlatform) {
+        const plat = mascot.targetCenterPlatform;
+        trapdoorCenterX = plat.x + plat.width / 2;
+        trapdoorTopY = plat.y;
+        // Also lock mascot to exact platform position
+        mascot.x = plat.x + plat.width / 2 - mascot.width / 2;
+        mascot.y = plat.y - mascot.height;
+    } else {
+        trapdoorCenterX = mascot.x + mascot.width / 2;
+        trapdoorTopY = mascot.y + mascot.height;
+    }
 
-    // Position trapdoor exactly under the mascot
+    // Position trapdoor exactly at the platform
     trapdoor.style.cssText = `
         position: fixed;
-        left: ${mascotCenterX - 70}px;
-        top: ${mascotBottomY - 10}px;
+        left: ${trapdoorCenterX - 70}px;
+        top: ${trapdoorTopY - 10}px;
         width: 140px;
         height: 70px;
         z-index: 1450;

@@ -117,7 +117,7 @@ function initGame() {
         });
     }
 
-    // Generate platforms - aiming for ~225 total
+    // Generate platforms - aiming for ~300+ total for easier gameplay
     const platformGrid = [];
 
     for (let row = 0; row < numRows; row++) {
@@ -130,8 +130,8 @@ function initGame() {
         else if (row >= 14 && row < 22) zone = 'lava';
         else if (row >= 22) zone = 'final';
 
-        // 3-5 platforms per row = ~28 rows * 4 avg = ~112 static platforms
-        const platformsThisRow = isCheckpointRow ? 4 : 3 + Math.floor(Math.random() * 3);
+        // 5-7 platforms per row for much easier gameplay
+        const platformsThisRow = isCheckpointRow ? 6 : 5 + Math.floor(Math.random() * 3);
         const columnOrder = [...Array(numColumns).keys()].sort(() => Math.random() - 0.5);
 
         for (let p = 0; p < Math.min(platformsThisRow, numColumns); p++) {
@@ -180,10 +180,10 @@ function initGame() {
         }
     }
 
-    // Add ~100 moving platforms
+    // Add ~150 moving platforms for more options
     for (let row = 0; row < numRows; row++) {
         const baseY = game.gameHeight - 160 - (row * rowHeight);
-        const movingCount = 3 + Math.floor(Math.random() * 2);
+        const movingCount = 4 + Math.floor(Math.random() * 3);
 
         for (let m = 0; m < movingCount; m++) {
             const x = Math.random() * (screenWidth - 70);
@@ -223,12 +223,13 @@ function initGame() {
 
     // ============ TONS OF OBSTACLES ============
 
-    // WALLS - maze-like barriers that block but don't kill
+    // WALLS - maze-like barriers that block but don't kill (fewer for easier gameplay)
     for (let row = 2; row < numRows - 2; row++) {
+        if (Math.random() > 0.6) continue; // Skip some rows entirely
         const baseY = game.gameHeight - 160 - (row * rowHeight);
 
-        // 2-4 walls per row
-        const wallCount = 2 + Math.floor(Math.random() * 3);
+        // 1-2 walls per row (reduced)
+        const wallCount = 1 + Math.floor(Math.random() * 2);
         for (let w = 0; w < wallCount; w++) {
             const isVertical = Math.random() > 0.3;
             const x = 30 + Math.random() * (screenWidth - 80);
@@ -244,8 +245,8 @@ function initGame() {
         }
     }
 
-    // VOID ORBS - dark floating orbs that move in patterns (deadly)
-    for (let i = 0; i < 40; i++) {
+    // VOID ORBS - dark floating orbs that move in patterns (deadly) - reduced count
+    for (let i = 0; i < 25; i++) {
         const row = 2 + Math.floor(Math.random() * (numRows - 4));
         const x = 40 + Math.random() * (screenWidth - 80);
         const y = game.gameHeight - 160 - (row * rowHeight) - Math.random() * 60;
@@ -307,8 +308,8 @@ function initGame() {
         }
     }
 
-    // FIRE HAZARDS - lots more, floating
-    for (let i = 0; i < 35; i++) {
+    // FIRE HAZARDS - floating (reduced for easier gameplay)
+    for (let i = 0; i < 20; i++) {
         const row = 2 + Math.floor(Math.random() * (numRows - 4));
         const x = 30 + Math.random() * (screenWidth - 60);
         const y = game.gameHeight - 160 - (row * rowHeight) - 10 - Math.random() * 70;

@@ -46,11 +46,11 @@ const game = {
 };
 
 // Physics constants
-const GRAVITY = 0.5;
-const JUMP_FORCE = -12;
-const MOVE_SPEED = 5;
-const FRICTION = 0.85;
-const MAX_FALL_SPEED = 14;
+const GRAVITY = 0.85;
+const JUMP_FORCE = -14;
+const MOVE_SPEED = 7;
+const FRICTION = 0.88;
+const MAX_FALL_SPEED = 18;
 
 // Input state
 const keys = {
@@ -104,15 +104,15 @@ function initGame() {
         col: Math.floor(numColumns / 2)
     });
 
-    // Generate void background tendrils
-    for (let i = 0; i < 25; i++) {
+    // Generate void background tendrils - more and larger
+    for (let i = 0; i < 40; i++) {
         game.voidTendrils.push({
             x: Math.random() * screenWidth,
             y: Math.random() * game.gameHeight,
-            length: 150 + Math.random() * 300,
+            length: 200 + Math.random() * 400,
             angle: Math.random() * Math.PI * 2,
-            speed: 0.002 + Math.random() * 0.004,
-            thickness: 20 + Math.random() * 40,
+            speed: 0.003 + Math.random() * 0.006,
+            thickness: 30 + Math.random() * 60,
             phase: Math.random() * Math.PI * 2
         });
     }
@@ -503,9 +503,9 @@ function updatePlayer() {
     // Handle intro falling
     if (p.introFalling) {
         // Smooth eased gravity for intro
-        const introGravity = GRAVITY * 0.6;
+        const introGravity = GRAVITY * 0.8;
         p.vy += introGravity;
-        p.vy = Math.min(p.vy, 10); // Slower max fall for smoother landing
+        p.vy = Math.min(p.vy, 14); // Max fall speed for intro
 
         // Smooth interpolation for position
         p.y += p.vy;
@@ -581,11 +581,11 @@ function updatePlayer() {
 
     // Normal gameplay
     if (keys.left) {
-        p.vx -= 0.35;
+        p.vx -= 0.7;
         p.facingRight = false;
     }
     if (keys.right) {
-        p.vx += 0.35;
+        p.vx += 0.7;
         p.facingRight = true;
     }
 
@@ -965,7 +965,20 @@ function updateParticles() {
 function drawGame() {
     const ctx = gameCtx;
 
-    ctx.fillStyle = '#050508';
+    // Dark void background with slight purple tint
+    ctx.fillStyle = '#0a0612';
+    ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+    // Add ambient void glow effect
+    const time = Date.now() * 0.001;
+    const voidGlow = ctx.createRadialGradient(
+        gameCanvas.width / 2, gameCanvas.height / 2, 0,
+        gameCanvas.width / 2, gameCanvas.height / 2, gameCanvas.width * 0.8
+    );
+    voidGlow.addColorStop(0, `rgba(88, 28, 135, ${0.15 + Math.sin(time * 0.5) * 0.05})`);
+    voidGlow.addColorStop(0.5, `rgba(59, 7, 100, ${0.1 + Math.sin(time * 0.3) * 0.03})`);
+    voidGlow.addColorStop(1, 'transparent');
+    ctx.fillStyle = voidGlow;
     ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
 
     ctx.save();
@@ -975,10 +988,7 @@ function drawGame() {
     const shakeY = Math.cos(shakeTime * 1.3) * game.shakeIntensity * 0.5 + (Math.random() - 0.5) * game.shakeIntensity * 0.5;
     ctx.translate(shakeX, -game.camera.y + shakeY);
 
-    // Draw void background with tendrils
-    const time = Date.now() * 0.001;
-
-    // Draw void tendrils - eerie swirling dark purple/black tendrils
+    // Draw void tendrils - eerie swirling dark purple tendrils (more visible)
     if (game.voidTendrils) {
         game.voidTendrils.forEach(tendril => {
             const parallaxY = tendril.y + game.camera.y * 0.3;
@@ -991,10 +1001,11 @@ function drawGame() {
                 ctx.translate(tendril.x, parallaxY);
                 ctx.rotate(tendril.angle);
 
-                // Create gradient for tendril
+                // Create gradient for tendril - more visible
                 const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, tendril.length);
-                grad.addColorStop(0, `rgba(88, 28, 135, ${0.3 + Math.sin(time + tendril.phase) * 0.1})`);
-                grad.addColorStop(0.5, `rgba(59, 7, 100, ${0.2 + Math.sin(time * 0.8 + tendril.phase) * 0.1})`);
+                grad.addColorStop(0, `rgba(139, 92, 246, ${0.5 + Math.sin(time + tendril.phase) * 0.15})`);
+                grad.addColorStop(0.4, `rgba(88, 28, 135, ${0.35 + Math.sin(time * 0.8 + tendril.phase) * 0.1})`);
+                grad.addColorStop(0.7, `rgba(59, 7, 100, ${0.2})`);
                 grad.addColorStop(1, 'transparent');
 
                 ctx.fillStyle = grad;
@@ -1005,7 +1016,6 @@ function drawGame() {
                     const t = i / 20;
                     const dist = t * tendril.length;
                     const waveOffset = Math.sin(t * 4 + time * 2 + tendril.phase) * tendril.thickness * (1 - t) * 0.5;
-                    const angle = t * Math.PI * 0.5;
 
                     if (i === 0) {
                         ctx.moveTo(waveOffset, dist);
@@ -1026,7 +1036,7 @@ function drawGame() {
         });
     }
 
-    // Draw dim background stars (fewer, dimmer for void theme)
+    // Draw purple-tinted background stars
     game.bgStars.forEach(star => {
         const parallaxY = star.y + game.camera.y * (1 - star.depth);
         const screenY = parallaxY - game.camera.y;
@@ -1034,8 +1044,8 @@ function drawGame() {
         if (screenY > -50 && screenY < gameCanvas.height + 50) {
             const twinkle = Math.sin(time * star.twinkleSpeed + star.twinkleOffset) * 0.3 + 0.7;
             ctx.beginPath();
-            ctx.arc(star.x, parallaxY, star.radius * 0.7, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(139, 92, 246, ${0.25 * twinkle * star.depth})`; // Purple tint, dimmer
+            ctx.arc(star.x, parallaxY, star.radius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(167, 139, 250, ${0.4 * twinkle * star.depth})`; // Brighter purple stars
             ctx.fill();
         }
     });

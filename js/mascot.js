@@ -284,6 +284,76 @@ function updateMascot() {
             m.onGround = true;
             m.isRunning = false;
         }
+    } else if (m.state === 'centering') {
+        // Mascot is jumping to center platform before iris close
+        m.vy += MASCOT_GRAVITY;
+        m.vy = Math.min(m.vy, 10);
+        m.x += m.vx;
+        m.y += m.vy;
+        m.animTimer += 0.08;
+
+        // Trail particles while jumping
+        if (Math.random() > 0.6) {
+            m.particles.push({
+                x: m.x + m.width / 2,
+                y: m.y + m.height,
+                vx: (Math.random() - 0.5) * 3,
+                vy: 1,
+                life: 0.8,
+                color: '#fbbf24'
+            });
+        }
+
+        // Check if landed on target center platform
+        const targetPlat = m.targetCenterPlatform;
+        if (targetPlat && m.vy > 0) {
+            if (m.x + m.width > targetPlat.x && m.x < targetPlat.x + targetPlat.width) {
+                if (m.y + m.height >= targetPlat.y && m.y + m.height < targetPlat.y + 30) {
+                    // Landed on center platform!
+                    m.y = targetPlat.y - m.height;
+                    m.vy = 0;
+                    m.vx = 0;
+                    m.onGround = true;
+                    m.state = 'centered';
+
+                    // Landing particles
+                    for (let i = 0; i < 10; i++) {
+                        m.particles.push({
+                            x: m.x + m.width / 2,
+                            y: m.y + m.height,
+                            vx: (Math.random() - 0.5) * 6,
+                            vy: -Math.random() * 4,
+                            life: 1,
+                            color: '#fbbf24'
+                        });
+                    }
+
+                    // Trigger the callback after a brief moment
+                    setTimeout(() => {
+                        if (m.onCenteredCallback) {
+                            m.onCenteredCallback();
+                            m.onCenteredCallback = null;
+                        }
+                    }, 200);
+                }
+            }
+        }
+
+        // Safety: if missed the platform, just land wherever and continue
+        if (m.y > mascotCanvas.height - 50) {
+            m.state = 'centered';
+            m.onGround = true;
+            m.vy = 0;
+            m.vx = 0;
+            if (m.onCenteredCallback) {
+                m.onCenteredCallback();
+                m.onCenteredCallback = null;
+            }
+        }
+    } else if (m.state === 'centered') {
+        // Mascot is standing still at center, waiting for iris to close
+        m.animTimer += 0.02; // Slow idle animation
+        // Don't move, just wait
     } else if (m.state === 'falling') {
         // Smooth eased gravity for falling
         m.vy += 0.4;

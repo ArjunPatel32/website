@@ -149,16 +149,6 @@ function triggerJackpot() {
 }
 
 function createDimOverlayAndFall() {
-    // Make mascot jump to center platform first
-    makeMascotJumpToCenter();
-
-    // Wait for mascot to reach center, then start iris close
-    setTimeout(() => {
-        createIrisCloseEffect();
-    }, 800);
-}
-
-function makeMascotJumpToCenter() {
     // Find the platform closest to center of screen
     const centerX = window.innerWidth / 2;
     const centerY = window.innerHeight / 2;
@@ -176,6 +166,11 @@ function makeMascotJumpToCenter() {
         }
     }
 
+    // Store the target platform and set mascot to centering state
+    mascot.targetCenterPlatform = closestPlatform;
+    mascot.state = 'centering';
+    mascot.onCenteredCallback = createIrisCloseEffect;
+
     // Calculate jump trajectory to center platform
     const startX = mascot.x + mascot.width / 2;
     const startY = mascot.y + mascot.height;
@@ -186,11 +181,11 @@ function makeMascotJumpToCenter() {
     const dy = endY - startY;
 
     // Calculate jump physics
-    const apexHeight = Math.min(startY, endY) - 100;
+    const apexHeight = Math.min(startY, endY) - 120;
     const rise = startY - apexHeight;
     const MASCOT_GRAVITY = 0.4;
 
-    const vy0 = -Math.sqrt(2 * MASCOT_GRAVITY * Math.max(rise, 50));
+    const vy0 = -Math.sqrt(2 * MASCOT_GRAVITY * Math.max(rise, 80));
     const discriminant = vy0 * vy0 + 2 * MASCOT_GRAVITY * dy;
     const totalTime = (-vy0 + Math.sqrt(Math.max(0, discriminant))) / MASCOT_GRAVITY;
     const vx0 = dx / Math.max(totalTime, 1);
@@ -202,8 +197,17 @@ function makeMascotJumpToCenter() {
     mascot.facingRight = dx > 0;
     mascot.isRunning = false;
 
-    // Store target platform for landing
-    mascot.targetCenterPlatform = closestPlatform;
+    // Add jump particles
+    for (let i = 0; i < 8; i++) {
+        mascot.particles.push({
+            x: mascot.x + mascot.width / 2,
+            y: mascot.y + mascot.height,
+            vx: (Math.random() - 0.5) * 6,
+            vy: Math.random() * 2,
+            life: 1,
+            color: '#fbbf24'
+        });
+    }
 }
 
 function createIrisCloseEffect() {

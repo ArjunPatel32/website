@@ -331,8 +331,8 @@ function initGame() {
                     direction: Math.random() > 0.5 ? 1 : -1,
                     moveType: 'vertical',
                     phase: Math.random() * Math.PI * 2,
-                    color1: '#10b981', color2: '#059669',
-                    glowColor: 'rgba(16, 185, 129, 0.4)',
+                    color1: '#06b6d4', color2: '#0891b2', // Cyan, not green (green = checkpoints only)
+                    glowColor: 'rgba(6, 182, 212, 0.4)',
                     isElevator: true
                 });
             }
@@ -1768,14 +1768,21 @@ function endGame() {
         ].filter(el => el);
 
         mainElements.forEach(el => {
-            el.style.transition = 'transform 1.5s cubic-bezier(0.4, 0, 0.2, 1)';
+            el.style.transition = 'transform 1.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 1s ease, filter 0.5s ease';
             el.style.transform = 'translateY(0)';
+            el.style.opacity = '1';
+            el.style.filter = '';
         });
 
         gameCanvas.style.transition = 'opacity 1.2s ease';
         gameCanvas.style.opacity = '0';
 
         mascotRiseFromGame();
+
+        // Also restore elements from black hole if applicable
+        if (typeof restoreAfterPlatformer === 'function') {
+            restoreAfterPlatformer();
+        }
 
         setTimeout(() => {
             gameActive = false;
@@ -1792,6 +1799,8 @@ function endGame() {
             mainElements.forEach(el => {
                 el.style.transition = '';
                 el.style.transform = '';
+                el.style.opacity = '';
+                el.style.filter = '';
             });
 
             // Reset slot machine completely

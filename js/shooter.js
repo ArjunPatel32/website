@@ -129,15 +129,15 @@ const shooter = {
     wave: 1
 };
 
-// Enemy types - SLOWED DOWN
+// Enemy types - SLOWED DOWN MORE
 const ENEMY_TYPES = [
-    { type: 'scout', points: 50, color: '#ef4444', size: 28, speed: 1.2, health: 1 },
-    { type: 'fighter', points: 100, color: '#f59e0b', size: 32, speed: 1, health: 2 },
-    { type: 'bomber', points: 150, color: '#8b5cf6', size: 38, speed: 0.7, health: 3, dropsBomb: true },
-    { type: 'elite', points: 250, color: '#ec4899', size: 42, speed: 1.5, health: 2 }
+    { type: 'scout', points: 50, color: '#ef4444', size: 28, speed: 0.8, health: 1 },
+    { type: 'fighter', points: 100, color: '#f59e0b', size: 32, speed: 0.65, health: 2 },
+    { type: 'bomber', points: 150, color: '#8b5cf6', size: 38, speed: 0.5, health: 3, dropsBomb: true },
+    { type: 'elite', points: 250, color: '#ec4899', size: 42, speed: 1, health: 2 }
 ];
 
-const MISSION_SUCCESS_SCORE = 1500;
+const MISSION_SUCCESS_SCORE = 1000;
 
 // Input state
 const shooterKeys = {
@@ -213,7 +213,7 @@ function spawnBomb(x, y) {
         x: x,
         y: y,
         radius: 12,
-        speed: 3
+        speed: 2
     });
 }
 
@@ -1092,65 +1092,19 @@ function endShooterGame(died = false) {
             <div style="font-size: 1rem; color: #888;">Returning to base...</div>
         `;
     } else {
-        const failReason = died ? 'Ship Destroyed!' : `Score: ${finalScore} / ${MISSION_SUCCESS_SCORE}`;
+        const failReason = died ? 'Ship Destroyed!' : `Need ${MISSION_SUCCESS_SCORE} points to pass`;
         endScreen.innerHTML = `
             <div style="font-size: 3rem; color: #ef4444; margin-bottom: 20px; text-shadow: 0 0 30px rgba(239, 68, 68, 0.5);">MISSION FAILED</div>
             <div style="font-size: 1.2rem; margin-bottom: 15px; color: #f87171;">${failReason}</div>
             <div style="font-size: 1.5rem; margin-bottom: 10px;">Final Score</div>
             <div style="font-size: 3rem; color: #f87171; font-weight: bold; margin-bottom: 30px;">${finalScore}</div>
-            <button id="retryShooterBtn" style="
-                background: linear-gradient(135deg, #ef4444, #dc2626);
-                color: white;
-                border: none;
-                padding: 15px 40px;
-                font-size: 1.2rem;
-                font-weight: bold;
-                border-radius: 10px;
-                cursor: pointer;
-                margin-bottom: 15px;
-                transition: transform 0.2s, box-shadow 0.2s;
-                box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
-            ">RETRY MISSION</button>
-            <div style="font-size: 0.9rem; color: #888; cursor: pointer;" id="exitShooterBtn">or return to base</div>
+            <div style="font-size: 1rem; color: #888;">Returning to base...</div>
         `;
     }
     document.body.appendChild(endScreen);
 
-    // Add retry button handlers if failed
-    if (missionFailed) {
-        const retryBtn = document.getElementById('retryShooterBtn');
-        const exitBtn = document.getElementById('exitShooterBtn');
-
-        retryBtn.addEventListener('mouseover', () => {
-            retryBtn.style.transform = 'scale(1.05)';
-            retryBtn.style.boxShadow = '0 0 30px rgba(239, 68, 68, 0.6)';
-        });
-        retryBtn.addEventListener('mouseout', () => {
-            retryBtn.style.transform = 'scale(1)';
-            retryBtn.style.boxShadow = '0 0 20px rgba(239, 68, 68, 0.4)';
-        });
-
-        retryBtn.addEventListener('click', () => {
-            endScreen.remove();
-            initShooter();
-            shooterActive = true;
-            shooterLoop();
-            shooter.spawnInterval = setInterval(() => {
-                if (shooterActive && shooter.enemies.length < 10) {
-                    spawnEnemy();
-                    if (Math.random() > 0.6) spawnEnemy();
-                }
-            }, 1200);
-        });
-
-        exitBtn.addEventListener('click', () => {
-            cleanupAndExit(endScreen);
-        });
-
-        return; // Don't auto-exit on failure
-    }
-
-    // Flash effect for success
+    // Flash effect (green for success, red for fail)
+    const flashColor = missionSuccess ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)';
     const flash = document.createElement('div');
     flash.style.cssText = `
         position: fixed;
@@ -1158,7 +1112,7 @@ function endShooterGame(died = false) {
         left: 0;
         width: 100%;
         height: 100%;
-        background: radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, transparent 70%);
+        background: radial-gradient(circle, ${flashColor} 0%, transparent 70%);
         z-index: 2450;
         pointer-events: none;
         animation: flashOut 0.8s ease-out forwards;

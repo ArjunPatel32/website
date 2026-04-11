@@ -96,7 +96,7 @@ const shooter = {
         y: 0,
         width: 50,
         height: 30,
-        speed: 8
+        speed: 18
     },
     bullets: [],
     prizes: [],
@@ -129,7 +129,9 @@ const shooterKeys = {
 };
 
 let canShoot = true;
-const SHOOT_COOLDOWN = 150; // ms between shots
+let shootHeld = false;
+let autoFireInterval = null;
+const SHOOT_COOLDOWN = 80; // ms between shots (fast fire!)
 
 function initShooter() {
     shooterCanvas.width = window.innerWidth;
@@ -241,10 +243,22 @@ function handleShooterKeyDown(e) {
             break;
         case ' ':
             e.preventDefault();
-            if (canShoot) {
-                shootBullet();
-                canShoot = false;
-                setTimeout(() => canShoot = true, SHOOT_COOLDOWN);
+            if (!shootHeld) {
+                shootHeld = true;
+                // Fire immediately
+                if (canShoot) {
+                    shootBullet();
+                    canShoot = false;
+                    setTimeout(() => canShoot = true, SHOOT_COOLDOWN);
+                }
+                // Start auto-fire while holding
+                autoFireInterval = setInterval(() => {
+                    if (shooterActive && canShoot) {
+                        shootBullet();
+                        canShoot = false;
+                        setTimeout(() => canShoot = true, SHOOT_COOLDOWN);
+                    }
+                }, SHOOT_COOLDOWN + 10);
             }
             break;
     }
@@ -260,10 +274,19 @@ function handleShooterKeyUp(e) {
         case 'arrowright':
             shooterKeys.right = false;
             break;
+        case ' ':
+            shootHeld = false;
+            if (autoFireInterval) {
+                clearInterval(autoFireInterval);
+                autoFireInterval = null;
+            }
+            break;
     }
 }
 
 // Touch controls
+let touchAutoFire = null;
+
 shooterCanvas.addEventListener('touchstart', (e) => {
     if (!shooterActive) return;
     e.preventDefault();
@@ -276,11 +299,21 @@ shooterCanvas.addEventListener('touchstart', (e) => {
     } else if (touch.clientX > screenThird * 2) {
         shooterKeys.right = true;
     } else {
-        // Center tap = shoot
+        // Center tap = shoot with auto-fire
         if (canShoot) {
             shootBullet();
             canShoot = false;
             setTimeout(() => canShoot = true, SHOOT_COOLDOWN);
+        }
+        // Start auto-fire for touch
+        if (!touchAutoFire) {
+            touchAutoFire = setInterval(() => {
+                if (shooterActive && canShoot) {
+                    shootBullet();
+                    canShoot = false;
+                    setTimeout(() => canShoot = true, SHOOT_COOLDOWN);
+                }
+            }, SHOOT_COOLDOWN + 10);
         }
     }
 }, { passive: false });
@@ -301,6 +334,11 @@ shooterCanvas.addEventListener('touchend', (e) => {
     e.preventDefault();
     shooterKeys.left = false;
     shooterKeys.right = false;
+    // Stop touch auto-fire
+    if (touchAutoFire) {
+        clearInterval(touchAutoFire);
+        touchAutoFire = null;
+    }
 }, { passive: false });
 
 function shootBullet() {
@@ -626,7 +664,7 @@ function drawShooter() {
     ctx.font = 'bold 14px monospace';
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     ctx.textAlign = 'right';
-    ctx.fillText('v1.5', shooterCanvas.width - 15, shooterCanvas.height - 15);
+    ctx.fillText('v1.5.1', shooterCanvas.width - 15, shooterCanvas.height - 15);
     ctx.restore();
 }
 
@@ -641,11 +679,16 @@ function shooterLoop() {
 
 function endShooterGame() {
     clearInterval(shooter.spawnInterval);
+    if (autoFireInterval) {
+        clearInterval(autoFireInterval);
+        autoFireInterval = null;
+    }
+    shootHeld = false;
 
     // Show final score
     const finalScore = shooter.score;
 
-    // Create end screen overlay
+    // Create end screen overlay with CSS-only confetti (no JS animation lag)
     const endScreen = document.createElement('div');
     endScreen.style.cssText = `
         position: fixed;
@@ -653,7 +696,7 @@ function endShooterGame() {
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.8);
+        background: rgba(0, 0, 0, 0.85);
         z-index: 2500;
         display: flex;
         flex-direction: column;
@@ -663,53 +706,42 @@ function endShooterGame() {
         font-family: 'Inter', sans-serif;
     `;
     endScreen.innerHTML = `
-        <div style="font-size: 3rem; color: #fbbf24; margin-bottom: 20px; text-shadow: 0 0 30px rgba(251, 191, 36, 0.5);">GAME OVER!</div>
-        <div style="font-size: 1.5rem; margin-bottom: 10px;">Final Score</div>
-        <div style="font-size: 4rem; color: #10b981; font-weight: bold; margin-bottom: 30px;">${finalScore}</div>
-        <div style="font-size: 1rem; color: #888;">Returning to site...</div>
+        <div style="font-size: 3rem; color: #fbbf24; margin-bottom: 20px; text-shadow: 0 0 30px rgba(251, 191, 36, 0.5); animation: popIn 0.5s ease-out;">GAME OVER!</div>
+        <div style="font-size: 1.5rem; margin-bottom: 10px; animation: popIn 0.5s ease-out 0.1s both;">Final Score</div>
+        <div style="font-size: 4rem; color: #10b981; font-weight: bold; margin-bottom: 30px; animation: popIn 0.5s ease-out 0.2s both;">${finalScore}</div>
+        <div style="font-size: 1rem; color: #888; animation: popIn 0.5s ease-out 0.3s both;">Returning to site...</div>
     `;
     document.body.appendChild(endScreen);
 
-    // Celebration particles
-    for (let i = 0; i < 50; i++) {
-        setTimeout(() => {
-            const particle = document.createElement('div');
-            particle.style.cssText = `
-                position: fixed;
-                width: ${8 + Math.random() * 8}px;
-                height: ${8 + Math.random() * 8}px;
-                background: hsl(${Math.random() * 60 + 30}, 90%, 60%);
-                left: ${Math.random() * window.innerWidth}px;
-                top: ${window.innerHeight + 20}px;
-                border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
-                z-index: 2600;
-                pointer-events: none;
-            `;
-            document.body.appendChild(particle);
+    // Simple flash effect instead of heavy confetti
+    const flash = document.createElement('div');
+    flash.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(251, 191, 36, 0.4) 0%, transparent 70%);
+        z-index: 2450;
+        pointer-events: none;
+        animation: flashOut 0.8s ease-out forwards;
+    `;
+    document.body.appendChild(flash);
 
-            let y = window.innerHeight + 20;
-            let vy = -(15 + Math.random() * 10);
-            let vx = (Math.random() - 0.5) * 8;
-            let rotation = 0;
-
-            function animateParticle() {
-                vy += 0.3;
-                y += vy;
-                const x = parseFloat(particle.style.left) + vx;
-                particle.style.left = x + 'px';
-                particle.style.top = y + 'px';
-                rotation += vx * 3;
-                particle.style.transform = `rotate(${rotation}deg)`;
-
-                if (y < window.innerHeight + 50) {
-                    requestAnimationFrame(animateParticle);
-                } else {
-                    particle.remove();
-                }
+    // Add animation keyframes if not present
+    if (!document.getElementById('shooterEndKeyframes')) {
+        const style = document.createElement('style');
+        style.id = 'shooterEndKeyframes';
+        style.textContent = `
+            @keyframes flashOut {
+                0% { opacity: 1; transform: scale(0.5); }
+                100% { opacity: 0; transform: scale(2); }
             }
-            requestAnimationFrame(animateParticle);
-        }, i * 50);
+        `;
+        document.head.appendChild(style);
     }
+
+    setTimeout(() => flash.remove(), 800);
 
     // Return to main site
     setTimeout(() => {

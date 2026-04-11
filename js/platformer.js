@@ -52,7 +52,7 @@ const JUMP_FORCE = -14.5;
 const MOVE_SPEED = 5.5;
 const FRICTION = 0.87;
 const MAX_FALL_SPEED = 15;
-const GAME_VERSION = 'v1.3';
+const GAME_VERSION = 'v1.4';
 
 // Input state
 const keys = {
@@ -65,7 +65,7 @@ function initGame() {
     gameCanvas.width = window.innerWidth;
     gameCanvas.height = window.innerHeight;
 
-    game.gameHeight = window.innerHeight * 1.8; // Shorter game for performance
+    game.gameHeight = window.innerHeight * 1.6; // Shorter game for easier jumps
 
     game.platforms = [];
     game.movingPlatforms = [];
@@ -78,8 +78,8 @@ function initGame() {
     const screenWidth = gameCanvas.width;
     const numColumns = 7;
     const columnWidth = screenWidth / numColumns;
-    const numRows = 12; // Fewer rows = less objects = better performance
-    const rowHeight = (game.gameHeight - 250) / numRows;
+    const numRows = 10; // Fewer rows = easier game
+    const rowHeight = (game.gameHeight - 200) / numRows; // Closer platforms
 
     // Platform sizes
     const PLATFORM_WIDTH_MIN = 85;
@@ -124,9 +124,9 @@ function initGame() {
         const isCheckpointRow = row % 2 === 0 && row > 0; // Checkpoint every 2 rows
 
         let zone = 'intro';
-        if (row >= 3 && row < 6) zone = 'water';
-        else if (row >= 6 && row < 9) zone = 'lava';
-        else if (row >= 9) zone = 'final';
+        if (row >= 2 && row < 5) zone = 'water';
+        else if (row >= 5 && row < 8) zone = 'lava';
+        else if (row >= 8) zone = 'final';
 
         // Get zone colors
         const getZoneColors = () => {
@@ -274,84 +274,61 @@ function initGame() {
         }
     }
 
-    // ============ TONS OF OBSTACLES ============
+    // ============ OBSTACLES ============
 
-    // WALLS - vertical barriers only (reduced for performance)
-    for (let row = 3; row < numRows - 2; row += 2) {
-        if (Math.random() > 0.4) continue; // Skip most rows
-        const baseY = game.gameHeight - 160 - (row * rowHeight);
-
-        const x = 30 + Math.random() * (screenWidth - 80);
-        const y = baseY - 20 - Math.random() * 50;
-
-        game.walls.push({
-            x: x,
-            y: y,
-            width: 20,
-            height: 50 + Math.random() * 60,
-            isVertical: true
-        });
-    }
-
-    // VOID ORBS - dark floating orbs that move in patterns (reduced for performance)
-    for (let i = 0; i < 8; i++) {
+    // VOID ORBS - dark floating orbs that move in patterns
+    for (let i = 0; i < 12; i++) {
         const row = 2 + Math.floor(Math.random() * (numRows - 4));
         const x = 40 + Math.random() * (screenWidth - 80);
-        const y = game.gameHeight - 160 - (row * rowHeight) - Math.random() * 60;
+        const y = game.gameHeight - 160 - (row * rowHeight) - Math.random() * 50;
 
         const pattern = Math.floor(Math.random() * 4); // 0: circle, 1: figure8, 2: horizontal, 3: vertical
 
         game.voidOrbs.push({
             x: x, y: y,
             baseX: x, baseY: y,
-            radius: 15 + Math.random() * 10,
+            radius: 12 + Math.random() * 8,
             pattern: pattern,
-            speed: 0.008 + Math.random() * 0.012,
+            speed: 0.006 + Math.random() * 0.01,
             phase: Math.random() * Math.PI * 2,
-            moveRange: 35 + Math.random() * 45
+            moveRange: 30 + Math.random() * 40
         });
     }
 
-    // SPIKES - reduced for performance
-    for (let i = 5; i < game.platforms.length; i += 6) {
+    // SPIKES - on some platforms (avoid main path)
+    for (let i = 5; i < game.platforms.length; i += 5) {
         const plat = game.platforms[i];
-        if (plat.isCheckpoint || plat.isStart || plat.width < 90) continue;
+        if (plat.isCheckpoint || plat.isStart || plat.isMainPath || plat.width < 100) continue;
 
         game.hazards.push({
-            x: plat.x + 10 + Math.random() * (plat.width - 40),
+            x: plat.x + 15 + Math.random() * (plat.width - 50),
             y: plat.y - 18,
-            width: 22,
-            height: 18,
+            width: 20,
+            height: 16,
             type: 'spike'
         });
     }
 
-    // WATER POOLS - water zone (reduced for performance)
-    for (let row = 4; row < 7; row += 2) {
-        game.hazards.push({
-            x: 30 + Math.random() * (screenWidth - 180),
-            y: game.gameHeight - 160 - (row * rowHeight) + rowHeight * 0.4,
-            width: 100 + Math.random() * 100,
-            height: 25,
-            type: 'water',
-            wavePhase: Math.random() * Math.PI * 2
-        });
-    }
+    // LAVA POOLS - scattered (but avoid blocking main path)
+    for (let row = 5; row < numRows - 2; row += 3) {
+        // Place lava on sides, not center where main path is
+        const side = Math.random() > 0.5 ? 0 : 1;
+        const x = side === 0
+            ? 30 + Math.random() * (screenWidth * 0.3)
+            : screenWidth * 0.7 + Math.random() * (screenWidth * 0.25);
 
-    // LAVA POOLS - lava zone (reduced for performance)
-    for (let row = 8; row < 11; row += 2) {
         game.hazards.push({
-            x: 30 + Math.random() * (screenWidth - 160),
-            y: game.gameHeight - 160 - (row * rowHeight) + rowHeight * 0.4,
-            width: 80 + Math.random() * 80,
-            height: 22,
+            x: x,
+            y: game.gameHeight - 160 - (row * rowHeight) + rowHeight * 0.3,
+            width: 70 + Math.random() * 60,
+            height: 20,
             type: 'lava',
             bubbleTimer: 0
         });
     }
 
-    // FIRE HAZARDS - floating (reduced for performance)
-    for (let i = 0; i < 5; i++) {
+    // FIRE HAZARDS - floating
+    for (let i = 0; i < 8; i++) {
         const row = 2 + Math.floor(Math.random() * (numRows - 4));
         const x = 30 + Math.random() * (screenWidth - 60);
         const y = game.gameHeight - 160 - (row * rowHeight) - 10 - Math.random() * 60;
@@ -368,37 +345,39 @@ function initGame() {
         });
     }
 
-    // CRUSHERS - reduced for performance
-    for (let row = 8; row < numRows - 2; row += 3) {
-        if (Math.random() > 0.5) continue;
-        const x = 60 + Math.random() * (screenWidth - 120);
+    // CRUSHERS - placed on sides to not block main path
+    for (let row = 5; row < numRows - 1; row += 2) {
+        if (Math.random() > 0.6) continue;
+        // Place on left or right side, not center
+        const side = Math.random() > 0.5;
+        const x = side ? 50 + Math.random() * 100 : screenWidth - 150 + Math.random() * 100;
         const baseY = game.gameHeight - 160 - (row * rowHeight);
 
         game.crushers.push({
             x: x,
-            y: baseY - 180,
-            width: 45, height: 55,
-            baseY: baseY - 180,
-            targetY: baseY - 50,
+            y: baseY - 160,
+            width: 40, height: 50,
+            baseY: baseY - 160,
+            targetY: baseY - 45,
             state: 'waiting',
-            waitTimer: 90 + Math.floor(Math.random() * 80),
+            waitTimer: 100 + Math.floor(Math.random() * 60),
             speed: 0
         });
     }
 
-    // LASER BEAMS - horizontal beams that sweep (reduced for performance)
-    for (let row = 5; row < numRows - 3; row += 4) {
-        if (Math.random() > 0.4) continue;
-        const y = game.gameHeight - 160 - (row * rowHeight) - 30;
+    // LASER BEAMS - horizontal beams that sweep
+    for (let row = 3; row < numRows - 2; row += 2) {
+        if (Math.random() > 0.5) continue;
+        const y = game.gameHeight - 160 - (row * rowHeight) - 25;
         const goingRight = Math.random() > 0.5;
 
         game.hazards.push({
             x: goingRight ? -100 : screenWidth + 100,
             y: y,
-            width: 120,
-            height: 6,
+            width: 100,
+            height: 5,
             baseX: goingRight ? -100 : screenWidth + 100,
-            speed: 2 + Math.random() * 1.5,
+            speed: 1.5 + Math.random() * 1,
             direction: goingRight ? 1 : -1,
             type: 'laser'
         });
@@ -1662,12 +1641,12 @@ function drawGame() {
         ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
     }
 
-    // Version display (bottom right)
+    // Version display (top right, more visible)
     ctx.save();
-    ctx.font = '12px monospace';
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.font = 'bold 14px monospace';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
     ctx.textAlign = 'right';
-    ctx.fillText(GAME_VERSION, gameCanvas.width - 10, gameCanvas.height - 10);
+    ctx.fillText(GAME_VERSION, gameCanvas.width - 15, 25);
     ctx.restore();
 }
 

@@ -239,6 +239,34 @@ function initGame() {
                 checkpointId: row
             });
         }
+
+        // === INTERMEDIATE PLATFORMS BETWEEN ROWS ===
+        // Add stepping stone platforms between this row and the next row up
+        if (row < numRows - 1) {
+            const nextRowY = game.gameHeight - 160 - ((row + 1) * rowHeight);
+            const midY = (baseY + nextRowY) / 2; // Halfway between rows
+
+            // Add 3-4 intermediate stepping stones per gap
+            const stepCount = 3 + Math.floor(Math.random() * 2);
+            for (let s = 0; s < stepCount; s++) {
+                const stepX = (screenWidth / (stepCount + 1)) * (s + 1) - 40 + (Math.random() - 0.5) * 60;
+                const stepY = midY + (Math.random() - 0.5) * 30;
+                const stepColors = getZoneColors();
+
+                game.platforms.push({
+                    x: stepX,
+                    y: stepY,
+                    width: 80 + Math.random() * 40,
+                    height: 14,
+                    color1: stepColors.color1,
+                    color2: stepColors.color2,
+                    glowColor: stepColors.glowColor,
+                    zone: zone, row: row + 0.5, col: s,
+                    isCheckpoint: false,
+                    isIntermediate: true
+                });
+            }
+        }
     }
 
     // Add moving platforms - reduced for performance
@@ -279,6 +307,35 @@ function initGame() {
                 phase: Math.random() * Math.PI * 2,
                 color1: color1, color2: color2, glowColor: glowColor
             });
+        }
+
+        // Add vertical elevator platforms between rows (helpful for navigation)
+        if (row < numRows - 1) {
+            const nextRowY = game.gameHeight - 160 - ((row + 1) * rowHeight);
+            const midY = (baseY + nextRowY) / 2;
+
+            // Add 1-2 elevator platforms per gap
+            const elevatorCount = 1 + Math.floor(Math.random() * 2);
+            for (let e = 0; e < elevatorCount; e++) {
+                const elevX = screenWidth * 0.2 + Math.random() * screenWidth * 0.6;
+
+                game.movingPlatforms.push({
+                    x: elevX,
+                    y: midY,
+                    width: 70,
+                    height: 14,
+                    startX: elevX,
+                    startY: midY,
+                    moveRange: rowHeight * 0.35, // Moves up and down enough to bridge gap
+                    speed: 0.6 + Math.random() * 0.3,
+                    direction: Math.random() > 0.5 ? 1 : -1,
+                    moveType: 'vertical',
+                    phase: Math.random() * Math.PI * 2,
+                    color1: '#10b981', color2: '#059669',
+                    glowColor: 'rgba(16, 185, 129, 0.4)',
+                    isElevator: true
+                });
+            }
         }
     }
 

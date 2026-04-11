@@ -1266,6 +1266,19 @@ body {
     border: 1px solid rgba(255,255,255,0.2);
 }
 
+.game-instructions-mobile {
+    display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .game-instructions-desktop {
+        display: none;
+    }
+    .game-instructions-mobile {
+        display: block;
+    }
+}
+
 @keyframes winGlowAnim {
     0% { opacity: 0; }
     30% { opacity: 1; }
@@ -1647,6 +1660,12 @@ body {
 
 /* Small phones */
 @media (max-width: 480px) {
+    .site-version {
+        bottom: 90px;
+        font-size: 0.7rem;
+        padding: 5px 12px;
+    }
+
     .container {
         padding: 20px 15px;
         justify-content: flex-start;
@@ -1849,6 +1868,32 @@ body {
     }
 }
 
+/* Site version badge - bottom center */
+.site-version {
+    position: fixed;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Inter', monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.4);
+    background: rgba(20, 20, 30, 0.6);
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 50;
+    letter-spacing: 0.5px;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+}
+
+.site-version:hover {
+    color: rgba(255, 255, 255, 0.7);
+    border-color: rgba(139, 92, 246, 0.3);
+    background: rgba(30, 30, 45, 0.8);
+}
+
 /* Landscape orientation on mobile */
 @media (max-height: 500px) and (orientation: landscape) {
     .container {
@@ -1905,6 +1950,10 @@ body {
     .floating-logo,
     .black-hole,
     .spiral-galaxy {
+        display: none;
+    }
+
+    .site-version {
         display: none;
     }
 }

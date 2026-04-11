@@ -52,7 +52,15 @@ const JUMP_FORCE = -14.5;
 const MOVE_SPEED = 5.5;
 const FRICTION = 0.87;
 const MAX_FALL_SPEED = 15;
-const GAME_VERSION = 'v1.4';
+const GAME_VERSION = 'v1.5';
+
+// Performance: Reduce effects on low-end devices
+const isLowEndDevice = () => {
+    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2) return true;
+    if (navigator.deviceMemory && navigator.deviceMemory <= 2) return true;
+    return false;
+};
+const MAX_PARTICLES = isLowEndDevice() ? 50 : 150;
 
 // Input state
 const keys = {
@@ -458,7 +466,8 @@ function startPlatformerGame() {
         document.querySelector('.aurora'),
         document.querySelector('.spiral-galaxy'),
         document.querySelector('#stars'),
-        document.querySelector('#mascot')
+        document.querySelector('#mascot'),
+        document.querySelector('.site-version')
     ].filter(el => el);
 
     mascot.state = 'playing';
@@ -1018,6 +1027,10 @@ function updateParticles() {
         p.life -= 0.03;
         return p.life > 0;
     });
+    // Limit particles for performance
+    if (game.particles.length > MAX_PARTICLES) {
+        game.particles = game.particles.slice(-MAX_PARTICLES);
+    }
 }
 
 function drawGame() {
@@ -1693,7 +1706,8 @@ function endGame() {
             document.querySelector('.aurora'),
             document.querySelector('.spiral-galaxy'),
             document.querySelector('#stars'),
-            document.querySelector('#mascot')
+            document.querySelector('#mascot'),
+            document.querySelector('.site-version')
         ].filter(el => el);
 
         mainElements.forEach(el => {
@@ -1754,3 +1768,60 @@ window.addEventListener('resize', () => {
         gameCanvas.height = window.innerHeight;
     }
 });
+
+// Touch controls for mobile
+let touchStartX = 0;
+let touchStartY = 0;
+let isTouching = false;
+
+gameCanvas.addEventListener('touchstart', (e) => {
+    if (!gameActive || game.player.introFalling) return;
+    e.preventDefault();
+    isTouching = true;
+    const touch = e.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+
+    // Tap on left/right side of screen for movement
+    if (touch.clientX < window.innerWidth / 3) {
+        keys.left = true;
+    } else if (touch.clientX > window.innerWidth * 2 / 3) {
+        keys.right = true;
+    }
+
+    // Tap on upper half for jump
+    if (touch.clientY < window.innerHeight / 2) {
+        keys.jump = true;
+    }
+}, { passive: false });
+
+gameCanvas.addEventListener('touchmove', (e) => {
+    if (!gameActive || game.player.introFalling) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+
+    // Update movement based on touch position
+    keys.left = touch.clientX < window.innerWidth / 3;
+    keys.right = touch.clientX > window.innerWidth * 2 / 3;
+}, { passive: false });
+
+gameCanvas.addEventListener('touchend', (e) => {
+    if (!gameActive) return;
+    e.preventDefault();
+    keys.left = false;
+    keys.right = false;
+    keys.jump = false;
+    isTouching = false;
+}, { passive: false });
+
+// Double-tap to respawn
+let lastTapTime = 0;
+gameCanvas.addEventListener('touchstart', (e) => {
+    if (!gameActive || game.player.introFalling) return;
+    const currentTime = Date.now();
+    if (currentTime - lastTapTime < 300) {
+        respawnAtCheckpoint();
+    }
+    lastTapTime = currentTime;
+}, { passive: true });
+

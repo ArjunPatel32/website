@@ -267,20 +267,50 @@ function bigBangExplosion(originalTransforms) {
 
 function resetEverything(originalTransforms) {
     document.body.classList.remove('sucking');
-    const bhCenter = storedBhCenter;
 
-    blackHole.style.opacity = '';
+    // Instead of resetting, start the platformer game!
+    // The black hole has consumed everything - now escape the void!
 
-    // Position elements at the black hole center
+    // Keep screen dark and transition to game
+    screenBlackout.classList.add('active');
+
+    // Brief pause in darkness before game starts
+    setTimeout(() => {
+        // Start the platformer game
+        if (typeof startPlatformerGame === 'function') {
+            startPlatformerGame();
+        }
+
+        // Fade out blackout
+        setTimeout(() => {
+            screenBlackout.classList.remove('active');
+        }, 500);
+
+        // Reset black hole state after game can be triggered again
+        blackHoleActive = false;
+        storedBhCenter = null;
+
+        // Reset black hole visibility
+        blackHole.style.opacity = '';
+
+        // Elements will be restored when the platformer game ends
+        // Store original transforms for later restoration
+        window.blackHoleOriginalTransforms = originalTransforms;
+    }, 800);
+}
+
+// Called when platformer game ends to restore elements (if triggered by black hole)
+function restoreAfterPlatformer() {
+    const originalTransforms = window.blackHoleOriginalTransforms;
+    if (!originalTransforms) return;
+
     originalTransforms.forEach(({ el }) => {
         el.style.transition = 'none';
         el.style.filter = 'blur(5px)';
     });
 
-    // Force reflow
     document.body.offsetHeight;
 
-    // Animate elements flying out from center
     originalTransforms.forEach(({ el }, index) => {
         const delay = Math.random() * 0.3;
 
@@ -292,13 +322,11 @@ function resetEverything(originalTransforms) {
         }, delay * 1000);
     });
 
-    // Allow re-triggering after animation completes
     setTimeout(() => {
         originalTransforms.forEach(({ el }) => {
             el.style.transition = '';
             el.style.transitionDelay = '';
         });
-        blackHoleActive = false;
-        storedBhCenter = null;
+        window.blackHoleOriginalTransforms = null;
     }, 1500);
 }

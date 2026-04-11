@@ -149,64 +149,82 @@ function triggerJackpot() {
 }
 
 function createDimOverlayAndFall() {
-    // Find the platform closest to horizontal center of screen
-    const centerX = window.innerWidth / 2;
+    // For jackpot, we now start the shooter game instead of platformer
+    // Create a quick transition effect
 
-    let closestPlatform = mascotPlatforms[0];
-    let closestDist = Infinity;
+    // Flash the screen gold
+    const flash = document.createElement('div');
+    flash.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at center, rgba(251, 191, 36, 0.6) 0%, rgba(251, 191, 36, 0.3) 50%, transparent 100%);
+        z-index: 1500;
+        pointer-events: none;
+        animation: jackpotFlash 1s ease-out forwards;
+    `;
+    document.body.appendChild(flash);
 
-    for (const plat of mascotPlatforms) {
-        const platCenterX = plat.x + plat.width / 2;
-        // Only consider horizontal distance - find platform closest to center X
-        const dist = Math.abs(platCenterX - centerX);
-        if (dist < closestDist) {
-            closestDist = dist;
-            closestPlatform = plat;
+    // Add flash animation
+    if (!document.getElementById('jackpotFlashKeyframes')) {
+        const style = document.createElement('style');
+        style.id = 'jackpotFlashKeyframes';
+        style.textContent = `
+            @keyframes jackpotFlash {
+                0% { opacity: 0; transform: scale(0.5); }
+                30% { opacity: 1; transform: scale(1.2); }
+                100% { opacity: 0; transform: scale(2); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Big "PRIZE BLASTER!" text
+    const blasterText = document.createElement('div');
+    blasterText.textContent = '🎯 PRIZE BLASTER! 🎯';
+    blasterText.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        font-size: 3rem;
+        font-weight: 800;
+        color: #fbbf24;
+        text-shadow: 0 0 30px rgba(251, 191, 36, 0.8), 0 0 60px rgba(251, 191, 36, 0.5);
+        z-index: 1600;
+        white-space: nowrap;
+        font-family: 'Inter', sans-serif;
+        animation: blasterTextPop 1.5s ease-out forwards;
+    `;
+    document.body.appendChild(blasterText);
+
+    if (!document.getElementById('blasterTextKeyframes')) {
+        const style = document.createElement('style');
+        style.id = 'blasterTextKeyframes';
+        style.textContent = `
+            @keyframes blasterTextPop {
+                0% { transform: translate(-50%, -50%) scale(0) rotate(-10deg); opacity: 0; }
+                30% { transform: translate(-50%, -50%) scale(1.3) rotate(5deg); opacity: 1; }
+                50% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+                80% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+                100% { transform: translate(-50%, -50%) scale(0.5) rotate(0deg); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Clean up and start game
+    setTimeout(() => {
+        flash.remove();
+        blasterText.remove();
+
+        // Start the shooter game!
+        if (typeof startShooterGame === 'function') {
+            startShooterGame();
         }
-    }
-
-    // Store the target platform and set mascot to centering state
-    mascot.targetCenterPlatform = closestPlatform;
-    mascot.state = 'centering';
-    mascot.onCenteredCallback = createIrisCloseEffect;
-
-    // Calculate jump trajectory to center platform
-    const startX = mascot.x + mascot.width / 2;
-    const startY = mascot.y + mascot.height;
-    const endX = closestPlatform.x + closestPlatform.width / 2;
-    const endY = closestPlatform.y;
-
-    const dx = endX - startX;
-    const dy = endY - startY;
-
-    // Calculate jump physics
-    const apexHeight = Math.min(startY, endY) - 120;
-    const rise = startY - apexHeight;
-    const MASCOT_GRAVITY = 0.4;
-
-    const vy0 = -Math.sqrt(2 * MASCOT_GRAVITY * Math.max(rise, 80));
-    const discriminant = vy0 * vy0 + 2 * MASCOT_GRAVITY * dy;
-    const totalTime = (-vy0 + Math.sqrt(Math.max(0, discriminant))) / MASCOT_GRAVITY;
-    const vx0 = dx / Math.max(totalTime, 1);
-
-    // Apply jump
-    mascot.vy = vy0;
-    mascot.vx = vx0;
-    mascot.onGround = false;
-    mascot.facingRight = dx > 0;
-    mascot.isRunning = false;
-
-    // Add jump particles
-    for (let i = 0; i < 8; i++) {
-        mascot.particles.push({
-            x: mascot.x + mascot.width / 2,
-            y: mascot.y + mascot.height,
-            vx: (Math.random() - 0.5) * 6,
-            vy: Math.random() * 2,
-            life: 1,
-            color: '#fbbf24'
-        });
-    }
+    }, 1500);
 }
 
 function createIrisCloseEffect() {

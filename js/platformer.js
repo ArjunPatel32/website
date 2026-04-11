@@ -46,12 +46,12 @@ const game = {
     bestCheckpoint: null // Tracks the furthest checkpoint reached
 };
 
-// Physics constants - fast and responsive (+15% more)
-const GRAVITY = 1.25;
-const JUMP_FORCE = -19;
-const MOVE_SPEED = 10.5;
-const FRICTION = 0.89;
-const MAX_FALL_SPEED = 25;
+// Physics constants - balanced for playability
+const GRAVITY = 0.9;
+const JUMP_FORCE = -16;
+const MOVE_SPEED = 7;
+const FRICTION = 0.88;
+const MAX_FALL_SPEED = 18;
 
 // Input state
 const keys = {
@@ -113,71 +113,101 @@ function initGame() {
         });
     }
 
-    // Generate platforms - TONS of platforms for guaranteed possible gameplay
+    // Generate platforms with guaranteed winnable path
     const platformGrid = [];
+    let lastMainPathCol = Math.floor(numColumns / 2); // Start in middle
 
     for (let row = 0; row < numRows; row++) {
         platformGrid[row] = [];
         const baseY = game.gameHeight - 160 - (row * rowHeight);
-        const isCheckpointRow = row % 3 === 0 && row > 0; // Checkpoint every 3 rows
+        const isCheckpointRow = row % 4 === 0 && row > 0; // Checkpoint every 4 rows
 
         let zone = 'intro';
         if (row >= 3 && row < 6) zone = 'water';
         else if (row >= 6 && row < 9) zone = 'lava';
         else if (row >= 9) zone = 'final';
 
-        // 4-5 platforms per row - balanced for performance
-        const platformsThisRow = isCheckpointRow ? 5 : 4 + Math.floor(Math.random() * 2);
-        const columnOrder = [...Array(numColumns).keys()].sort(() => Math.random() - 0.5);
-
-        for (let p = 0; p < Math.min(platformsThisRow, numColumns); p++) {
-            const col = columnOrder[p];
-            const baseX = col * columnWidth + 15;
-            const maxX = (col + 1) * columnWidth - 15;
-
-            const width = isCheckpointRow ? CHECKPOINT_WIDTH : PLATFORM_WIDTH_MIN + Math.random() * (PLATFORM_WIDTH_MAX - PLATFORM_WIDTH_MIN);
-            const x = baseX + Math.random() * Math.max(5, maxX - baseX - width);
-            // Scatter heights much more - ±35 pixels variation
-            const y = baseY + (Math.random() - 0.5) * 70;
-
-            let color1, color2, glowColor;
+        // Get zone colors
+        const getZoneColors = () => {
             if (zone === 'water') {
-                color1 = `hsl(${190 + Math.random() * 25}, 70%, 50%)`;
-                color2 = `hsl(${200 + Math.random() * 25}, 60%, 40%)`;
-                glowColor = 'rgba(56, 189, 248, 0.3)';
+                return {
+                    color1: `hsl(${190 + Math.random() * 25}, 70%, 50%)`,
+                    color2: `hsl(${200 + Math.random() * 25}, 60%, 40%)`,
+                    glowColor: 'rgba(56, 189, 248, 0.3)'
+                };
             } else if (zone === 'lava') {
-                color1 = `hsl(${5 + Math.random() * 25}, 85%, 50%)`;
-                color2 = `hsl(${0 + Math.random() * 20}, 75%, 40%)`;
-                glowColor = 'rgba(249, 115, 22, 0.3)';
+                return {
+                    color1: `hsl(${5 + Math.random() * 25}, 85%, 50%)`,
+                    color2: `hsl(${0 + Math.random() * 20}, 75%, 40%)`,
+                    glowColor: 'rgba(249, 115, 22, 0.3)'
+                };
             } else if (zone === 'final') {
-                color1 = `hsl(${275 + Math.random() * 35}, 75%, 55%)`;
-                color2 = `hsl(${285 + Math.random() * 35}, 65%, 45%)`;
-                glowColor = 'rgba(168, 85, 247, 0.3)';
+                return {
+                    color1: `hsl(${275 + Math.random() * 35}, 75%, 55%)`,
+                    color2: `hsl(${285 + Math.random() * 35}, 65%, 45%)`,
+                    glowColor: 'rgba(168, 85, 247, 0.3)'
+                };
             } else {
-                color1 = `hsl(${245 + Math.random() * 35}, 70%, 55%)`;
-                color2 = `hsl(${255 + Math.random() * 35}, 60%, 45%)`;
-                glowColor = 'rgba(139, 92, 246, 0.3)';
+                return {
+                    color1: `hsl(${245 + Math.random() * 35}, 70%, 55%)`,
+                    color2: `hsl(${255 + Math.random() * 35}, 60%, 45%)`,
+                    glowColor: 'rgba(139, 92, 246, 0.3)'
+                };
             }
+        };
 
-            // Checkpoints: 2 per checkpoint row (positions 1 and near end)
-            const isCheckpoint = isCheckpointRow && (
-                p === 1 ||
-                p === platformsThisRow - 2
-            );
-            const platform = {
+        // GUARANTEED MAIN PATH PLATFORM - always reachable from previous row
+        // Move 0-2 columns left or right from last position
+        const colShift = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
+        lastMainPathCol = Math.max(1, Math.min(numColumns - 2, lastMainPathCol + colShift));
+
+        const mainX = lastMainPathCol * columnWidth + columnWidth / 2 - 60;
+        const mainY = baseY + (Math.random() - 0.5) * 20; // Only ±10px variation
+        const colors = getZoneColors();
+
+        const isCheckpoint = isCheckpointRow;
+        game.platforms.push({
+            x: mainX,
+            y: mainY,
+            width: isCheckpoint ? CHECKPOINT_WIDTH : 120, // Main path platforms are wider
+            height: isCheckpoint ? 20 : PLATFORM_HEIGHT,
+            color1: isCheckpoint ? '#10b981' : colors.color1,
+            color2: isCheckpoint ? '#059669' : colors.color2,
+            glowColor: isCheckpoint ? 'rgba(16, 185, 129, 0.5)' : colors.glowColor,
+            zone: zone, row: row, col: lastMainPathCol,
+            isCheckpoint: isCheckpoint,
+            checkpointId: row,
+            isMainPath: true
+        });
+
+        // Add 2-3 extra platforms for variety (not guaranteed path)
+        const extraCount = 2 + Math.floor(Math.random() * 2);
+        const usedCols = [lastMainPathCol];
+
+        for (let p = 0; p < extraCount; p++) {
+            let col;
+            do {
+                col = Math.floor(Math.random() * numColumns);
+            } while (usedCols.includes(col));
+            usedCols.push(col);
+
+            const baseX = col * columnWidth + 10;
+            const width = PLATFORM_WIDTH_MIN + Math.random() * (PLATFORM_WIDTH_MAX - PLATFORM_WIDTH_MIN);
+            const x = baseX + Math.random() * Math.max(5, columnWidth - 30 - width);
+            const y = baseY + (Math.random() - 0.5) * 40; // ±20px variation
+            const extraColors = getZoneColors();
+
+            game.platforms.push({
                 x: x, y: y,
-                width: isCheckpoint ? CHECKPOINT_WIDTH : width,
-                height: isCheckpoint ? 20 : PLATFORM_HEIGHT,
-                color1: isCheckpoint ? '#10b981' : color1,
-                color2: isCheckpoint ? '#059669' : color2,
-                glowColor: isCheckpoint ? 'rgba(16, 185, 129, 0.5)' : glowColor,
+                width: width,
+                height: PLATFORM_HEIGHT,
+                color1: extraColors.color1,
+                color2: extraColors.color2,
+                glowColor: extraColors.glowColor,
                 zone: zone, row: row, col: col,
-                isCheckpoint: isCheckpoint,
+                isCheckpoint: false,
                 checkpointId: row
-            };
-
-            game.platforms.push(platform);
-            platformGrid[row].push(platform);
+            });
         }
     }
 
@@ -600,13 +630,13 @@ function updatePlayer() {
         return;
     }
 
-    // Normal gameplay - fast acceleration (+15% more)
+    // Normal gameplay - balanced acceleration
     if (keys.left) {
-        p.vx -= 1.15;
+        p.vx -= 0.85;
         p.facingRight = false;
     }
     if (keys.right) {
-        p.vx += 1.15;
+        p.vx += 0.85;
         p.facingRight = true;
     }
 

@@ -64,12 +64,7 @@ function initGame() {
     gameCanvas.width = window.innerWidth;
     gameCanvas.height = window.innerHeight;
 
-    game.gameHeight = window.innerHeight * 2; // Short game
-
-    // Jump physics
-    const MAX_SAFE_VERTICAL = 55;
-    const MAX_SAFE_HORIZONTAL = 90;
-    const MAX_DIAGONAL = Math.sqrt(MAX_SAFE_VERTICAL * MAX_SAFE_VERTICAL + MAX_SAFE_HORIZONTAL * MAX_SAFE_HORIZONTAL);
+    game.gameHeight = window.innerHeight * 1.8; // Shorter game for performance
 
     game.platforms = [];
     game.movingPlatforms = [];
@@ -80,10 +75,10 @@ function initGame() {
     game.voidTendrils = [];
 
     const screenWidth = gameCanvas.width;
-    const numColumns = 9;
+    const numColumns = 7;
     const columnWidth = screenWidth / numColumns;
-    const numRows = 20; // More rows = closer spacing = easier jumps
-    const rowHeight = (game.gameHeight - 250) / numRows; // ~85-90px per row, easily jumpable
+    const numRows = 12; // Fewer rows = less objects = better performance
+    const rowHeight = (game.gameHeight - 250) / numRows;
 
     // Platform sizes
     const PLATFORM_WIDTH_MIN = 85;
@@ -105,15 +100,15 @@ function initGame() {
         col: Math.floor(numColumns / 2)
     });
 
-    // Generate void background tendrils
-    for (let i = 0; i < 25; i++) {
+    // Generate void background tendrils (reduced for performance)
+    for (let i = 0; i < 8; i++) {
         game.voidTendrils.push({
             x: Math.random() * screenWidth,
             y: Math.random() * game.gameHeight,
-            length: 200 + Math.random() * 400,
+            length: 200 + Math.random() * 300,
             angle: Math.random() * Math.PI * 2,
-            speed: 0.003 + Math.random() * 0.006,
-            thickness: 30 + Math.random() * 60,
+            speed: 0.003 + Math.random() * 0.005,
+            thickness: 30 + Math.random() * 50,
             phase: Math.random() * Math.PI * 2
         });
     }
@@ -124,15 +119,15 @@ function initGame() {
     for (let row = 0; row < numRows; row++) {
         platformGrid[row] = [];
         const baseY = game.gameHeight - 160 - (row * rowHeight);
-        const isCheckpointRow = row % 2 === 0 && row > 0; // Checkpoint every 2 rows
+        const isCheckpointRow = row % 3 === 0 && row > 0; // Checkpoint every 3 rows
 
         let zone = 'intro';
-        if (row >= 5 && row < 10) zone = 'water';
-        else if (row >= 10 && row < 14) zone = 'lava';
-        else if (row >= 14) zone = 'final';
+        if (row >= 3 && row < 6) zone = 'water';
+        else if (row >= 6 && row < 9) zone = 'lava';
+        else if (row >= 9) zone = 'final';
 
-        // 7-9 platforms per row - extremely dense
-        const platformsThisRow = isCheckpointRow ? 9 : 7 + Math.floor(Math.random() * 3);
+        // 4-5 platforms per row - balanced for performance
+        const platformsThisRow = isCheckpointRow ? 5 : 4 + Math.floor(Math.random() * 2);
         const columnOrder = [...Array(numColumns).keys()].sort(() => Math.random() - 0.5);
 
         for (let p = 0; p < Math.min(platformsThisRow, numColumns); p++) {
@@ -164,10 +159,9 @@ function initGame() {
                 glowColor = 'rgba(139, 92, 246, 0.3)';
             }
 
-            // Checkpoints: 3 per checkpoint row (positions 1, middle, and second-to-last)
+            // Checkpoints: 2 per checkpoint row (positions 1 and near end)
             const isCheckpoint = isCheckpointRow && (
                 p === 1 ||
-                p === Math.floor(platformsThisRow / 2) ||
                 p === platformsThisRow - 2
             );
             const platform = {
@@ -187,10 +181,10 @@ function initGame() {
         }
     }
 
-    // Add tons of moving platforms - these help bridge gaps
+    // Add moving platforms - reduced for performance
     for (let row = 0; row < numRows; row++) {
         const baseY = game.gameHeight - 160 - (row * rowHeight);
-        const movingCount = 6 + Math.floor(Math.random() * 5); // 6-10 per row
+        const movingCount = 2 + Math.floor(Math.random() * 2); // 2-3 per row
 
         for (let m = 0; m < movingCount; m++) {
             const x = Math.random() * (screenWidth - 70);
@@ -230,29 +224,25 @@ function initGame() {
 
     // ============ TONS OF OBSTACLES ============
 
-    // WALLS - vertical barriers only (no horizontal - you'd get stuck on them)
-    for (let row = 2; row < numRows - 2; row++) {
-        if (Math.random() > 0.5) continue; // Skip half the rows
+    // WALLS - vertical barriers only (reduced for performance)
+    for (let row = 3; row < numRows - 2; row += 2) {
+        if (Math.random() > 0.4) continue; // Skip most rows
         const baseY = game.gameHeight - 160 - (row * rowHeight);
 
-        // 1-2 walls per row
-        const wallCount = 1 + Math.floor(Math.random() * 2);
-        for (let w = 0; w < wallCount; w++) {
-            const x = 30 + Math.random() * (screenWidth - 80);
-            const y = baseY - 20 - Math.random() * 60;
+        const x = 30 + Math.random() * (screenWidth - 80);
+        const y = baseY - 20 - Math.random() * 50;
 
-            game.walls.push({
-                x: x,
-                y: y,
-                width: 20, // Always vertical
-                height: 60 + Math.random() * 80,
-                isVertical: true
-            });
-        }
+        game.walls.push({
+            x: x,
+            y: y,
+            width: 20,
+            height: 50 + Math.random() * 60,
+            isVertical: true
+        });
     }
 
-    // VOID ORBS - dark floating orbs that move in patterns (deadly)
-    for (let i = 0; i < 30; i++) {
+    // VOID ORBS - dark floating orbs that move in patterns (reduced for performance)
+    for (let i = 0; i < 8; i++) {
         const row = 2 + Math.floor(Math.random() * (numRows - 4));
         const x = 40 + Math.random() * (screenWidth - 80);
         const y = game.gameHeight - 160 - (row * rowHeight) - Math.random() * 60;
@@ -262,16 +252,16 @@ function initGame() {
         game.voidOrbs.push({
             x: x, y: y,
             baseX: x, baseY: y,
-            radius: 15 + Math.random() * 12,
+            radius: 15 + Math.random() * 10,
             pattern: pattern,
-            speed: 0.008 + Math.random() * 0.015,
+            speed: 0.008 + Math.random() * 0.012,
             phase: Math.random() * Math.PI * 2,
-            moveRange: 40 + Math.random() * 60
+            moveRange: 35 + Math.random() * 45
         });
     }
 
-    // SPIKES - more of them, scattered
-    for (let i = 5; i < game.platforms.length; i += 4) {
+    // SPIKES - reduced for performance
+    for (let i = 5; i < game.platforms.length; i += 6) {
         const plat = game.platforms[i];
         if (plat.isCheckpoint || plat.isStart || plat.width < 90) continue;
 
@@ -284,85 +274,79 @@ function initGame() {
         });
     }
 
-    // WATER POOLS - water zone (rows 7-13)
-    for (let row = 7; row < 14; row++) {
-        const poolCount = 1 + Math.floor(Math.random() * 2);
-        for (let p = 0; p < poolCount; p++) {
-            game.hazards.push({
-                x: 30 + Math.random() * (screenWidth - 180),
-                y: game.gameHeight - 160 - (row * rowHeight) + rowHeight * 0.4,
-                width: 100 + Math.random() * 120,
-                height: 28,
-                type: 'water',
-                wavePhase: Math.random() * Math.PI * 2
-            });
-        }
+    // WATER POOLS - water zone (reduced for performance)
+    for (let row = 4; row < 7; row += 2) {
+        game.hazards.push({
+            x: 30 + Math.random() * (screenWidth - 180),
+            y: game.gameHeight - 160 - (row * rowHeight) + rowHeight * 0.4,
+            width: 100 + Math.random() * 100,
+            height: 25,
+            type: 'water',
+            wavePhase: Math.random() * Math.PI * 2
+        });
     }
 
-    // LAVA POOLS - lava zone (rows 14-21)
-    for (let row = 14; row < 22; row++) {
-        const poolCount = 1 + Math.floor(Math.random() * 2);
-        for (let p = 0; p < poolCount; p++) {
-            game.hazards.push({
-                x: 30 + Math.random() * (screenWidth - 160),
-                y: game.gameHeight - 160 - (row * rowHeight) + rowHeight * 0.4,
-                width: 90 + Math.random() * 100,
-                height: 25,
-                type: 'lava',
-                bubbleTimer: 0
-            });
-        }
+    // LAVA POOLS - lava zone (reduced for performance)
+    for (let row = 8; row < 11; row += 2) {
+        game.hazards.push({
+            x: 30 + Math.random() * (screenWidth - 160),
+            y: game.gameHeight - 160 - (row * rowHeight) + rowHeight * 0.4,
+            width: 80 + Math.random() * 80,
+            height: 22,
+            type: 'lava',
+            bubbleTimer: 0
+        });
     }
 
-    // FIRE HAZARDS - floating
-    for (let i = 0; i < 18; i++) {
+    // FIRE HAZARDS - floating (reduced for performance)
+    for (let i = 0; i < 5; i++) {
         const row = 2 + Math.floor(Math.random() * (numRows - 4));
         const x = 30 + Math.random() * (screenWidth - 60);
-        const y = game.gameHeight - 160 - (row * rowHeight) - 10 - Math.random() * 70;
+        const y = game.gameHeight - 160 - (row * rowHeight) - 10 - Math.random() * 60;
 
         game.hazards.push({
             x: x, y: y,
-            width: 26, height: 26,
+            width: 24, height: 24,
             baseX: x, baseY: y,
-            moveRange: 35 + Math.random() * 50,
-            speed: 0.006 + Math.random() * 0.012,
+            moveRange: 30 + Math.random() * 40,
+            speed: 0.006 + Math.random() * 0.01,
             phase: Math.random() * Math.PI * 2,
             moveType: Math.random() > 0.5 ? 'vertical' : 'horizontal',
             type: 'fire'
         });
     }
 
-    // CRUSHERS - more of them
-    for (let row = 12; row < numRows - 2; row += 2) {
-        if (Math.random() > 0.6) continue;
+    // CRUSHERS - reduced for performance
+    for (let row = 8; row < numRows - 2; row += 3) {
+        if (Math.random() > 0.5) continue;
         const x = 60 + Math.random() * (screenWidth - 120);
         const baseY = game.gameHeight - 160 - (row * rowHeight);
 
         game.crushers.push({
             x: x,
-            y: baseY - 200,
-            width: 50, height: 60,
-            baseY: baseY - 200,
+            y: baseY - 180,
+            width: 45, height: 55,
+            baseY: baseY - 180,
             targetY: baseY - 50,
             state: 'waiting',
-            waitTimer: 80 + Math.floor(Math.random() * 100),
+            waitTimer: 90 + Math.floor(Math.random() * 80),
             speed: 0
         });
     }
 
-    // LASER BEAMS - horizontal beams that sweep (new obstacle type)
-    for (let row = 5; row < numRows - 3; row += 3) {
-        if (Math.random() > 0.5) continue;
+    // LASER BEAMS - horizontal beams that sweep (reduced for performance)
+    for (let row = 5; row < numRows - 3; row += 4) {
+        if (Math.random() > 0.4) continue;
         const y = game.gameHeight - 160 - (row * rowHeight) - 30;
         const goingRight = Math.random() > 0.5;
 
         game.hazards.push({
             x: goingRight ? -100 : screenWidth + 100,
             y: y,
-            width: 150,
-            height: 8,
+            width: 120,
+            height: 6,
             baseX: goingRight ? -100 : screenWidth + 100,
-            speed: 2 + Math.random() * 2,
+            speed: 2 + Math.random() * 1.5,
             direction: goingRight ? 1 : -1,
             type: 'laser'
         });
@@ -392,14 +376,14 @@ function initGame() {
     // Camera starts showing bottom
     game.camera.y = game.gameHeight - gameCanvas.height;
 
-    // Generate background stars
+    // Generate background stars (reduced for performance)
     game.bgStars = [];
-    for (let i = 0; i < 150; i++) {
+    for (let i = 0; i < 60; i++) {
         game.bgStars.push({
             x: Math.random() * gameCanvas.width,
             y: Math.random() * game.gameHeight,
             radius: Math.random() * 2 + 0.5,
-            twinkleSpeed: Math.random() * 0.03 + 0.01,
+            twinkleSpeed: Math.random() * 0.025 + 0.01,
             twinkleOffset: Math.random() * Math.PI * 2,
             depth: Math.random() * 0.5 + 0.5
         });
@@ -1114,11 +1098,11 @@ function drawGame() {
     ctx.shadowBlur = 0;
     ctx.restore();
 
-    // Swirling energy particles
+    // Swirling energy particles (reduced for performance)
     ctx.save();
-    for (let i = 0; i < 20; i++) {
-        const particleAngle = rotationPhase + (i / 20) * Math.PI * 2;
-        const particleDist = portal.radius + 20 + Math.sin(time * 3 + i) * 15;
+    for (let i = 0; i < 10; i++) {
+        const particleAngle = rotationPhase + (i / 10) * Math.PI * 2;
+        const particleDist = portal.radius + 20 + Math.sin(time * 3 + i) * 12;
         const px = portal.x + Math.cos(particleAngle) * particleDist;
         const py = portal.y + Math.sin(particleAngle) * particleDist;
         const particleSize = 3 + Math.sin(time * 5 + i * 0.5) * 2;
@@ -1178,11 +1162,11 @@ function drawGame() {
 
     ctx.restore();
 
-    // Light rays
+    // Light rays (reduced for performance)
     ctx.save();
-    for (let i = 0; i < 12; i++) {
-        const rayAngle = rotationPhase * 0.5 + (i / 12) * Math.PI * 2;
-        const rayLength = 120 + Math.sin(time * 2.5 + i * 0.8) * 60;
+    for (let i = 0; i < 6; i++) {
+        const rayAngle = rotationPhase * 0.5 + (i / 6) * Math.PI * 2;
+        const rayLength = 100 + Math.sin(time * 2.5 + i * 0.8) * 50;
         const rayWidth = 4 + Math.sin(time * 3 + i) * 2;
 
         const rayGrad = ctx.createLinearGradient(

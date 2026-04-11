@@ -796,14 +796,34 @@ function endShooterGame() {
                 shooterKeys.right = false;
                 shooterKeys.shoot = false;
 
-                // Reset slot machine
+                // Reset slot machine completely
                 const slotMachine = document.getElementById('slotMachine');
                 slotMachine.classList.remove('winning');
+                slotMachine.style.position = '';
+                slotMachine.style.transform = '';
+                slotMachine.style.transition = '';
+                slotMachine.style.opacity = '';
+                slotMachine.style.left = '';
+                slotMachine.style.top = '';
+                slotMachine.style.right = '';
+                slotMachine.style.bottom = '';
+                slotMachine.style.width = '';
+                slotMachine.style.zIndex = '';
                 document.getElementById('reel1').textContent = '♠️';
                 document.getElementById('reel2').textContent = '♠️';
                 document.getElementById('reel3').textContent = '♠️';
                 document.getElementById('slotResult').textContent = '';
                 document.getElementById('slotResult').classList.remove('jackpot');
+
+                // Also reset the spin button and state
+                const spinBtn = document.getElementById('spinBtn');
+                if (spinBtn) {
+                    spinBtn.disabled = false;
+                }
+
+                // Remove any leftover jackpot banners
+                const leftoverBanners = document.querySelectorAll('.slot-jackpot-banner');
+                leftoverBanners.forEach(b => b.remove());
             }, 500);
         }, 500);
     }, 3000);

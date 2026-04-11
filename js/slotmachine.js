@@ -143,7 +143,11 @@ function triggerJackpot() {
         jackpotBanner.style.transform = 'translate(-50%, -50%) scale(1)';
         jackpotBanner.style.opacity = '0';
         jackpotBanner.style.transition = 'opacity 0.3s ease';
-        setTimeout(() => jackpotBanner.remove(), 300);
+        setTimeout(() => {
+            jackpotBanner.remove();
+            // Reset slot machine position style
+            slotMachine.style.position = '';
+        }, 300);
         createDimOverlayAndFall();
     }, 1000);
 }

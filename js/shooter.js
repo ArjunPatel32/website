@@ -235,7 +235,7 @@ function playTransitionAnimation(callback) {
     const ctx = transitionCanvas.getContext('2d');
 
     let frame = 0;
-    const totalFrames = 90;
+    const totalFrames = 150; // Extended from 90 to 150 (extra ~1 second)
     const stars = [];
 
     // Create hyperspace stars
@@ -277,26 +277,41 @@ function playTransitionAnimation(callback) {
         });
 
         // Center glow
-        const glowSize = frame * 5;
+        const glowSize = Math.min(frame * 5, 300);
         const glow = ctx.createRadialGradient(
             window.innerWidth / 2, window.innerHeight / 2, 0,
             window.innerWidth / 2, window.innerHeight / 2, glowSize
         );
-        glow.addColorStop(0, `rgba(96, 165, 250, ${0.3 - frame * 0.003})`);
+        glow.addColorStop(0, `rgba(96, 165, 250, ${Math.max(0, 0.3 - frame * 0.002)})`);
         glow.addColorStop(1, 'transparent');
         ctx.fillStyle = glow;
         ctx.fillRect(0, 0, transitionCanvas.width, transitionCanvas.height);
 
-        // Title text appears
-        if (frame > 40) {
-            const alpha = Math.min(1, (frame - 40) / 20);
-            ctx.font = 'bold 48px Inter, sans-serif';
+        // Title text appears earlier and stays longer
+        if (frame > 30) {
+            const fadeIn = Math.min(1, (frame - 30) / 20);
+            const fadeOut = frame > 120 ? Math.max(0, 1 - (frame - 120) / 30) : 1;
+            const alpha = fadeIn * fadeOut;
+
+            // Pulsing effect while holding
+            const pulse = 1 + Math.sin(frame * 0.1) * 0.05;
+
+            ctx.save();
+            ctx.font = `bold ${48 * pulse}px Inter, sans-serif`;
             ctx.textAlign = 'center';
             ctx.fillStyle = `rgba(96, 165, 250, ${alpha})`;
             ctx.shadowColor = '#60a5fa';
-            ctx.shadowBlur = 30;
+            ctx.shadowBlur = 30 + Math.sin(frame * 0.15) * 10;
             ctx.fillText('STAR DESTROYER', window.innerWidth / 2, window.innerHeight / 2);
-            ctx.shadowBlur = 0;
+
+            // Subtitle
+            if (frame > 50) {
+                ctx.font = 'bold 18px Inter, sans-serif';
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.7})`;
+                ctx.shadowBlur = 10;
+                ctx.fillText('PREPARE FOR COMBAT', window.innerWidth / 2, window.innerHeight / 2 + 45);
+            }
+            ctx.restore();
         }
 
         if (frame < totalFrames) {

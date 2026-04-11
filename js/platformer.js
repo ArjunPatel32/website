@@ -52,7 +52,7 @@ const JUMP_FORCE = -14.5;
 const MOVE_SPEED = 5.5;
 const FRICTION = 0.87;
 const MAX_FALL_SPEED = 15;
-const GAME_VERSION = 'v1.6';
+const GAME_VERSION = 'v2.0';
 
 // Performance: Reduce effects on low-end devices
 const isLowEndDevice = () => {

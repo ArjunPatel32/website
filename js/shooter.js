@@ -173,6 +173,7 @@ function initShooter() {
     shooter.wave = 1;
     shooter.gameStartTime = Date.now();
     shooter.screenShake = 0;
+    shooter.damageFlash = 0; // Red flash when taking damage
 
     // Generate background stars
     shooter.bgStars = [];
@@ -653,8 +654,9 @@ function updateShooter() {
                 });
             }
 
-            // Screen shake
-            shooter.screenShake = 10;
+            // Screen shake and damage flash
+            shooter.screenShake = 15;
+            shooter.damageFlash = 1;
 
             // Check for death
             if (p.health <= 0) {
@@ -704,8 +706,9 @@ function updateShooter() {
                     });
                 }
 
-                // Screen shake
-                shooter.screenShake = 8;
+                // Screen shake and damage flash
+                shooter.screenShake = 12;
+                shooter.damageFlash = 1;
 
                 // Check for death
                 if (p.health <= 0) {
@@ -749,6 +752,12 @@ function updateShooter() {
     if (shooter.screenShake > 0) {
         shooter.screenShake *= 0.9;
         if (shooter.screenShake < 0.5) shooter.screenShake = 0;
+    }
+
+    // Update damage flash
+    if (shooter.damageFlash > 0) {
+        shooter.damageFlash -= 0.05;
+        if (shooter.damageFlash < 0) shooter.damageFlash = 0;
     }
 
     // Update time
@@ -1026,17 +1035,50 @@ function drawShooter() {
         ctx.shadowBlur = 0;
     }
 
-    // Time warning (subtle)
-    if (shooter.timeLeft <= 5 && shooter.timeLeft > 0) {
-        ctx.fillStyle = `rgba(239, 68, 68, ${0.05 + Math.sin(time * 6) * 0.03})`;
+    // Damage flash (red vignette when hit)
+    if (shooter.damageFlash > 0) {
+        const flashGrad = ctx.createRadialGradient(
+            shooterCanvas.width / 2, shooterCanvas.height / 2, 0,
+            shooterCanvas.width / 2, shooterCanvas.height / 2, shooterCanvas.width * 0.7
+        );
+        flashGrad.addColorStop(0, 'transparent');
+        flashGrad.addColorStop(0.5, `rgba(239, 68, 68, ${shooter.damageFlash * 0.3})`);
+        flashGrad.addColorStop(1, `rgba(239, 68, 68, ${shooter.damageFlash * 0.6})`);
+        ctx.fillStyle = flashGrad;
         ctx.fillRect(0, 0, shooterCanvas.width, shooterCanvas.height);
+    }
+
+    // Time warning (yellow/orange pulsing border - different from damage)
+    if (shooter.timeLeft <= 5 && shooter.timeLeft > 0) {
+        const pulse = Math.sin(time * 8) * 0.5 + 0.5;
+        const borderSize = 8 + pulse * 4;
+
+        // Top border
+        const warnGrad = ctx.createLinearGradient(0, 0, 0, borderSize * 3);
+        warnGrad.addColorStop(0, `rgba(251, 191, 36, ${0.4 + pulse * 0.3})`);
+        warnGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = warnGrad;
+        ctx.fillRect(0, 0, shooterCanvas.width, borderSize * 3);
+
+        // Bottom border
+        const warnGrad2 = ctx.createLinearGradient(0, shooterCanvas.height, 0, shooterCanvas.height - borderSize * 3);
+        warnGrad2.addColorStop(0, `rgba(251, 191, 36, ${0.4 + pulse * 0.3})`);
+        warnGrad2.addColorStop(1, 'transparent');
+        ctx.fillStyle = warnGrad2;
+        ctx.fillRect(0, shooterCanvas.height - borderSize * 3, shooterCanvas.width, borderSize * 3);
+
+        // "HURRY!" text
+        ctx.font = 'bold 20px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = `rgba(251, 191, 36, ${0.6 + pulse * 0.4})`;
+        ctx.fillText('HURRY!', shooterCanvas.width / 2, 70);
     }
 
     // Version
     ctx.font = 'bold 14px monospace';
     ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
     ctx.textAlign = 'right';
-    ctx.fillText('v1.6', shooterCanvas.width - 15, shooterCanvas.height - 15);
+    ctx.fillText('v2.0', shooterCanvas.width - 15, shooterCanvas.height - 15);
 
     // Restore from screen shake
     ctx.restore();

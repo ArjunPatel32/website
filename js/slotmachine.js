@@ -185,9 +185,9 @@ function createDimOverlayAndFall() {
         document.head.appendChild(style);
     }
 
-    // Big "PRIZE BLASTER!" text
+    // Big "STAR DESTROYER!" text
     const blasterText = document.createElement('div');
-    blasterText.textContent = '🎯 PRIZE BLASTER! 🎯';
+    blasterText.textContent = '🚀 STAR DESTROYER! 🚀';
     blasterText.style.cssText = `
         position: fixed;
         top: 50%;

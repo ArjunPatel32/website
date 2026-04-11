@@ -52,7 +52,7 @@ const JUMP_FORCE = -14.5;
 const MOVE_SPEED = 5.5;
 const FRICTION = 0.87;
 const MAX_FALL_SPEED = 15;
-const GAME_VERSION = 'v1.5';
+const GAME_VERSION = 'v1.6';
 
 // Performance: Reduce effects on low-end devices
 const isLowEndDevice = () => {
@@ -73,7 +73,7 @@ function initGame() {
     gameCanvas.width = window.innerWidth;
     gameCanvas.height = window.innerHeight;
 
-    game.gameHeight = window.innerHeight * 1.6; // Shorter game for easier jumps
+    game.gameHeight = window.innerHeight * 1.3; // Even shorter game
 
     game.platforms = [];
     game.movingPlatforms = [];
@@ -86,8 +86,8 @@ function initGame() {
     const screenWidth = gameCanvas.width;
     const numColumns = 7;
     const columnWidth = screenWidth / numColumns;
-    const numRows = 10; // Fewer rows = easier game
-    const rowHeight = (game.gameHeight - 200) / numRows; // Closer platforms
+    const numRows = 7; // Even fewer rows = much easier game
+    const rowHeight = (game.gameHeight - 200) / numRows; // Very close platforms
 
     // Platform sizes
     const PLATFORM_WIDTH_MIN = 85;
@@ -132,9 +132,9 @@ function initGame() {
         const isCheckpointRow = row % 2 === 0 && row > 0; // Checkpoint every 2 rows
 
         let zone = 'intro';
-        if (row >= 2 && row < 5) zone = 'water';
-        else if (row >= 5 && row < 8) zone = 'lava';
-        else if (row >= 8) zone = 'final';
+        if (row >= 2 && row < 4) zone = 'water';
+        else if (row >= 4 && row < 6) zone = 'lava';
+        else if (row >= 6) zone = 'final';
 
         // Get zone colors
         const getZoneColors = () => {
@@ -206,8 +206,8 @@ function initGame() {
             });
         }
 
-        // Add 3-4 extra platforms spread across screen for easier navigation
-        const extraCount = 3 + Math.floor(Math.random() * 2);
+        // Add 5-6 extra platforms spread across screen for easier navigation
+        const extraCount = 5 + Math.floor(Math.random() * 2);
         const usedCols = [lastMainPathCol];
         if (isCheckpointRow) usedCols.push(lastMainPathCol < numColumns / 2 ? numColumns - 2 : 1);
 
@@ -217,14 +217,14 @@ function initGame() {
             do {
                 col = Math.floor(Math.random() * numColumns);
                 attempts++;
-            } while (usedCols.includes(col) && attempts < 10);
-            if (attempts >= 10) continue;
+            } while (usedCols.includes(col) && attempts < 15);
+            if (attempts >= 15) continue;
             usedCols.push(col);
 
             const baseX = col * columnWidth + 10;
-            const width = 100 + Math.random() * 40; // Wider platforms
+            const width = 120 + Math.random() * 50; // Even wider platforms
             const x = baseX + Math.random() * Math.max(5, columnWidth - 20 - width);
-            const y = baseY + (Math.random() - 0.5) * 30; // ±15px variation
+            const y = baseY + (Math.random() - 0.5) * 20; // ±10px variation (tighter)
             const extraColors = getZoneColors();
 
             game.platforms.push({
@@ -284,8 +284,8 @@ function initGame() {
 
     // ============ OBSTACLES ============
 
-    // VOID ORBS - dark floating orbs that move in patterns
-    for (let i = 0; i < 12; i++) {
+    // VOID ORBS - dark floating orbs that move in patterns (reduced)
+    for (let i = 0; i < 5; i++) {
         const row = 2 + Math.floor(Math.random() * (numRows - 4));
         const x = 40 + Math.random() * (screenWidth - 80);
         const y = game.gameHeight - 160 - (row * rowHeight) - Math.random() * 50;
@@ -303,8 +303,8 @@ function initGame() {
         });
     }
 
-    // SPIKES - on some platforms (avoid main path)
-    for (let i = 5; i < game.platforms.length; i += 5) {
+    // SPIKES - on some platforms (avoid main path) - reduced
+    for (let i = 8; i < game.platforms.length; i += 8) {
         const plat = game.platforms[i];
         if (plat.isCheckpoint || plat.isStart || plat.isMainPath || plat.width < 100) continue;
 
@@ -335,8 +335,8 @@ function initGame() {
         });
     }
 
-    // FIRE HAZARDS - floating
-    for (let i = 0; i < 8; i++) {
+    // FIRE HAZARDS - floating (reduced)
+    for (let i = 0; i < 4; i++) {
         const row = 2 + Math.floor(Math.random() * (numRows - 4));
         const x = 30 + Math.random() * (screenWidth - 60);
         const y = game.gameHeight - 160 - (row * rowHeight) - 10 - Math.random() * 60;
